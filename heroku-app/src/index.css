@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Font & Base ──────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface-bg text-gray-300;
+  }
+}
+
+/* ─── Dark Command Center Component Styles ─────────────────────────────── */
+@layer components {
+  /* Metric Card — dark glass with subtle border glow */
+  .metric-card {
+    @apply bg-surface-card rounded-lg border border-surface-border p-5
+           shadow-card transition-all duration-200
+           hover:border-surface-border-light hover:shadow-card-hover;
+  }
+
+  /* Status Badges — dark-mode adapted */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-green {
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-yellow {
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/20;
+  }
+
+  .badge-red {
+    @apply bg-red-500/15 text-red-400 border border-red-500/20;
+  }
+
+  .badge-blue {
+    @apply bg-blue-500/15 text-blue-400 border border-blue-500/20;
+  }
+
+  .badge-orange {
+    @apply bg-orange-500/15 text-orange-400 border border-orange-500/20;
+  }
+
+  .badge-gray {
+    @apply bg-gray-500/15 text-gray-400 border border-gray-500/20;
+  }
+
+  .badge-teal {
+    @apply bg-siemens-teal/15 text-siemens-accent border border-siemens-teal/25;
+  }
+
+  /* Data Table — dark theme */
+  .data-table {
+    @apply w-full text-sm text-left;
+  }
+
+  .data-table thead {
+    @apply bg-[#0d1321] border-b border-surface-border;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em];
+  }
+
+  .data-table td {
+    @apply px-4 py-3 border-b border-surface-border;
+  }
+
+  .data-table tbody tr {
+    @apply hover:bg-surface-card-hover transition-colors duration-100;
+  }
+
+  /* Loading Skeleton — dark */
+  .skeleton {
+    @apply animate-pulse bg-gray-800 rounded;
+  }
+
+  /* Section Card — dark glass */
+  .section-card {
+    @apply bg-surface-card rounded-lg border border-surface-border shadow-card overflow-hidden;
+  }
+
+  .section-card-header {
+    @apply px-5 py-4 border-b border-surface-border flex items-center justify-between;
+  }
+
+  .section-card-body {
+    @apply p-5;
+  }
+
+  /* Filter Tabs — dark */
+  .filter-tab {
+    @apply px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 cursor-pointer;
+  }
+
+  .filter-tab-active {
+    @apply bg-siemens-teal text-white;
+  }
+
+  .filter-tab-inactive {
+    @apply text-gray-400 hover:bg-white/5 hover:text-gray-200;
+  }
+
+  /* Region label — like the REGION badge in Claudeforce */
+  .region-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[10px]
+           font-bold uppercase tracking-[0.12em]
+           bg-siemens-teal/20 text-siemens-accent border border-siemens-teal/30;
+  }
+
+  /* Signal card — alert/insight card like CLAUDE SIGNAL */
+  .signal-card {
+    @apply bg-[#0d1321] rounded-lg border border-surface-border p-4
+           border-l-2 border-l-siemens-teal;
+  }
+
+  /* Pill button — action buttons like DETAILS, SLACK THE TEAM */
+  .pill-btn {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+           bg-surface-card-hover text-gray-300 border border-surface-border
+           hover:border-siemens-teal/40 hover:text-siemens-accent
+           transition-all duration-150 cursor-pointer;
+  }
+
+  .pill-btn-active {
+    @apply bg-siemens-teal/20 text-siemens-accent border-siemens-teal/40;
+  }
+
+  /* Big hero metric — like $78.1M in the Claudeforce UI */
+  .hero-metric {
+    @apply text-4xl font-bold tracking-tight;
+    color: #00cccc;
+    text-shadow: 0 0 30px rgba(0, 204, 204, 0.2);
+  }
+}
+
+/* ─── Scrollbar Styling (dark) ─────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+/* ─── Progress Bar (dark) ──────────────────────────────────────────────── */
+.progress-bar {
+  @apply h-2 rounded-full bg-gray-800 overflow-hidden;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+}
+
+/* ─── Form Controls (dark) ─────────────────────────────────────────────── */
+select,
+input[type="text"],
+input[type="search"] {
+  @apply bg-surface-card text-gray-300 border-surface-border;
+}
+
+select:focus,
+input:focus {
+  @apply border-siemens-teal/50 ring-siemens-teal/20;
+}
+
+select option {
+  @apply bg-surface-card text-gray-300;
+}

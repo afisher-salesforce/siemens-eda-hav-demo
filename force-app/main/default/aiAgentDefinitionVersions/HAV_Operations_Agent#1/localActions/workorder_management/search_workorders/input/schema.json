@@ -1,0 +1,21 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "assetName" : {
+      "title" : "Asset Name",
+      "description" : "Optional asset name to filter work orders",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "priorityFilter" : {
+      "title" : "Priority Filter",
+      "description" : "Optional priority filter: Critical, High, Medium, Low",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

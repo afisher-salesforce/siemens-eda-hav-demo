@@ -1,0 +1,14 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "locationName" : {
+      "title" : "Location Name",
+      "description" : "Optional location name to filter (e.g. San Jose, Hsinchu, Munich). Leave blank for all.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AiAgentDefinitionVersion xmlns="http://soap.sforce.com/2006/04/metadata">
+    <articleAnswersGPTEnabled>false</articleAnswersGPTEnabled>
+    <billingMode>ActionBased</billingMode>
+    <citationsEnabled>false</citationsEnabled>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The agent instructions</description>
+        <developerName>AgentScriptInternal_agent_instructions</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Agent Instructions</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>Runtime condition evaluation for if statements</description>
+        <developerName>AgentScriptInternal_condition_1</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Runtime Condition 1</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The next topic to be visited</description>
+        <developerName>AgentScriptInternal_next_topic</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Next Topic</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Stores the result of the latest asset search</description>
+        <developerName>asset_search_result</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Asset Search Result</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Stores the result of the latest capacity analysis</description>
+        <developerName>capacity_result</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Capacity Result</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Stores the result of the latest financial summary</description>
+        <developerName>financial_result</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Financial Result</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Stores the result of the latest telemetry check</description>
+        <developerName>telemetry_result</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Telemetry Result</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Stores the result of the latest work order search</description>
+        <developerName>workorder_result</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Workorder Result</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <copilotPrimaryLanguage>en_US</copilotPrimaryLanguage>
+    <genAiPlannerName>HAV_Operations_Agent_v1</genAiPlannerName>
+    <isScriptCompatibleAgent>true</isScriptCompatibleAgent>
+    <knowledgeActionEnabled>false</knowledgeActionEnabled>
+    <knowledgeFallbackEnabled>false</knowledgeFallbackEnabled>
+    <planner>
+        <fullName>HAV_Operations_Agent_v1</fullName>
+        <agentGraphRef>20ZWt00000DzoYH</agentGraphRef>
+        <description>AI operations assistant for Siemens EDA Hardware-Assisted Verification. Helps engineers manage emulator fleet assets, monitor telemetry health, plan colocation capacity, review financials, and track field service work orders.</description>
+        <localTopicLinks>
+            <genAiPluginName>asset_management</genAiPluginName>
+        </localTopicLinks>
+        <localTopicLinks>
+            <genAiPluginName>capacity_planning</genAiPluginName>
+        </localTopicLinks>
+        <localTopicLinks>
+            <genAiPluginName>entry</genAiPluginName>
+        </localTopicLinks>
+        <localTopicLinks>
+            <genAiPluginName>financial_operations</genAiPluginName>
+        </localTopicLinks>
+        <localTopicLinks>
+            <genAiPluginName>telemetry_monitoring</genAiPluginName>
+        </localTopicLinks>
+        <localTopicLinks>
+            <genAiPluginName>workorder_management</genAiPluginName>
+        </localTopicLinks>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Search and look up emulator assets across the global fleet. Find assets by name, serial number, customer, location, or status.</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJe2</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJe2</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localActionLinks>
+                <functionName>search_assets</functionName>
+            </localActionLinks>
+            <localActions>
+                <description>Search for emulator assets by name, serial number, customer name, or location</description>
+                <invocationTarget>HAV_Agent_AssetLookup</invocationTarget>
+                <invocationTargetType>apex</invocationTargetType>
+                <isConfirmationRequired>false</isConfirmationRequired>
+                <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+                <localDeveloperName>search_assets</localDeveloperName>
+                <masterLabel>Search Assets</masterLabel>
+            </localActions>
+            <localDeveloperName>asset_management</localDeveloperName>
+            <masterLabel>Asset Management</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Analyze colocation facility capacity including rack occupancy, power usage, PUE efficiency, and demand forecasts for Q3/Q4.</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJe0</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJe0</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localActionLinks>
+                <functionName>analyze_capacity</functionName>
+            </localActionLinks>
+            <localActions>
+                <description>Analyze capacity, rack occupancy, power usage, and demand forecasts for colocation facilities</description>
+                <invocationTarget>HAV_Agent_CapacityForecast</invocationTarget>
+                <invocationTargetType>apex</invocationTargetType>
+                <isConfirmationRequired>false</isConfirmationRequired>
+                <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+                <localDeveloperName>analyze_capacity</localDeveloperName>
+                <masterLabel>Analyze Capacity</masterLabel>
+            </localActions>
+            <localDeveloperName>capacity_planning</localDeveloperName>
+            <masterLabel>Capacity Planning</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Routes the user to the appropriate topic based on their request</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJdy</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJdy</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localDeveloperName>entry</localDeveloperName>
+            <masterLabel>Entry</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Review financial metrics for the emulator fleet including monthly recurring revenue, lease type breakdown, customer revenue, and open repair costs.</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJdz</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJdz</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localActionLinks>
+                <functionName>get_financials</functionName>
+            </localActionLinks>
+            <localActions>
+                <description>Get financial summary including revenue by lease type, customer breakdown, and repair costs</description>
+                <invocationTarget>HAV_Agent_FinancialSummary</invocationTarget>
+                <invocationTargetType>apex</invocationTargetType>
+                <isConfirmationRequired>false</isConfirmationRequired>
+                <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+                <localDeveloperName>get_financials</localDeveloperName>
+                <masterLabel>Get Financials</masterLabel>
+            </localActions>
+            <localDeveloperName>financial_operations</localDeveloperName>
+            <masterLabel>Financial Operations</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Monitor real-time telemetry health for emulator assets including CPU utilization, memory usage, temperature, active jobs, and error counts.</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJe1</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJe1</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localActionLinks>
+                <functionName>check_telemetry</functionName>
+            </localActionLinks>
+            <localActions>
+                <description>Check the latest telemetry readings and health status for an emulator asset</description>
+                <invocationTarget>HAV_Agent_TelemetryCheck</invocationTarget>
+                <invocationTargetType>apex</invocationTargetType>
+                <isConfirmationRequired>false</isConfirmationRequired>
+                <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+                <localDeveloperName>check_telemetry</localDeveloperName>
+                <masterLabel>Check Telemetry</masterLabel>
+            </localActions>
+            <localDeveloperName>telemetry_monitoring</localDeveloperName>
+            <masterLabel>Telemetry Monitoring</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <localTopics>
+            <canEscalate>false</canEscalate>
+            <description>Search and track field service work orders for emulator assets including priority, status, RMA numbers, vendor assignments, and estimated repair costs.</description>
+            <genAiPluginInstructions>
+                <description>You are the HAV Operations Agent for Siemens EDA&apos;s Hardware-Assisted Verification division.
+You help operations engineers, account managers, and executives manage a global fleet of
+hardware emulation systems (Veloce Strato, Primo, proFPGA) deployed across colocation
+facilities in San Jose, Austin, Hsinchu, Munich, Seoul, and Bangalore.
+
+Your capabilities:
+1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
+2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
+3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
+4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
+5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+
+Always be concise, data-driven, and proactive about flagging anomalies or risks.
+When presenting data, use clear formatting with bullet points and key metrics highlighted.
+If asked about something outside these capabilities, politely redirect to your areas of expertise.</description>
+                <developerName>instruction0_179Wt000000LJdx</developerName>
+                <language>en_US</language>
+                <masterLabel>instruction0_179Wt000000LJdx</masterLabel>
+                <sortOrder>1</sortOrder>
+            </genAiPluginInstructions>
+            <language>en_US</language>
+            <localActionLinks>
+                <functionName>search_workorders</functionName>
+            </localActionLinks>
+            <localActions>
+                <description>Search work orders by asset name or priority level</description>
+                <invocationTarget>HAV_Agent_WorkOrderLookup</invocationTarget>
+                <invocationTargetType>apex</invocationTargetType>
+                <isConfirmationRequired>false</isConfirmationRequired>
+                <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+                <localDeveloperName>search_workorders</localDeveloperName>
+                <masterLabel>Search Workorders</masterLabel>
+            </localActions>
+            <localDeveloperName>workorder_management</localDeveloperName>
+            <masterLabel>Workorder Management</masterLabel>
+            <pluginType>Topic</pluginType>
+        </localTopics>
+        <masterLabel>HAV Operations Agent</masterLabel>
+        <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+    </planner>
+    <smallTalkEnabled>false</smallTalkEnabled>
+    <staticPromptsEnabled>false</staticPromptsEnabled>
+    <status>Inactive</status>
+    <stopRecPrompts>false</stopRecPrompts>
+    <surfacesEnabled>false</surfacesEnabled>
+    <toneType>Casual</toneType>
+    <version>1</version>
+    <welcomeMessage>Hello! I&apos;m the HAV Operations Agent. I can help you with emulator fleet management, telemetry monitoring, capacity planning, financial analysis, and work order tracking. What would you like to know?</welcomeMessage>
+</AiAgentDefinitionVersion>
