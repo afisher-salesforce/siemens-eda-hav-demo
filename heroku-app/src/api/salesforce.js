@@ -3,6 +3,9 @@
  *
  * All requests go through the Express proxy at /api/hav/*
  * which forwards to Salesforce Apex REST endpoints.
+ *
+ * Transform functions map Apex PascalCase responses to the
+ * camelCase format React components expect.
  */
 
 const BASE = '/api/hav';
@@ -42,33 +45,307 @@ async function request(path, options = {}) {
   }
 }
 
+// ─── Transform helpers ───────────────────────────────────────
+
+/**
+ * Dashboard: Apex returns flat object → React expects { metrics, locationCapacity, recentAlerts, contractRenewals }
+ *
+ * Apex keys: totalAssets, activeAssets, avgUtilization, upcomingRenewals,
+ *            revenueEstimate, openWorkOrders, criticalAlerts,
+ *            locations[].{Id, Name, TotalRackCapacity, PowerCapacityKW, PUE, assetCount}
+ *
+ * React expects:
+ *   metrics.{totalAssets, activeAssets, avgUtilization, criticalAlerts, openWorkOrders, revenueEstimate}
+ *   locationCapacity[].{name, occupancy}
+ *   recentAlerts[] (from telemetry — fetched separately if needed, but provide empty default)
+ *   contractRenewals[] (not in this endpoint — provide empty default)
+ */
+function transformDashboard(raw) {
+  if (!raw) return null;
+
+  const metrics = {
+    totalAssets: raw.totalAssets,
+    activeAssets: raw.activeAssets,
+    avgUtilization: raw.avgUtilization,
+    criticalAlerts: raw.criticalAlerts,
+    openWorkOrders: raw.openWorkOrders,
+    revenueEstimate: raw.revenueEstimate,
+    upcomingRenewals: raw.upcomingRenewals,
+  };
+
+  // Build locationCapacity from locations array — compute occupancy %
+  const locations = raw.locations || [];
+  const locationCapacity = locations.map((loc) => {
+    const totalRacks = loc.TotalRackCapacity || 0;
+    const assetCount = loc.assetCount || 0;
+    return {
+      name: loc.Name || '--',
+      occupancy: totalRacks > 0 ? Math.round((assetCount / totalRacks) * 100) : 0,
+    };
+  });
+
+  return {
+    metrics,
+    locationCapacity,
+    recentAlerts: [],       // telemetry alerts not included in dashboard endpoint
+    contractRenewals: [],   // contract data not included in dashboard endpoint
+  };
+}
+
+/**
+ * Assets: Apex returns array of PascalCase → React expects camelCase
+ *
+ * Apex: Id, Name, SerialNumber, Status, InstallDate, ProductName, AccountName,
+ *       LocationName, RackPosition, PowerDrawKW, UtilizationPct, ContractEndDate, LeaseType
+ *
+ * React: id, name, serialNumber, status, installDate, product, customer,
+ *        location, rackPosition, powerDraw, utilization, contractEnd, leaseType
+ */
+function transformAssets(raw) {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((a) => ({
+    id: a.Id,
+    name: a.Name,
+    serialNumber: a.SerialNumber,
+    status: a.Status,
+    installDate: a.InstallDate,
+    product: a.ProductName,
+    customer: a.AccountName,
+    location: a.LocationName,
+    rackPosition: a.RackPosition,
+    powerDraw: a.PowerDrawKW,
+    utilization: a.UtilizationPct,
+    contractEnd: a.ContractEndDate,
+    leaseType: a.LeaseType,
+  }));
+}
+
+/**
+ * Capacity: Apex returns { forecasts: [...], locations: [...] } PascalCase
+ *
+ * React expects:
+ *   locations[].{id, name, totalRacks, usedRacks, totalPowerKw, usedPowerKw, pue}
+ *   forecast[].{location, quarter, currentRacks, projectedDemand, available}
+ *
+ * Apex locations: Id, Name, TotalRackCapacity, PowerCapacityKW, PUE
+ * Apex forecasts: Id, LocationId, LocationName, PeriodStart, PeriodEnd,
+ *                 TotalRacks, OccupiedRacks, ProjectedDemand, Source
+ */
+function transformCapacity(raw) {
+  if (!raw) return { locations: [], forecast: [] };
+
+  const apexLocations = raw.locations || [];
+  const apexForecasts = raw.forecasts || [];
+
+  // Build a map of occupied racks per location from forecasts (latest period)
+  const occupiedByLocation = {};
+  const powerByLocation = {};
+  for (const f of apexForecasts) {
+    const locId = f.LocationId;
+    if (locId) {
+      occupiedByLocation[locId] = f.OccupiedRacks || 0;
+    }
+  }
+
+  const locations = apexLocations.map((loc) => {
+    const totalRacks = loc.TotalRackCapacity || 0;
+    const usedRacks = occupiedByLocation[loc.Id] || 0;
+    const totalPowerKw = loc.PowerCapacityKW || 0;
+    // Estimate used power proportionally to rack usage
+    const usedPowerKw = totalRacks > 0 ? (usedRacks / totalRacks) * totalPowerKw : 0;
+
+    return {
+      id: loc.Id,
+      name: loc.Name,
+      totalRacks,
+      usedRacks,
+      totalPowerKw,
+      usedPowerKw,
+      pue: loc.PUE,
+    };
+  });
+
+  const forecast = apexForecasts.map((f) => {
+    const totalRacks = f.TotalRacks || 0;
+    const occupied = f.OccupiedRacks || 0;
+    const available = totalRacks - occupied;
+    // Build quarter string from PeriodStart
+    let quarter = '--';
+    if (f.PeriodStart) {
+      const d = new Date(f.PeriodStart);
+      const q = Math.ceil((d.getMonth() + 1) / 3);
+      quarter = `Q${q} ${d.getFullYear()}`;
+    }
+
+    return {
+      location: f.LocationName || '--',
+      quarter,
+      currentRacks: occupied,
+      projectedDemand: f.ProjectedDemand || 0,
+      available,
+    };
+  });
+
+  return { locations, forecast };
+}
+
+/**
+ * Telemetry: Apex returns PascalCase array → React expects camelCase
+ *
+ * Apex: Id, AssetId, AssetName, Timestamp, CPUUtilization, MemoryUtilization,
+ *       TemperatureC, Status, ActiveVerificationJobs, ErrorCount
+ *
+ * React: assetName, assetId, timestamp, cpuPercent, memoryPercent,
+ *        temperature, status, jobs, errors
+ */
+function transformTelemetry(raw) {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((t) => ({
+    assetName: t.AssetName,
+    assetId: t.AssetId,
+    timestamp: t.Timestamp,
+    cpuPercent: t.CPUUtilization,
+    memoryPercent: t.MemoryUtilization,
+    temperature: t.TemperatureC,
+    status: t.Status,
+    jobs: t.ActiveVerificationJobs,
+    errors: t.ErrorCount,
+  }));
+}
+
+/**
+ * Work Orders: Apex PascalCase → React camelCase
+ *
+ * Apex: Id, WorkOrderNumber, Subject, Status, Priority, AssetName,
+ *       AccountName, RMANumber, Vendor, EstimatedRepairCost, CreatedDate
+ *
+ * React: id, workOrderNumber, subject, status, priority, assetName,
+ *        customer, rmaNumber, vendor, estimatedCost, createdDate
+ */
+function transformWorkOrders(raw) {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((wo) => ({
+    id: wo.Id,
+    workOrderNumber: wo.WorkOrderNumber,
+    subject: wo.Subject,
+    status: wo.Status,
+    priority: wo.Priority,
+    assetName: wo.AssetName,
+    customer: wo.AccountName,
+    rmaNumber: wo.RMANumber,
+    vendor: wo.Vendor,
+    estimatedCost: wo.EstimatedRepairCost,
+    createdDate: wo.CreatedDate,
+  }));
+}
+
+/**
+ * Financials: Apex returns nested structure → React expects structured data
+ *
+ * Apex: { assetsByLeaseType: {}, openRepairCosts: {totalEstimatedCost, openWorkOrderCount},
+ *         revenueByProduct: {productName: {count, pricePerUnit, monthlyRevenue}},
+ *         totalMonthlyRevenue, contractRenewalsDueNext90Days }
+ *
+ * React expects:
+ *   revenue.{total, monthlyRecurring, period}
+ *   productBreakdown[].{product, revenue}
+ *   leaseBreakdown[].{leaseType, count}
+ *   repairCosts.{total, openCount, items[]}
+ */
+function transformFinancials(raw) {
+  if (!raw) return null;
+
+  const revenue = {
+    total: raw.totalMonthlyRevenue != null ? raw.totalMonthlyRevenue * 12 : null,
+    monthlyRecurring: raw.totalMonthlyRevenue,
+    period: 'Annual estimate',
+  };
+
+  // Convert revenueByProduct map to array for bar chart
+  const revenueByProduct = raw.revenueByProduct || {};
+  const productBreakdown = Object.entries(revenueByProduct).map(([product, data]) => ({
+    product,
+    revenue: data.monthlyRevenue || 0,
+  }));
+
+  // Convert assetsByLeaseType map to array for pie chart
+  const assetsByLeaseType = raw.assetsByLeaseType || {};
+  const leaseBreakdown = Object.entries(assetsByLeaseType).map(([leaseType, count]) => ({
+    leaseType,
+    count,
+  }));
+
+  const openRepairCosts = raw.openRepairCosts || {};
+  const repairCosts = {
+    total: openRepairCosts.totalEstimatedCost,
+    openCount: openRepairCosts.openWorkOrderCount,
+  };
+
+  return {
+    revenue,
+    productBreakdown,
+    leaseBreakdown,
+    repairCosts,
+  };
+}
+
+/**
+ * Orders: Apex PascalCase → React camelCase
+ *
+ * Apex (SalesAgreement source): Id, Name, Status, AccountName, StartDate, EndDate, Source
+ * Apex (Order source): Id, Name (=OrderNumber), Status, AccountName, StartDate, EndDate, TotalAmount, Source
+ *
+ * React: id, orderNumber, agreementName, customer, product, quantity,
+ *        totalValue, startDate, endDate, status
+ */
+function transformOrders(raw) {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((o) => ({
+    id: o.Id,
+    orderNumber: o.Name,
+    agreementName: o.Source === 'SalesAgreement' ? o.Name : null,
+    customer: o.AccountName,
+    product: null,      // Not provided by current Apex endpoint
+    quantity: null,      // Not provided by current Apex endpoint
+    totalValue: o.TotalAmount,
+    startDate: o.StartDate,
+    endDate: o.EndDate,
+    status: o.Status,
+  }));
+}
+
+// ─── Exported API functions ──────────────────────────────────
+
 /**
  * Get dashboard summary: totals, alerts, recent activity
  */
-export function getDashboardSummary() {
-  return request('/dashboard-summary');
+export async function getDashboardSummary() {
+  const raw = await request('/dashboard-summary');
+  return transformDashboard(raw);
 }
 
 /**
  * Get all assets with optional filters
  * @param {Object} filters - { location, customer, status }
  */
-export function getAssets(filters = {}) {
+export async function getAssets(filters = {}) {
   const params = new URLSearchParams();
   if (filters.location) params.set('location', filters.location);
   if (filters.customer) params.set('customer', filters.customer);
   if (filters.status) params.set('status', filters.status);
   const qs = params.toString();
-  return request(`/assets${qs ? `?${qs}` : ''}`);
+  const raw = await request(`/assets${qs ? `?${qs}` : ''}`);
+  return transformAssets(raw);
 }
 
 /**
  * Get capacity data for a specific location (or all locations)
  * @param {string} [locationId] - Optional location ID
  */
-export function getCapacity(locationId) {
+export async function getCapacity(locationId) {
   const path = locationId ? `/capacity?locationId=${locationId}` : '/capacity';
-  return request(path);
+  const raw = await request(path);
+  return transformCapacity(raw);
 }
 
 /**
@@ -76,38 +353,42 @@ export function getCapacity(locationId) {
  * @param {string} [assetId] - Optional asset ID
  * @param {number} [limit] - Number of records to return
  */
-export function getTelemetry(assetId, limit) {
+export async function getTelemetry(assetId, limit) {
   const params = new URLSearchParams();
   if (assetId) params.set('assetId', assetId);
   if (limit) params.set('limit', String(limit));
   const qs = params.toString();
-  return request(`/telemetry${qs ? `?${qs}` : ''}`);
+  const raw = await request(`/telemetry${qs ? `?${qs}` : ''}`);
+  return transformTelemetry(raw);
 }
 
 /**
  * Get financial data: revenue, costs, lease breakdown
  */
-export function getFinancials() {
-  return request('/financials');
+export async function getFinancials() {
+  const raw = await request('/financials');
+  return transformFinancials(raw);
 }
 
 /**
  * Get work orders with optional filters
  * @param {Object} filters - { priority, status }
  */
-export function getWorkOrders(filters = {}) {
+export async function getWorkOrders(filters = {}) {
   const params = new URLSearchParams();
   if (filters.priority) params.set('priority', filters.priority);
   if (filters.status) params.set('status', filters.status);
   const qs = params.toString();
-  return request(`/workorders${qs ? `?${qs}` : ''}`);
+  const raw = await request(`/workorders${qs ? `?${qs}` : ''}`);
+  return transformWorkOrders(raw);
 }
 
 /**
  * Get sales orders / agreements
  */
-export function getOrders() {
-  return request('/orders');
+export async function getOrders() {
+  const raw = await request('/orders');
+  return transformOrders(raw);
 }
 
 export default {
