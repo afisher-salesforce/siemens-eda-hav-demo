@@ -82,7 +82,7 @@ export default function ComplianceChecklist() {
   const [expandedOrder, setExpandedOrder] = useState(null);
 
   const orders = useMemo(() => {
-    if (!ordersData) return [];
+    if (!ordersData || !Array.isArray(ordersData)) return [];
     let filtered = ordersData.filter((o) => o.status !== 'Expired');
     if (searchTerm && activeTab === 'orders') {
       const term = searchTerm.toLowerCase();
@@ -115,20 +115,8 @@ export default function ComplianceChecklist() {
     );
   }, [complianceData, searchTerm, activeTab]);
 
+  // Show loading if either data source is still fetching
   const loading = compLoading || ordersLoading;
-
-  if (compError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Compliance Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{compError}</p>
-        <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
-          Retry
-        </button>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -139,6 +127,19 @@ export default function ComplianceChecklist() {
             <div key={i} className="skeleton w-full h-24" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (compError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <AlertTriangle size={48} className="text-amber-400 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Compliance Data</h3>
+        <p className="text-sm text-gray-500 max-w-md mb-4">{compError}</p>
+        <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
+          Retry
+        </button>
       </div>
     );
   }
@@ -212,7 +213,7 @@ export default function ComplianceChecklist() {
                 <Globe size={14} className="text-red-400" />
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Embargoed Countries</span>
               </div>
-              <div className="text-2xl font-bold text-red-400">{metrics.embargoedCountries}</div>
+              <div className="text-2xl font-bold text-red-400">{metrics.embargoedCountries ?? 0}</div>
               <div className="text-xs text-gray-500">active trade embargoes</div>
             </div>
             <div className="metric-card">
@@ -220,7 +221,7 @@ export default function ComplianceChecklist() {
                 <Ban size={14} className="text-amber-400" />
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Restricted Parties</span>
               </div>
-              <div className="text-2xl font-bold text-amber-400">{metrics.restrictedParties}</div>
+              <div className="text-2xl font-bold text-amber-400">{metrics.restrictedParties ?? 0}</div>
               <div className="text-xs text-gray-500">on SDN/Entity lists</div>
             </div>
             <div className="metric-card">
@@ -228,7 +229,7 @@ export default function ComplianceChecklist() {
                 <FileCheck size={14} className="text-blue-400" />
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">ECCN Classifications</span>
               </div>
-              <div className="text-2xl font-bold text-blue-400">{metrics.eccnClassifications}</div>
+              <div className="text-2xl font-bold text-blue-400">{metrics.eccnClassifications ?? 0}</div>
               <div className="text-xs text-gray-500">controlled items</div>
             </div>
             <div className="metric-card">
@@ -236,8 +237,8 @@ export default function ComplianceChecklist() {
                 <CheckCircle2 size={14} className="text-emerald-400" />
                 <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Compliance Records</span>
               </div>
-              <div className="text-2xl font-bold text-emerald-400">{metrics.totalRecords}</div>
-              <div className="text-xs text-gray-500">{metrics.clearRecords} clear, {metrics.flaggedRecords} flagged, {metrics.blockedRecords} blocked</div>
+              <div className="text-2xl font-bold text-emerald-400">{metrics.totalRecords ?? 0}</div>
+              <div className="text-xs text-gray-500">{metrics.clearRecords ?? 0} clear, {metrics.flaggedRecords ?? 0} flagged, {metrics.blockedRecords ?? 0} blocked</div>
             </div>
           </div>
 

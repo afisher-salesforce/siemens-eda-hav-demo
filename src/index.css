@@ -42,6 +42,9 @@
     @apply bg-red-500/15 text-red-400 border border-red-500/20;
   }
 
+  .badge-gray {
+    @apply bg-gray-500/10 text-gray-400 border border-gray-500/20;
+  }
   .badge-blue {
     @apply bg-blue-500/15 text-blue-400 border border-blue-500/20;
   }
