@@ -529,6 +529,33 @@ app.get('/api/slack/channel/:channelName', async (req, res) => {
   }
 });
 
+// POST /api/slack/channels — create a channel + seed message
+app.post('/api/slack/channels', async (req, res) => {
+  if (!SLACK_BOT_TOKEN) return res.status(503).json({ error: 'Slack not configured' });
+  try {
+    const { name, seedMessage } = req.body;
+    if (!name) return res.status(400).json({ error: 'name is required' });
+
+    // Create channel
+    const createData = await slackApi('conversations.create', { name, is_private: false });
+    const channelId = createData.channel.id;
+
+    // Post seed message if provided
+    if (seedMessage) {
+      await slackApi('chat.postMessage', { channel: channelId, text: seedMessage });
+    }
+
+    res.json({ ok: true, id: channelId, name: createData.channel.name });
+  } catch (err) {
+    // Handle "name_taken" gracefully — channel may already exist
+    if (err.slackError === 'name_taken') {
+      return res.status(409).json({ error: 'name_taken', name: req.body.name });
+    }
+    console.error('[Slack] Channel create error:', err.message);
+    res.status(500).json({ error: err.slackError || err.message });
+  }
+});
+
 // GET /api/slack/channels/:channelId/history — fetch messages with user profiles
 app.get('/api/slack/channels/:channelId/history', async (req, res) => {
   if (!SLACK_BOT_TOKEN) {

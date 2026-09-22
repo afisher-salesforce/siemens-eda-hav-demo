@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -12,11 +12,23 @@ import {
   FileText,
   Package,
   Hash,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
-import { getWorkOrders, getAssets, getTelemetry } from '../api/salesforce';
+import { getWorkOrders, getAssets, getTelemetry, updateWorkOrderStatus } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import { getSlackChannelName } from '../utils/slackChannel';
+
+// Status transitions: current status → allowed next statuses
+const STATUS_TRANSITIONS = {
+  New: ['In Progress', 'Scheduled'],
+  Scheduled: ['In Progress'],
+  'In Progress': ['Completed', 'On Hold'],
+  'On Hold': ['In Progress'],
+  Completed: ['Closed'],
+  Assigned: ['In Progress', 'Scheduled'],
+};
 
 function PriorityBadge({ priority }) {
   const styles = {
@@ -61,11 +73,35 @@ function formatCurrency(value) {
 export default function WorkOrderDetail() {
   const { workOrderId } = useParams();
   const navigate = useNavigate();
-  const { data: allWorkOrders, loading: woLoading } = useSalesforceData(getWorkOrders);
+  const { data: allWorkOrders, loading: woLoading, refetch } = useSalesforceData(getWorkOrders);
   const { data: allAssets, loading: assetsLoading } = useSalesforceData(getAssets);
   const { data: telemetryData, loading: telemetryLoading } = useSalesforceData(
     () => getTelemetry(null, 200)
   );
+
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusSuccess, setStatusSuccess] = useState(null);
+  const [statusError, setStatusError] = useState(null);
+
+  const handleStatusUpdate = async (newStatus) => {
+    if (updatingStatus || !workOrder) return;
+    setUpdatingStatus(true);
+    setStatusError(null);
+    setStatusSuccess(null);
+    try {
+      await updateWorkOrderStatus(workOrder.id, { status: newStatus });
+      setStatusSuccess(newStatus);
+      // Refresh work order data
+      await refetch();
+      // Clear success after 3s
+      setTimeout(() => setStatusSuccess(null), 3000);
+    } catch (err) {
+      setStatusError(err.message);
+      setTimeout(() => setStatusError(null), 5000);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const workOrder = useMemo(() => {
     if (!allWorkOrders) return null;
@@ -183,6 +219,46 @@ export default function WorkOrderDetail() {
           <StatusBadge status={workOrder.status} />
         </div>
       </div>
+
+      {/* Status Transition Actions */}
+      {STATUS_TRANSITIONS[workOrder.status] && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+            Move to:
+          </span>
+          {STATUS_TRANSITIONS[workOrder.status].map((nextStatus) => (
+            <button
+              key={nextStatus}
+              onClick={() => handleStatusUpdate(nextStatus)}
+              disabled={updatingStatus}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors
+                bg-siemens-teal/10 text-siemens-accent border-siemens-teal/30
+                hover:bg-siemens-teal/20 hover:border-siemens-teal/50
+                disabled:opacity-50 disabled:cursor-not-allowed
+                flex items-center gap-1.5"
+            >
+              {updatingStatus ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <ChevronRight size={12} />
+              )}
+              {nextStatus}
+            </button>
+          ))}
+          {statusSuccess && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <CheckCircle2 size={14} />
+              Updated to {statusSuccess}
+            </span>
+          )}
+          {statusError && (
+            <span className="flex items-center gap-1 text-xs text-red-400">
+              <AlertTriangle size={14} />
+              {statusError}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Properties Panel */}

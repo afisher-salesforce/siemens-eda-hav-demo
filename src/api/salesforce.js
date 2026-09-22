@@ -711,6 +711,31 @@ export async function getManufacturerData(filters = {}) {
   };
 }
 
+/**
+ * Update a work order's status (or priority)
+ * @param {string} workOrderId - Salesforce WorkOrder ID
+ * @param {Object} fields - { status, priority }
+ * @returns {Object} Updated work order data
+ */
+export async function updateWorkOrderStatus(workOrderId, fields) {
+  return request(`/workorders/${workOrderId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
+}
+
+/**
+ * Create a Case or WorkOrder linked to an asset
+ * @param {Object} params - { recordType: 'Case'|'WorkOrder', assetId, subject, description, priority }
+ * @returns {Object} Created record data
+ */
+export async function createAssetRecord(params) {
+  return request('/assets', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
 export default {
   getDashboardSummary,
   getAssets,
@@ -724,4 +749,6 @@ export default {
   getAssetLineage,
   getComplianceData,
   getManufacturerData,
+  updateWorkOrderStatus,
+  createAssetRecord,
 };

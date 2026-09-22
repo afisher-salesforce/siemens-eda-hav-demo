@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,6 +13,10 @@ import {
   GitBranch,
   ArrowRightLeft,
   Wrench,
+  ShieldAlert,
+  Loader2,
+  CheckCircle2,
+  X,
 } from 'lucide-react';
 import {
   LineChart,
@@ -23,7 +27,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getAssets, getTelemetry, getAssetLineage } from '../api/salesforce';
+import { getAssets, getTelemetry, getAssetLineage, createAssetRecord } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -104,6 +108,85 @@ export default function AssetDetail() {
       .slice(-24);
   }, [telemetryData, asset]);
 
+  // Latest telemetry reading for pre-filling action forms
+  const latestTelemetry = useMemo(() => {
+    if (!assetTelemetry || assetTelemetry.length === 0) return null;
+    return assetTelemetry[assetTelemetry.length - 1];
+  }, [assetTelemetry]);
+
+  // Action modal state
+  const [actionModal, setActionModal] = useState(null); // 'Case' | 'WorkOrder' | null
+  const [actionForm, setActionForm] = useState({ subject: '', description: '', priority: 'Medium' });
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
+  const openActionModal = (type) => {
+    // Pre-fill based on telemetry context
+    let subject = '';
+    let description = '';
+    let priority = 'Medium';
+
+    if (latestTelemetry) {
+      const hasErrors = (latestTelemetry.errors || 0) > 0;
+      const highTemp = (latestTelemetry.temperature || 0) > 80;
+      const highCpu = (latestTelemetry.cpuPercent || 0) > 90;
+
+      if (hasErrors) {
+        subject = `${type === 'Case' ? 'Case' : 'WO'}: ${asset.name} — ${latestTelemetry.errors} error(s) detected`;
+        priority = 'High';
+      } else if (highTemp) {
+        subject = `${type === 'Case' ? 'Case' : 'WO'}: ${asset.name} — High temperature (${latestTelemetry.temperature.toFixed(1)}°C)`;
+        priority = 'High';
+      } else if (highCpu) {
+        subject = `${type === 'Case' ? 'Case' : 'WO'}: ${asset.name} — CPU at ${latestTelemetry.cpuPercent}%`;
+        priority = 'Medium';
+      } else {
+        subject = `${type === 'Case' ? 'Case' : 'WO'}: ${asset.name} — Maintenance request`;
+      }
+
+      const lines = [`Asset: ${asset.name} (${asset.product || 'N/A'})`];
+      lines.push(`Location: ${asset.location || 'N/A'}`);
+      lines.push(`Status: ${latestTelemetry.status || asset.status || 'N/A'}`);
+      lines.push(`CPU: ${latestTelemetry.cpuPercent ?? '--'}%, Memory: ${latestTelemetry.memoryPercent ?? '--'}%`);
+      lines.push(`Temperature: ${latestTelemetry.temperature != null ? latestTelemetry.temperature.toFixed(1) + '°C' : '--'}`);
+      lines.push(`Errors: ${latestTelemetry.errors ?? 0}, Active Jobs: ${latestTelemetry.jobs ?? '--'}`);
+      description = lines.join('\n');
+    } else {
+      subject = `${type === 'Case' ? 'Case' : 'WO'}: ${asset.name}`;
+      description = `Asset: ${asset.name}\nProduct: ${asset.product || 'N/A'}\nLocation: ${asset.location || 'N/A'}`;
+    }
+
+    setActionForm({ subject, description, priority });
+    setActionError(null);
+    setActionSuccess(null);
+    setActionModal(type);
+  };
+
+  const handleActionSubmit = async () => {
+    if (actionSubmitting || !actionModal || !asset) return;
+    setActionSubmitting(true);
+    setActionError(null);
+    try {
+      const result = await createAssetRecord({
+        recordType: actionModal,
+        assetId: asset.id,
+        subject: actionForm.subject,
+        description: actionForm.description,
+        priority: actionForm.priority,
+      });
+      setActionSuccess(result);
+      setTimeout(() => {
+        setActionModal(null);
+        setActionSuccess(null);
+      }, 3000);
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
   const loading = assetsLoading || telemetryLoading;
 
   if (loading) {
@@ -170,7 +253,29 @@ export default function AssetDetail() {
             {asset.product} &middot; S/N: {asset.serialNumber || 'N/A'}
           </p>
         </div>
-        <StatusBadge status={asset.status} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openActionModal('Case')}
+            className="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors
+              bg-amber-500/10 text-amber-400 border-amber-500/30
+              hover:bg-amber-500/20 hover:border-amber-500/50
+              flex items-center gap-1.5"
+          >
+            <ShieldAlert size={13} />
+            Create Case
+          </button>
+          <button
+            onClick={() => openActionModal('WorkOrder')}
+            className="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors
+              bg-siemens-teal/10 text-siemens-accent border-siemens-teal/30
+              hover:bg-siemens-teal/20 hover:border-siemens-teal/50
+              flex items-center gap-1.5"
+          >
+            <Wrench size={13} />
+            Create Work Order
+          </button>
+          <StatusBadge status={asset.status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -557,6 +662,132 @@ export default function AssetDetail() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Modal — Create Case / Create Work Order */}
+      {actionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                {actionModal === 'Case' ? (
+                  <ShieldAlert size={16} className="text-amber-400" />
+                ) : (
+                  <Wrench size={16} className="text-siemens-accent" />
+                )}
+                Create {actionModal === 'Case' ? 'Case' : 'Work Order'} for {asset.name}
+              </h3>
+              <button
+                onClick={() => setActionModal(null)}
+                className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {actionSuccess ? (
+              <div className="px-5 py-8 text-center">
+                <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-white mb-1">
+                  {actionSuccess.recordType === 'Case' ? 'Case' : 'Work Order'} Created
+                </p>
+                <p className="text-xs text-gray-400">
+                  {actionSuccess.CaseNumber || actionSuccess.WorkOrderNumber} — {actionSuccess.Subject}
+                </p>
+              </div>
+            ) : (
+              <div className="px-5 py-4 space-y-4">
+                {/* Subject */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={actionForm.subject}
+                    onChange={(e) => setActionForm({ ...actionForm, subject: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                    placeholder="Brief description"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={actionForm.description}
+                    onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
+                    rows={5}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
+                      resize-none font-mono text-xs leading-relaxed"
+                    placeholder="Detailed description..."
+                  />
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Priority
+                  </label>
+                  <select
+                    value={actionForm.priority}
+                    onChange={(e) => setActionForm({ ...actionForm, priority: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+
+                {/* Error */}
+                {actionError && (
+                  <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+                    <AlertTriangle size={14} />
+                    {actionError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            {!actionSuccess && (
+              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-surface-border">
+                <button
+                  onClick={() => setActionModal(null)}
+                  className="px-4 py-2 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleActionSubmit}
+                  disabled={actionSubmitting || !actionForm.subject.trim()}
+                  className="px-4 py-2 text-xs font-medium rounded-md transition-colors
+                    bg-siemens-teal text-white hover:bg-siemens-dark
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    flex items-center gap-1.5"
+                >
+                  {actionSubmitting ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      Creating…
+                    </>
+                  ) : (
+                    <>Create {actionModal === 'Case' ? 'Case' : 'Work Order'}</>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

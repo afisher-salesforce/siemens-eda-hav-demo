@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, Send, ExternalLink, Hash, RefreshCw, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, ExternalLink, Hash, RefreshCw, AlertCircle, Plus } from 'lucide-react';
 
 /**
  * SlackFeed — Reusable component that displays a Slack channel feed
@@ -119,8 +119,44 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
   const [configured, setConfigured] = useState(true);
   const [composing, setComposing] = useState('');
   const [sending, setSending] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [workspaceUrl, setWorkspaceUrl] = useState('');
   const feedEndRef = useRef(null);
+
+  // Seed messages per record type
+  const SEED_MESSAGES = {
+    asset: `📋 Collaboration channel for asset *${recordLabel}* — track maintenance, incidents, and operational updates.`,
+    workorder: `🔧 Collaboration channel for work order *${recordLabel}* — coordinate repairs, share diagnostics, and track resolution.`,
+    order: `📦 Collaboration channel for order *${recordLabel}* — track fulfillment, compliance, and delivery updates.`,
+  };
+
+  // Create a new Slack channel for this record
+  const handleCreateChannel = async () => {
+    if (creating || !channelName) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const res = await fetch(`${SLACK_API}/channels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: channelName,
+          seedMessage: SEED_MESSAGES[recordType] || `Channel created for ${recordLabel}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create channel');
+      }
+      const data = await res.json();
+      setChannelId(data.id);
+      setNotFound(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   // Check Slack config on mount
   useEffect(() => {
@@ -300,16 +336,24 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
           </div>
         )}
 
-        {/* Channel not found */}
+        {/* Channel not found — offer to create */}
         {notFound && !loading && (
           <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
             <Hash size={20} className="text-gray-600 mb-2" />
-            <p className="text-xs text-gray-500">
-              Channel {channelDisplayName} not found
+            <p className="text-xs text-gray-500 mb-1">
+              Channel {channelDisplayName} doesn&apos;t exist yet
             </p>
-            <p className="text-[10px] text-gray-600 mt-1">
-              Create this channel in Slack to enable collaboration for this {recordType}
+            <p className="text-[10px] text-gray-600 mb-3">
+              Create a Slack channel to enable collaboration for this {recordType}
             </p>
+            <button
+              onClick={handleCreateChannel}
+              disabled={creating}
+              className="px-3 py-1.5 text-xs bg-siemens-teal/20 text-siemens-accent border border-siemens-teal/30 rounded-md hover:bg-siemens-teal/30 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+            >
+              <Plus size={12} />
+              {creating ? 'Creating…' : 'Create Channel'}
+            </button>
           </div>
         )}
 
