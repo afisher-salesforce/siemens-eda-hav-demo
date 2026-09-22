@@ -147,7 +147,7 @@ function TravelerCard({ order }) {
           </span>
           <span className="text-xs text-white font-semibold">
             {order.totalValue != null
-              ? `$${(order.totalValue / 1000).toFixed(0)}K`
+              ? `$${(order.totalValue / 1000000).toFixed(2)}M`
               : '--'}
           </span>
         </div>

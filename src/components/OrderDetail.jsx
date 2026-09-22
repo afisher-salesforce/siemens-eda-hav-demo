@@ -65,6 +65,7 @@ function DetailRow({ label, value, icon: Icon }) {
 function formatCurrency(value) {
   if (value == null) return '--';
   if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
+  if (value >= 100000) return `$${(value / 1000000).toFixed(2)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value.toLocaleString()}`;
 }

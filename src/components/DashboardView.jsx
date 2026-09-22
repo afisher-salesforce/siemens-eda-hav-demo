@@ -154,7 +154,7 @@ export default function DashboardView() {
           <span className="region-badge">Global Fleet</span>
           <span className="hero-metric">
             {metrics.revenueEstimate != null
-              ? `$${(metrics.revenueEstimate / 1000).toFixed(0)}K`
+              ? `$${(metrics.revenueEstimate / 1000000).toFixed(1)}M`
               : '--'}
           </span>
         </div>
@@ -216,7 +216,7 @@ export default function DashboardView() {
           label="Revenue Estimate"
           value={
             metrics.revenueEstimate != null
-              ? `$${(metrics.revenueEstimate / 1000).toFixed(0)}K`
+              ? `$${(metrics.revenueEstimate / 1000000).toFixed(1)}M`
               : '--'
           }
           change={metrics.revenueChange}
