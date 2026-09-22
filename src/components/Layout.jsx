@@ -16,6 +16,13 @@ const pageTitles = {
   '/workorders': 'Field Service Work Orders',
   '/workorders/manufacturer': 'Contract Manufacturer Portal',
   '/orders': 'Order Orchestration',
+  '/vignettes': 'Solution Vignettes',
+  '/vignettes/order-close': 'The Order That Almost Didn\'t Close',
+  '/vignettes/capacity': 'The Capacity Nobody Could See',
+  '/vignettes/finance': 'The Spreadsheet That Owns the Quarter Close',
+  '/vignettes/traveler': 'The Traveler That Traveled by Email',
+  '/vignettes/platform': 'The Platform That Connects It All',
+  '/vignettes/automation': 'From Heroic Manual Efforts to Closed-Loop Automation',
 };
 
 export default function Layout({ children }) {

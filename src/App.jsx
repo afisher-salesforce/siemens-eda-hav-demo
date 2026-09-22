@@ -19,6 +19,13 @@ import FailureTimeline from './components/FailureTimeline';
 import AllocationTimeline from './components/AllocationTimeline';
 import LoanerConversionView from './components/LoanerConversionView';
 import ManufacturerPortalView from './components/ManufacturerPortalView';
+import VignetteIndex from './components/vignettes/VignetteIndex';
+import Vignette1 from './components/vignettes/Vignette1';
+import Vignette2 from './components/vignettes/Vignette2';
+import Vignette3 from './components/vignettes/Vignette3';
+import Vignette4 from './components/vignettes/Vignette4';
+import Vignette5 from './components/vignettes/Vignette5';
+import Vignette6 from './components/vignettes/Vignette6';
 
 export default function App() {
   return (
@@ -42,6 +49,13 @@ export default function App() {
         <Route path="/orders/travelers" element={<TravelerView />} />
         <Route path="/orders/compliance" element={<ComplianceChecklist />} />
         <Route path="/orders/:orderId" element={<OrderDetail />} />
+        <Route path="/vignettes" element={<VignetteIndex />} />
+        <Route path="/vignettes/order-close" element={<Vignette1 />} />
+        <Route path="/vignettes/capacity" element={<Vignette2 />} />
+        <Route path="/vignettes/finance" element={<Vignette3 />} />
+        <Route path="/vignettes/traveler" element={<Vignette4 />} />
+        <Route path="/vignettes/platform" element={<Vignette5 />} />
+        <Route path="/vignettes/automation" element={<Vignette6 />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

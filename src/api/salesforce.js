@@ -113,9 +113,9 @@ function transformDashboard(raw, telemetryRaw, assetsRaw) {
 
     // Price estimates by product for monthly value
     const PRICE_MAP = {
-      'Veloce Strato': 150000,
-      'Veloce Primo': 90000,
-      'proFPGA': 45000,
+      'Veloce Strato': 200000,
+      'Veloce Primo': 120000,
+      'proFPGA': 60000,
     };
 
     assetsRaw
@@ -385,13 +385,13 @@ function transformOrders(raw) {
         const months = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24 * 30)));
         // Use hash of ID for deterministic rate between 45K-150K/month
         const hash = simpleHash(o.Id || o.Name);
-        const rates = [45000, 90000, 150000];
+        const rates = [60000, 120000, 200000];
         const rate = rates[hash % rates.length];
         totalValue = rate * months;
       } else {
         // Fallback: single-year estimate
         const hash = simpleHash(o.Id || o.Name);
-        totalValue = [540000, 1080000, 1800000][hash % 3];
+        totalValue = [720000, 1440000, 2400000][hash % 3];
       }
     }
 

@@ -20,6 +20,9 @@ import {
   PanelLeftOpen,
   RefreshCcw,
   Factory,
+  BookOpen,
+  Zap,
+  Layers,
 } from 'lucide-react';
 
 const navItems = [
@@ -66,6 +69,19 @@ const navItems = [
     children: [
       { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
       { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
+    ],
+  },
+  {
+    to: '/vignettes',
+    icon: BookOpen,
+    label: 'Vignettes',
+    children: [
+      { to: '/vignettes/order-close', icon: ShoppingCart, label: 'Order Close' },
+      { to: '/vignettes/capacity', icon: BarChart3, label: 'Capacity' },
+      { to: '/vignettes/finance', icon: DollarSign, label: 'Finance' },
+      { to: '/vignettes/traveler', icon: FileText, label: 'Traveler' },
+      { to: '/vignettes/platform', icon: Layers, label: 'Platform' },
+      { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
     ],
   },
 ];
