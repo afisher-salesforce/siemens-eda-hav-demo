@@ -25,6 +25,8 @@ import {
 } from 'recharts';
 import { getOrders, getWorkOrders, getAssets } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import SlackFeed from './SlackFeed';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 const darkTooltipStyle = {
   borderRadius: '8px',
@@ -329,6 +331,13 @@ export default function OrderDetail() {
           )}
         </div>
       </div>
+
+      {/* Slack Channel */}
+      <SlackFeed
+        channelName={getSlackChannelName('order', order.orderNumber)}
+        recordLabel={order.orderNumber}
+        recordType="order"
+      />
 
       {/* Customer Assets */}
       {customerAssets.length > 0 && (

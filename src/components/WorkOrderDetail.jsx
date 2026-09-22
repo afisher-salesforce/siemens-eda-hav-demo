@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { getWorkOrders, getAssets, getTelemetry } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import SlackFeed from './SlackFeed';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 function PriorityBadge({ priority }) {
   const styles = {
@@ -349,6 +351,13 @@ export default function WorkOrderDetail() {
           )}
         </div>
       </div>
+
+      {/* Slack Channel */}
+      <SlackFeed
+        channelName={getSlackChannelName('workorder', workOrder.workOrderNumber)}
+        recordLabel={workOrder.workOrderNumber}
+        recordType="work order"
+      />
 
       {/* Related Work Orders for Same Asset */}
       {relatedWorkOrders.length > 0 && (

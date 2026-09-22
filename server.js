@@ -271,6 +271,194 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
   }
 });
 
+// ─── Slack API Proxy ─────────────────────────────────────────────────────────
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const SLACK_WORKSPACE_URL = process.env.SLACK_WORKSPACE_URL || 'https://slack-demo-34143.enterprise.slack.com';
+
+// Helper: call Slack Web API
+async function slackApi(method, params = {}) {
+  if (!SLACK_BOT_TOKEN) throw new Error('SLACK_BOT_TOKEN not configured');
+
+  const isGet = ['conversations.list', 'conversations.info', 'conversations.history',
+    'conversations.replies', 'conversations.members', 'users.info', 'users.list'].includes(method);
+
+  const url = `https://slack.com/api/${method}`;
+
+  let response;
+  if (isGet) {
+    const qs = new URLSearchParams(params).toString();
+    response = await fetch(`${url}?${qs}`, {
+      headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
+    });
+  } else {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify(params),
+    });
+  }
+
+  const data = await response.json();
+  if (!data.ok) {
+    console.error(`[Slack] ${method} error:`, data.error);
+    const err = new Error(data.error);
+    err.slackError = data.error;
+    throw err;
+  }
+  return data;
+}
+
+// Cache user profiles to avoid repeated lookups
+const slackUserCache = {};
+async function getSlackUser(userId) {
+  if (slackUserCache[userId]) return slackUserCache[userId];
+  try {
+    const data = await slackApi('users.info', { user: userId });
+    const profile = {
+      id: data.user.id,
+      name: data.user.real_name || data.user.name,
+      displayName: data.user.profile?.display_name || data.user.real_name || data.user.name,
+      avatar: data.user.profile?.image_48 || data.user.profile?.image_32,
+      isBot: data.user.is_bot,
+    };
+    slackUserCache[userId] = profile;
+    return profile;
+  } catch {
+    return { id: userId, name: userId, displayName: userId, avatar: null, isBot: false };
+  }
+}
+
+// GET /api/slack/config — expose workspace URL and configured status
+app.get('/api/slack/config', (_req, res) => {
+  res.json({
+    configured: !!SLACK_BOT_TOKEN,
+    workspaceUrl: SLACK_WORKSPACE_URL,
+  });
+});
+
+// GET /api/slack/channel/:channelName — resolve channel name to ID and get info
+app.get('/api/slack/channel/:channelName', async (req, res) => {
+  if (!SLACK_BOT_TOKEN) {
+    return res.status(503).json({ error: 'Slack not configured' });
+  }
+  try {
+    const targetName = req.params.channelName.replace(/^#/, '').toLowerCase();
+    let channelId = null;
+    let cursor = '';
+
+    // Paginate through channels to find the one by name
+    for (let page = 0; page < 10; page++) {
+      const params = { types: 'public_channel,private_channel', limit: 200 };
+      if (cursor) params.cursor = cursor;
+      const data = await slackApi('conversations.list', params);
+
+      const match = (data.channels || []).find(
+        (c) => c.name.toLowerCase() === targetName
+      );
+      if (match) {
+        channelId = match.id;
+        break;
+      }
+
+      cursor = data.response_metadata?.next_cursor;
+      if (!cursor) break;
+    }
+
+    if (!channelId) {
+      return res.status(404).json({ error: 'channel_not_found', name: targetName });
+    }
+
+    res.json({ id: channelId, name: targetName });
+  } catch (err) {
+    console.error('[Slack] Channel lookup error:', err.message);
+    res.status(err.slackError === 'not_authed' ? 401 : 500).json({
+      error: err.slackError || err.message,
+    });
+  }
+});
+
+// GET /api/slack/channels/:channelId/history — fetch messages with user profiles
+app.get('/api/slack/channels/:channelId/history', async (req, res) => {
+  if (!SLACK_BOT_TOKEN) {
+    return res.status(503).json({ error: 'Slack not configured' });
+  }
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 15, 50);
+    const data = await slackApi('conversations.history', {
+      channel: req.params.channelId,
+      limit,
+    });
+
+    // Enrich messages with user profile data
+    const messages = await Promise.all(
+      (data.messages || []).map(async (msg) => {
+        let user = null;
+        if (msg.user) {
+          user = await getSlackUser(msg.user);
+        }
+        return {
+          ts: msg.ts,
+          text: msg.text,
+          user: user || { name: msg.username || 'Unknown', displayName: msg.username || 'Unknown' },
+          threadTs: msg.thread_ts,
+          replyCount: msg.reply_count || 0,
+          reactions: (msg.reactions || []).map((r) => ({ name: r.name, count: r.count })),
+        };
+      })
+    );
+
+    res.json({ messages: messages.reverse(), channelId: req.params.channelId });
+  } catch (err) {
+    console.error('[Slack] History error:', err.message);
+    if (err.slackError === 'not_in_channel') {
+      // Auto-join and retry
+      try {
+        await slackApi('conversations.join', { channel: req.params.channelId });
+        // Retry
+        const limit = Math.min(parseInt(req.query.limit) || 15, 50);
+        const data = await slackApi('conversations.history', {
+          channel: req.params.channelId,
+          limit,
+        });
+        const messages = (data.messages || []).map((msg) => ({
+          ts: msg.ts,
+          text: msg.text,
+          user: { name: msg.username || 'Unknown', displayName: msg.username || 'Unknown' },
+          replyCount: msg.reply_count || 0,
+          reactions: [],
+        }));
+        return res.json({ messages: messages.reverse(), channelId: req.params.channelId });
+      } catch (retryErr) {
+        return res.status(500).json({ error: retryErr.message });
+      }
+    }
+    res.status(500).json({ error: err.slackError || err.message });
+  }
+});
+
+// POST /api/slack/channels/:channelId/messages — post a message
+app.post('/api/slack/channels/:channelId/messages', async (req, res) => {
+  if (!SLACK_BOT_TOKEN) {
+    return res.status(503).json({ error: 'Slack not configured' });
+  }
+  try {
+    const { text, threadTs } = req.body;
+    if (!text) return res.status(400).json({ error: 'text is required' });
+
+    const params = { channel: req.params.channelId, text };
+    if (threadTs) params.thread_ts = threadTs;
+
+    const data = await slackApi('chat.postMessage', params);
+    res.json({ ok: true, ts: data.ts, channel: data.channel });
+  } catch (err) {
+    console.error('[Slack] Post message error:', err.message);
+    res.status(500).json({ error: err.slackError || err.message });
+  }
+});
+
 // ─── Serve Static Files (Production) ─────────────────────────────────────────
 const distPath = join(__dirname, 'dist');
 
@@ -306,5 +494,6 @@ app.listen(PORT, () => {
   console.log(`  Port:          ${PORT}`);
   console.log(`  SF Instance:   ${SF_INSTANCE_URL || '(not configured)'}`);
   console.log(`  SF Login URL:  ${SF_LOGIN_URL}`);
-  console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}\n`);
+  console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}`);
+  console.log(`  Slack:         ${SLACK_BOT_TOKEN ? 'Configured' : '(not configured)'}\n`);
 });

@@ -22,6 +22,8 @@ import {
 } from 'recharts';
 import { getAssets, getTelemetry } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import SlackFeed from './SlackFeed';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 const darkTooltipStyle = {
   borderRadius: '8px',
@@ -255,6 +257,13 @@ export default function AssetDetail() {
           </div>
         </div>
       </div>
+
+      {/* Slack Channel */}
+      <SlackFeed
+        channelName={getSlackChannelName('asset', asset.name)}
+        recordLabel={asset.name}
+        recordType="asset"
+      />
 
       {/* Related Assets (Hierarchy) */}
       {childAssets.length > 0 && (
