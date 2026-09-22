@@ -13,7 +13,8 @@ const PORT = process.env.PORT || 3001;
 const SF_CLIENT_ID = process.env.SF_CLIENT_ID;
 const SF_CLIENT_SECRET = process.env.SF_CLIENT_SECRET;
 const SF_INSTANCE_URL = process.env.SF_INSTANCE_URL;
-const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com';
+// Client credentials flow requires My Domain URL, not login.salesforce.com
+const SF_LOGIN_URL = process.env.SF_LOGIN_URL || SF_INSTANCE_URL;
 
 // ─── Agentforce Agent Configuration ─────────────────────────────────────────
 const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
