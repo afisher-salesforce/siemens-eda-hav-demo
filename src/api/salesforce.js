@@ -46,7 +46,7 @@ async function request(path, options = {}) {
  * Get dashboard summary: totals, alerts, recent activity
  */
 export function getDashboardSummary() {
-  return request('/dashboard');
+  return request('/dashboard-summary');
 }
 
 /**
