@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Server,
@@ -8,23 +8,76 @@ import {
   DollarSign,
   Wrench,
   ShoppingCart,
-  Bot,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  ChevronDown,
+  Calendar,
+  FileSpreadsheet,
+  FileText,
+  Shield,
+  Package,
+  AlertTriangle,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/assets', icon: Server, label: 'Asset Fleet' },
-  { to: '/capacity', icon: BarChart3, label: 'Capacity' },
+  {
+    to: '/assets',
+    icon: Server,
+    label: 'Asset Fleet',
+  },
+  {
+    to: '/capacity',
+    icon: BarChart3,
+    label: 'Capacity',
+    children: [
+      { to: '/capacity/allocations', icon: Calendar, label: 'Allocations' },
+    ],
+  },
   { to: '/telemetry', icon: Activity, label: 'Telemetry' },
-  { to: '/financials', icon: DollarSign, label: 'Financials' },
-  { to: '/workorders', icon: Wrench, label: 'Work Orders' },
-  { to: '/orders', icon: ShoppingCart, label: 'Orders' },
+  {
+    to: '/financials',
+    icon: DollarSign,
+    label: 'Financials',
+    children: [
+      { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
+    ],
+  },
+  {
+    to: '/workorders',
+    icon: Wrench,
+    label: 'Work Orders',
+    children: [
+      { to: '/workorders/failures', icon: AlertTriangle, label: 'Failures' },
+      { to: '/workorders/spares', icon: Package, label: 'Spare Parts' },
+    ],
+  },
+  {
+    to: '/orders',
+    icon: ShoppingCart,
+    label: 'Orders',
+    children: [
+      { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
+      { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
+    ],
+  },
 ];
 
 export default function Sidebar({ collapsed, onToggle, onOpenChat }) {
+  const location = useLocation();
+  const [expandedParent, setExpandedParent] = useState(null);
+
+  // Auto-expand if we're on a child route
+  const currentParent = navItems.find(
+    (item) =>
+      item.children &&
+      (location.pathname === item.to ||
+        item.children.some((c) => location.pathname === c.to))
+  );
+
+  const effectiveExpanded = expandedParent || (currentParent ? currentParent.to : null);
+
   return (
     <aside
       className={`fixed top-0 left-0 h-screen bg-[#080c14] text-white flex flex-col z-30 transition-all duration-300 border-r border-surface-border ${
@@ -48,23 +101,71 @@ export default function Sidebar({ collapsed, onToggle, onOpenChat }) {
 
       {/* Navigation */}
       <nav className="flex-1 py-3 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center h-10 mx-2 px-3 rounded-md text-sm transition-all duration-150 ${
-                isActive
-                  ? 'bg-siemens-teal/15 text-siemens-accent border-l-2 border-siemens-teal'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-              }`
-            }
-          >
-            <Icon size={18} className="shrink-0" />
-            {!collapsed && <span className="ml-3 whitespace-nowrap">{label}</span>}
-          </NavLink>
-        ))}
+        {navItems.map(({ to, icon: Icon, label, children }) => {
+          const hasChildren = children && children.length > 0;
+          const isActive =
+            location.pathname === to ||
+            (hasChildren && children.some((c) => location.pathname === c.to));
+          const isExpanded = !collapsed && effectiveExpanded === to;
+
+          return (
+            <div key={to}>
+              <div className="flex items-center mx-2">
+                <NavLink
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive: linkActive }) =>
+                    `flex items-center flex-1 h-10 px-3 rounded-md text-sm transition-all duration-150 ${
+                      linkActive
+                        ? 'bg-siemens-teal/15 text-siemens-accent border-l-2 border-siemens-teal'
+                        : isActive
+                        ? 'bg-white/[0.03] text-gray-300'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                    }`
+                  }
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!collapsed && <span className="ml-3 whitespace-nowrap">{label}</span>}
+                </NavLink>
+                {hasChildren && !collapsed && (
+                  <button
+                    onClick={() =>
+                      setExpandedParent(isExpanded ? null : to)
+                    }
+                    className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                    />
+                  </button>
+                )}
+              </div>
+
+              {/* Sub-items */}
+              {hasChildren && isExpanded && (
+                <div className="ml-6 mt-0.5 mb-1 space-y-0.5">
+                  {children.map(({ to: childTo, icon: ChildIcon, label: childLabel }) => (
+                    <NavLink
+                      key={childTo}
+                      to={childTo}
+                      className={({ isActive: childActive }) =>
+                        `flex items-center h-8 px-3 mx-2 rounded-md text-xs transition-all duration-150 ${
+                          childActive
+                            ? 'bg-siemens-teal/10 text-siemens-accent'
+                            : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                        }`
+                      }
+                    >
+                      <ChildIcon size={14} className="shrink-0" />
+                      <span className="ml-2.5 whitespace-nowrap">{childLabel}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Agent Chat Button */}
