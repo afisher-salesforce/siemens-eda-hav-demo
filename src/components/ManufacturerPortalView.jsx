@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Factory,
   Wrench,
@@ -316,7 +317,11 @@ export default function ManufacturerPortalView() {
               <tbody>
                 {filteredOrders.map((wo) => (
                   <tr key={wo.id}>
-                    <td className="font-mono text-xs text-gray-400">{wo.workOrderNumber}</td>
+                    <td className="font-mono text-xs">
+                      <Link to={`/workorders/${wo.id}`} className="text-siemens-accent hover:underline">
+                        {wo.workOrderNumber}
+                      </Link>
+                    </td>
                     <td className="text-gray-200 text-sm font-medium">{wo.assetName || '--'}</td>
                     <td className="text-gray-400 text-xs">{wo.productName || '--'}</td>
                     <td className="text-gray-400">{wo.customer || '--'}</td>

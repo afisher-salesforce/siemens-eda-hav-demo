@@ -80,6 +80,7 @@ export default function ComplianceChecklist() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [expandedRecord, setExpandedRecord] = useState(null);
 
   const orders = useMemo(() => {
     if (!ordersData || !Array.isArray(ordersData)) return [];
@@ -254,6 +255,7 @@ export default function ComplianceChecklist() {
                   <table className="data-table">
                     <thead>
                       <tr>
+                        <th></th>
                         <th>Record</th>
                         <th>Outcome</th>
                         <th>Account</th>
@@ -263,32 +265,89 @@ export default function ComplianceChecklist() {
                       </tr>
                     </thead>
                     <tbody>
-                      {complianceData.complianceRecords.map((cr) => (
-                        <tr key={cr.id}>
-                          <td className="font-mono text-xs text-gray-400">{cr.name}</td>
-                          <td>
-                            <span className={`badge ${
-                              cr.assessmentOutcome === 'Clear' ? 'badge-green' :
-                              cr.assessmentOutcome === 'Flagged' ? 'badge-yellow' :
-                              cr.assessmentOutcome === 'Blocked' ? 'badge-red' : 'badge-gray'
-                            }`}>
-                              {cr.assessmentOutcome || '--'}
-                            </span>
-                          </td>
-                          <td className="text-gray-300">{cr.account?.name || '--'}</td>
-                          <td className="text-gray-400 text-xs">{cr.quote?.quoteNumber || '--'}</td>
-                          <td className="text-gray-500 text-xs whitespace-nowrap">
-                            {cr.createdDate ? new Date(cr.createdDate).toLocaleDateString() : '--'}
-                          </td>
-                          <td>
-                            {cr.createdByAgent ? (
-                              <span className="badge badge-blue text-[9px]">AI Agent</span>
-                            ) : (
-                              <span className="text-gray-600 text-xs">Manual</span>
+                      {complianceData.complianceRecords.map((cr) => {
+                        const isExpanded = expandedRecord === cr.id;
+                        return (
+                          <React.Fragment key={cr.id}>
+                            <tr
+                              className="cursor-pointer hover:bg-white/[0.03]"
+                              onClick={() => setExpandedRecord(isExpanded ? null : cr.id)}
+                            >
+                              <td className="w-8 text-center">
+                                {isExpanded
+                                  ? <ChevronDown size={14} className="text-gray-500 inline" />
+                                  : <ChevronRight size={14} className="text-gray-500 inline" />}
+                              </td>
+                              <td className="font-mono text-xs text-siemens-accent font-medium">{cr.name}</td>
+                              <td>
+                                <span className={`badge ${
+                                  cr.assessmentOutcome === 'Clear' ? 'badge-green' :
+                                  cr.assessmentOutcome === 'Flagged' ? 'badge-yellow' :
+                                  cr.assessmentOutcome === 'Blocked' ? 'badge-red' : 'badge-gray'
+                                }`}>
+                                  {cr.assessmentOutcome || '--'}
+                                </span>
+                              </td>
+                              <td className="text-gray-300">{cr.account?.name || '--'}</td>
+                              <td className="text-gray-400 text-xs">{cr.quote?.quoteNumber || '--'}</td>
+                              <td className="text-gray-500 text-xs whitespace-nowrap">
+                                {cr.createdDate ? new Date(cr.createdDate).toLocaleDateString() : '--'}
+                              </td>
+                              <td>
+                                {cr.createdByAgent ? (
+                                  <span className="badge badge-blue text-[9px]">AI Agent</span>
+                                ) : (
+                                  <span className="text-gray-600 text-xs">Manual</span>
+                                )}
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={7} className="bg-[#0a0f1a] border-b border-surface-border p-0">
+                                  <div className="px-6 py-4 space-y-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      <div>
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Compliance Status</div>
+                                        <span className={`badge ${
+                                          cr.complianceStatus === 'Clear' ? 'badge-green' :
+                                          cr.complianceStatus === 'Flagged' ? 'badge-yellow' :
+                                          cr.complianceStatus === 'Blocked' ? 'badge-red' :
+                                          cr.complianceStatus === 'Pending Review' ? 'badge-orange' : 'badge-gray'
+                                        }`}>
+                                          {cr.complianceStatus || 'Pending Review'}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Data Sources</div>
+                                        <div className="text-xs text-gray-400">{cr.dataSources || 'Not specified'}</div>
+                                      </div>
+                                    </div>
+                                    {cr.screeningDetails && (
+                                      <div>
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Screening Details</div>
+                                        <div className="text-xs text-gray-400 bg-surface-card rounded-md p-3 border border-surface-border whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                          {cr.screeningDetails}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {cr.account && (
+                                      <div>
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Account Details</div>
+                                        <div className="text-xs text-gray-400">
+                                          {cr.account.name}{cr.account.country ? ` — ${cr.account.country}` : ''}
+                                          {cr.account.embargoFlag && (
+                                            <span className="ml-2 badge badge-red text-[9px]">Embargo Flagged</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                        </tr>
-                      ))}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
