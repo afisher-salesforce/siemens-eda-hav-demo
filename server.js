@@ -18,6 +18,7 @@ const SF_LOGIN_URL = process.env.SF_LOGIN_URL || SF_INSTANCE_URL;
 
 // ─── Agentforce Agent Configuration ─────────────────────────────────────────
 const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
+const SF_TRADE_AGENT_ID = process.env.SF_TRADE_AGENT_ID || '0XxWt000000wkaLKAQ'; // Trade Compliance Sentinel
 const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
 
 // ─── Token Cache ─────────────────────────────────────────────────────────────
@@ -268,6 +269,124 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
   } catch (err) {
     console.error('[Agent API] Session delete error:', err.message);
     res.status(502).json({ error: 'Agent API error', message: err.message });
+  }
+});
+
+// ─── Trade Compliance Agent API Proxy ────────────────────────────────────────
+
+// GET /api/trade-agent/config — expose trade agent ID to front-end
+app.get('/api/trade-agent/config', (_req, res) => {
+  res.json({ agentId: SF_TRADE_AGENT_ID, configured: !!(SF_TRADE_AGENT_ID && SF_CLIENT_ID) });
+});
+
+// POST /api/trade-agent/sessions — create a new session with the Trade Compliance agent
+app.post('/api/trade-agent/sessions', async (req, res) => {
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
+
+    console.log(`[Trade Agent API] Creating session for agent ${SF_TRADE_AGENT_ID}`);
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(req.body || {}),
+    });
+
+    const data = await sfResponse.json();
+    if (!sfResponse.ok) {
+      console.error('[Trade Agent API] Session creation failed:', sfResponse.status, data);
+      return res.status(sfResponse.status).json(data);
+    }
+
+    console.log(`[Trade Agent API] Session created: ${data.sessionId || data.id}`);
+    res.json(data);
+  } catch (err) {
+    console.error('[Trade Agent API] Session error:', err.message);
+    if (err.message.includes('auth')) {
+      tokenCache = { accessToken: null, expiresAt: 0 };
+    }
+    res.status(502).json({ error: 'Trade Agent API error', message: err.message });
+  }
+});
+
+// POST /api/trade-agent/sessions/:sessionId/messages — send message and stream response
+app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+
+    console.log(`[Trade Agent API] Sending message to session ${sessionId}`);
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const contentType = sfResponse.headers.get('content-type') || '';
+
+    // If SSE streaming response, pipe it through
+    if (contentType.includes('text/event-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      sfResponse.body.pipe(res);
+      return;
+    }
+
+    // Standard JSON response
+    if (contentType.includes('application/json')) {
+      const data = await sfResponse.json();
+      res.status(sfResponse.status).json(data);
+    } else {
+      const text = await sfResponse.text();
+      res.status(sfResponse.status).send(text);
+    }
+  } catch (err) {
+    console.error('[Trade Agent API] Message error:', err.message);
+    if (err.message.includes('auth')) {
+      tokenCache = { accessToken: null, expiresAt: 0 };
+    }
+    res.status(502).json({ error: 'Trade Agent API error', message: err.message });
+  }
+});
+
+// DELETE /api/trade-agent/sessions/:sessionId — end session
+app.delete('/api/trade-agent/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (sfResponse.status === 204) {
+      return res.status(204).end();
+    }
+
+    const data = await sfResponse.json();
+    res.status(sfResponse.status).json(data);
+  } catch (err) {
+    console.error('[Trade Agent API] Session delete error:', err.message);
+    res.status(502).json({ error: 'Trade Agent API error', message: err.message });
   }
 });
 
@@ -552,5 +671,7 @@ app.listen(PORT, () => {
   console.log(`  SF Instance:   ${SF_INSTANCE_URL || '(not configured)'}`);
   console.log(`  SF Login URL:  ${SF_LOGIN_URL}`);
   console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}`);
+  console.log(`  HAV Agent:     ${SF_AGENT_ID}`);
+  console.log(`  Trade Agent:   ${SF_TRADE_AGENT_ID}`);
   console.log(`  Slack:         ${SLACK_BOT_TOKEN ? 'Configured' : '(not configured)'}\n`);
 });

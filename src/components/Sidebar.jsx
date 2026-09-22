@@ -64,7 +64,7 @@ const navItems = [
   },
 ];
 
-export default function Sidebar({ collapsed, onToggle, onOpenChat }) {
+export default function Sidebar({ collapsed, onToggle, onOpenChat, onOpenTradeChat }) {
   const location = useLocation();
   const [expandedParent, setExpandedParent] = useState(null);
 
@@ -168,8 +168,20 @@ export default function Sidebar({ collapsed, onToggle, onOpenChat }) {
         })}
       </nav>
 
-      {/* Agent Chat Button */}
-      <div className="px-2 pb-2">
+      {/* Agent Chat Buttons */}
+      <div className="px-2 pb-2 space-y-1.5">
+        <button
+          onClick={onOpenTradeChat}
+          className={`flex items-center w-full h-10 px-3 rounded-md text-sm transition-all duration-150 group ${
+            collapsed ? 'justify-center' : ''
+          } bg-amber-500/10 text-amber-400 border border-amber-500/20
+            hover:bg-amber-500/20 hover:border-amber-500/40`}
+        >
+          <Shield size={18} className="shrink-0 group-hover:animate-pulse" />
+          {!collapsed && (
+            <span className="ml-3 whitespace-nowrap font-medium">Trade Compliance</span>
+          )}
+        </button>
         <button
           onClick={onOpenChat}
           className={`flex items-center w-full h-10 px-3 rounded-md text-sm transition-all duration-150 group ${
@@ -179,7 +191,7 @@ export default function Sidebar({ collapsed, onToggle, onOpenChat }) {
         >
           <Sparkles size={18} className="shrink-0 group-hover:animate-pulse" />
           {!collapsed && (
-            <span className="ml-3 whitespace-nowrap font-medium">Agent Chat</span>
+            <span className="ml-3 whitespace-nowrap font-medium">HAV Agent</span>
           )}
         </button>
       </div>

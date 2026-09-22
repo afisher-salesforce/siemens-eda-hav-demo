@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Bell, RefreshCw, User, Sparkles } from 'lucide-react';
 import Sidebar from './Sidebar';
 import AgentChat from './AgentChat';
+import TradeAgentChat from './TradeAgentChat';
 
 const pageTitles = {
   '/': 'Operations Command Center',
@@ -17,6 +18,7 @@ const pageTitles = {
 export default function Layout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [tradeChatOpen, setTradeChatOpen] = useState(false);
   const location = useLocation();
 
   const pageTitle = pageTitles[location.pathname] || 'HAV Operations';
@@ -26,7 +28,8 @@ export default function Layout({ children }) {
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        onOpenChat={() => setChatOpen(true)}
+        onOpenChat={() => { setTradeChatOpen(false); setChatOpen(true); }}
+        onOpenTradeChat={() => { setChatOpen(false); setTradeChatOpen(true); }}
       />
 
       {/* Main Content */}
@@ -77,8 +80,9 @@ export default function Layout({ children }) {
         <main className="p-6">{children}</main>
       </div>
 
-      {/* Agent Chat Panel */}
+      {/* Agent Chat Panels */}
       <AgentChat open={chatOpen} onClose={() => setChatOpen(false)} />
+      <TradeAgentChat open={tradeChatOpen} onClose={() => setTradeChatOpen(false)} />
     </div>
   );
 }
