@@ -99,7 +99,8 @@ app.all('/api/hav/*', async (req, res) => {
     const accessToken = await getAccessToken();
     // Build the Salesforce URL: /api/hav/dashboard → /services/apexrest/hav/dashboard
     const sfPath = req.originalUrl.replace(/^\/api/, '/services/apexrest');
-    const sfUrl = `${SF_INSTANCE_URL}${sfPath}`;
+    const baseUrl = SF_INSTANCE_URL.replace(/\/+$/, ''); // strip trailing slash
+    const sfUrl = `${baseUrl}${sfPath}`;
 
     console.log(`[SF Proxy] ${req.method} ${sfUrl}`);
 
@@ -109,19 +110,35 @@ app.all('/api/hav/*', async (req, res) => {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        'Cache-Control': 'no-cache, no-store',
       },
       ...(req.method !== 'GET' && req.method !== 'HEAD' && req.body
         ? { body: JSON.stringify(req.body) }
         : {}),
     });
 
+    // Prevent browser from caching API responses
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+
+    const text = await sfResponse.text();
+    console.log(`[SF Proxy] Response status=${sfResponse.status} bytes=${text.length}`);
+
+    // Always parse and forward the response body
     const contentType = sfResponse.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      const data = await sfResponse.json();
-      res.status(sfResponse.status).json(data);
-    } else {
-      const text = await sfResponse.text();
+    if (text && contentType.includes('application/json')) {
+      try {
+        const data = JSON.parse(text);
+        res.status(sfResponse.status).json(data);
+      } catch {
+        res.status(sfResponse.status).send(text);
+      }
+    } else if (text) {
       res.status(sfResponse.status).send(text);
+    } else {
+      // Empty response from Salesforce — return empty JSON
+      console.warn(`[SF Proxy] Empty response from Salesforce for ${sfPath}`);
+      res.status(sfResponse.status === 304 ? 200 : sfResponse.status).json(null);
     }
   } catch (err) {
     console.error('[SF Proxy] Error:', err.message);
