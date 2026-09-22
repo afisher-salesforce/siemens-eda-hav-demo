@@ -273,10 +273,30 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
 
 // ─── Serve Static Files (Production) ─────────────────────────────────────────
 const distPath = join(__dirname, 'dist');
-app.use(express.static(distPath));
+
+// Hashed assets (JS/CSS with content-hash in filename) — long-lived cache
+app.use('/assets', express.static(join(distPath, 'assets'), {
+  maxAge: '1y',
+  immutable: true,
+}));
+
+// All other static files — no caching for index.html
+app.use(express.static(distPath, {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  },
+}));
+
+// Return 404 for missing asset files instead of SPA fallback
+app.use('/assets', (_req, res) => {
+  res.status(404).send('Not found');
+});
 
 // SPA fallback — serve index.html for any non-API route
 app.get('*', (_req, res) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(join(distPath, 'index.html'));
 });
 
