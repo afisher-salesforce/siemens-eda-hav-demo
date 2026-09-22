@@ -1,6 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { Activity, AlertTriangle, Search } from 'lucide-react';
-import { getTelemetry } from '../api/salesforce';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  Activity,
+  AlertTriangle,
+  Search,
+  MoreVertical,
+  ShieldAlert,
+  Wrench,
+  CheckCircle2,
+  Loader2,
+  X,
+} from 'lucide-react';
+import { getTelemetry, getAssets, createAssetRecord } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function StatusBadge({ status }) {
@@ -32,10 +42,137 @@ function TempDisplay({ temp }) {
   );
 }
 
+function ActionDropdown({ reading, onAction }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1 text-gray-600 hover:text-gray-300 transition-colors rounded hover:bg-white/5"
+      >
+        <MoreVertical size={14} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-card border border-surface-border rounded-lg shadow-xl overflow-hidden">
+          <button
+            onClick={() => { setOpen(false); onAction('Case', reading); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
+          >
+            <ShieldAlert size={13} className="text-amber-400" />
+            Create Case
+          </button>
+          <button
+            onClick={() => { setOpen(false); onAction('WorkOrder', reading); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
+          >
+            <Wrench size={13} className="text-siemens-accent" />
+            Create Work Order
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TelemetryView() {
   const { data, loading, error, refetch } = useSalesforceData(() => getTelemetry(null, 200));
+  const { data: allAssets } = useSalesforceData(getAssets);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Action modal state
+  const [actionModal, setActionModal] = useState(null); // { type: 'Case'|'WorkOrder', reading }
+  const [actionForm, setActionForm] = useState({ subject: '', description: '', priority: 'Medium' });
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
+  // Build asset name → ID map
+  const assetIdMap = useMemo(() => {
+    if (!allAssets) return {};
+    const map = {};
+    for (const a of allAssets) {
+      if (a.name) map[a.name] = a.id;
+    }
+    return map;
+  }, [allAssets]);
+
+  const openActionModal = (type, reading) => {
+    const assetName = reading.assetName || 'Unknown';
+    const hasErrors = (reading.errors || 0) > 0;
+    const highTemp = (reading.temperature || 0) > 80;
+    const highCpu = (reading.cpuPercent || 0) > 90;
+
+    let subject = '';
+    let priority = 'Medium';
+
+    if (hasErrors) {
+      subject = `${type === 'Case' ? 'Case' : 'WO'}: ${assetName} — ${reading.errors} error(s) detected`;
+      priority = 'High';
+    } else if (highTemp) {
+      subject = `${type === 'Case' ? 'Case' : 'WO'}: ${assetName} — High temperature (${reading.temperature.toFixed(1)}°C)`;
+      priority = 'High';
+    } else if (highCpu) {
+      subject = `${type === 'Case' ? 'Case' : 'WO'}: ${assetName} — CPU at ${reading.cpuPercent}%`;
+      priority = 'Medium';
+    } else {
+      subject = `${type === 'Case' ? 'Case' : 'WO'}: ${assetName} — Maintenance request`;
+    }
+
+    const lines = [
+      `Asset: ${assetName}`,
+      `Status: ${reading.status || 'N/A'}`,
+      `CPU: ${reading.cpuPercent ?? '--'}%, Memory: ${reading.memoryPercent ?? '--'}%`,
+      `Temperature: ${reading.temperature != null ? reading.temperature.toFixed(1) + '°C' : '--'}`,
+      `Errors: ${reading.errors ?? 0}, Active Jobs: ${reading.jobs ?? '--'}`,
+      `Timestamp: ${reading.timestamp ? new Date(reading.timestamp).toLocaleString() : '--'}`,
+    ];
+
+    setActionForm({ subject, description: lines.join('\n'), priority });
+    setActionError(null);
+    setActionSuccess(null);
+    setActionModal({ type, reading });
+  };
+
+  const handleActionSubmit = async () => {
+    if (actionSubmitting || !actionModal) return;
+    const assetId = assetIdMap[actionModal.reading.assetName];
+    if (!assetId) {
+      setActionError('Could not resolve asset ID for ' + actionModal.reading.assetName);
+      return;
+    }
+    setActionSubmitting(true);
+    setActionError(null);
+    try {
+      const result = await createAssetRecord({
+        recordType: actionModal.type,
+        assetId,
+        subject: actionForm.subject,
+        description: actionForm.description,
+        priority: actionForm.priority,
+      });
+      setActionSuccess(result);
+      setTimeout(() => {
+        setActionModal(null);
+        setActionSuccess(null);
+      }, 3000);
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
 
   const readings = data || [];
 
@@ -125,6 +262,7 @@ export default function TelemetryView() {
                   <th>Status</th>
                   <th>Jobs</th>
                   <th>Errors</th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -199,11 +337,14 @@ export default function TelemetryView() {
                           <span className="text-gray-600">--</span>
                         )}
                       </td>
+                      <td>
+                        <ActionDropdown reading={r} onAction={openActionModal} />
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-gray-600">
+                    <td colSpan={9} className="text-center py-12 text-gray-600">
                       No telemetry readings match the current filters
                     </td>
                   </tr>
@@ -213,6 +354,132 @@ export default function TelemetryView() {
           )}
         </div>
       </div>
+
+      {/* Action Modal — Create Case / Create Work Order from Telemetry */}
+      {actionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                {actionModal.type === 'Case' ? (
+                  <ShieldAlert size={16} className="text-amber-400" />
+                ) : (
+                  <Wrench size={16} className="text-siemens-accent" />
+                )}
+                Create {actionModal.type === 'Case' ? 'Case' : 'Work Order'} for {actionModal.reading.assetName}
+              </h3>
+              <button
+                onClick={() => setActionModal(null)}
+                className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {actionSuccess ? (
+              <div className="px-5 py-8 text-center">
+                <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-white mb-1">
+                  {actionSuccess.recordType === 'Case' ? 'Case' : 'Work Order'} Created
+                </p>
+                <p className="text-xs text-gray-400">
+                  {actionSuccess.CaseNumber || actionSuccess.WorkOrderNumber} — {actionSuccess.Subject}
+                </p>
+              </div>
+            ) : (
+              <div className="px-5 py-4 space-y-4">
+                {/* Subject */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={actionForm.subject}
+                    onChange={(e) => setActionForm({ ...actionForm, subject: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                    placeholder="Brief description"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={actionForm.description}
+                    onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
+                    rows={5}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
+                      resize-none font-mono text-xs leading-relaxed"
+                    placeholder="Detailed description..."
+                  />
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                    Priority
+                  </label>
+                  <select
+                    value={actionForm.priority}
+                    onChange={(e) => setActionForm({ ...actionForm, priority: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
+                      text-gray-200 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+
+                {/* Error */}
+                {actionError && (
+                  <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+                    <AlertTriangle size={14} />
+                    {actionError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            {!actionSuccess && (
+              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-surface-border">
+                <button
+                  onClick={() => setActionModal(null)}
+                  className="px-4 py-2 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleActionSubmit}
+                  disabled={actionSubmitting || !actionForm.subject.trim()}
+                  className="px-4 py-2 text-xs font-medium rounded-md transition-colors
+                    bg-siemens-teal text-white hover:bg-siemens-dark
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    flex items-center gap-1.5"
+                >
+                  {actionSubmitting ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      Creating…
+                    </>
+                  ) : (
+                    <>Create {actionModal.type === 'Case' ? 'Case' : 'Work Order'}</>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
