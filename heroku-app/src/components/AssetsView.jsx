@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, Server } from 'lucide-react';
 import { getAssets } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
@@ -166,8 +167,13 @@ export default function AssetsView() {
                 {filtered.length > 0 ? (
                   filtered.map((asset, i) => (
                     <tr key={asset.id || i}>
-                      <td className="font-medium text-gray-200 whitespace-nowrap">
-                        {asset.name || '--'}
+                      <td className="font-medium whitespace-nowrap">
+                        <Link
+                          to={`/assets/${asset.id}`}
+                          className="text-siemens-accent hover:underline"
+                        >
+                          {asset.name || '--'}
+                        </Link>
                       </td>
                       <td className="text-gray-500 font-mono text-xs">
                         {asset.serialNumber || '--'}
