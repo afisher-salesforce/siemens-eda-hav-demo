@@ -28,6 +28,11 @@
                 <default>false</default>
                 <label>Maintenance</label>
             </value>
+            <value>
+                <fullName>Warning</fullName>
+                <default>false</default>
+                <label>Warning</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

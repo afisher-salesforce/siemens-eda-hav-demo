@@ -15,6 +15,10 @@ const SF_CLIENT_SECRET = process.env.SF_CLIENT_SECRET;
 const SF_INSTANCE_URL = process.env.SF_INSTANCE_URL;
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || 'https://login.salesforce.com';
 
+// ─── Agentforce Agent Configuration ─────────────────────────────────────────
+const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
+const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
+
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
   accessToken: null,
@@ -128,6 +132,124 @@ app.all('/api/hav/*', async (req, res) => {
     }
 
     res.status(502).json({ error: 'Upstream error', message: err.message });
+  }
+});
+
+// ─── Agentforce Agent API Proxy ──────────────────────────────────────────────
+
+// GET /api/agent/config — expose agent ID to front-end
+app.get('/api/agent/config', (_req, res) => {
+  res.json({ agentId: SF_AGENT_ID, configured: !!(SF_AGENT_ID && SF_CLIENT_ID) });
+});
+
+// POST /api/agent/sessions — create a new Agent API session
+app.post('/api/agent/sessions', async (req, res) => {
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
+
+    console.log(`[Agent API] Creating session for agent ${SF_AGENT_ID}`);
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(req.body || {}),
+    });
+
+    const data = await sfResponse.json();
+    if (!sfResponse.ok) {
+      console.error('[Agent API] Session creation failed:', sfResponse.status, data);
+      return res.status(sfResponse.status).json(data);
+    }
+
+    console.log(`[Agent API] Session created: ${data.sessionId || data.id}`);
+    res.json(data);
+  } catch (err) {
+    console.error('[Agent API] Session error:', err.message);
+    if (err.message.includes('auth')) {
+      tokenCache = { accessToken: null, expiresAt: 0 };
+    }
+    res.status(502).json({ error: 'Agent API error', message: err.message });
+  }
+});
+
+// POST /api/agent/sessions/:sessionId/messages — send message and stream response via SSE
+app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+
+    console.log(`[Agent API] Sending message to session ${sessionId}`);
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const contentType = sfResponse.headers.get('content-type') || '';
+
+    // If SSE streaming response, pipe it through
+    if (contentType.includes('text/event-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      sfResponse.body.pipe(res);
+      return;
+    }
+
+    // Standard JSON response
+    if (contentType.includes('application/json')) {
+      const data = await sfResponse.json();
+      res.status(sfResponse.status).json(data);
+    } else {
+      const text = await sfResponse.text();
+      res.status(sfResponse.status).send(text);
+    }
+  } catch (err) {
+    console.error('[Agent API] Message error:', err.message);
+    if (err.message.includes('auth')) {
+      tokenCache = { accessToken: null, expiresAt: 0 };
+    }
+    res.status(502).json({ error: 'Agent API error', message: err.message });
+  }
+});
+
+// DELETE /api/agent/sessions/:sessionId — end session
+app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const accessToken = await getAccessToken();
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (sfResponse.status === 204) {
+      return res.status(204).end();
+    }
+
+    const data = await sfResponse.json();
+    res.status(sfResponse.status).json(data);
+  } catch (err) {
+    console.error('[Agent API] Session delete error:', err.message);
+    res.status(502).json({ error: 'Agent API error', message: err.message });
   }
 });
 
