@@ -49,6 +49,10 @@ export default function Vignette1() {
         { name: "Slack Team Collaboration", description: "Real-time deal rooms connecting sales, operations, compliance, and logistics." },
         { name: "Asset Lifecycle Management", description: "Track every asset from loan deployment through sale conversion with complete serial number lineage." }
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"List all contract renewals expiring in the next 30 days."', prompt: 'List all contract renewals expiring in the next 30 days.' },
+        { agent: 'trade', label: '"Screen quote Q-00001 for trade compliance — shipping to South Korea."', prompt: 'Screen quote Q-00001 for trade compliance — shipping to South Korea for Samsung.' },
+      ]}
     />
   );
 }

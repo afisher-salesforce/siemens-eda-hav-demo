@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronRight, Sparkles, Shield, Zap } from 'lucide-react';
+import { AgentChatContext } from '../Layout';
 
 const VIGNETTES = [
   { path: '/vignettes/order-close', title: 'The Order That Almost Didn\'t Close' },
@@ -45,10 +46,12 @@ export default function VignetteTemplate({
   outcomes,
   whySalesforce,
   capabilities,
+  agentPrompts,
 }) {
   const currentIndex = number - 1;
   const prev = currentIndex > 0 ? VIGNETTES[currentIndex - 1] : null;
   const next = currentIndex < VIGNETTES.length - 1 ? VIGNETTES[currentIndex + 1] : null;
+  const openAgentChat = useContext(AgentChatContext);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -160,6 +163,49 @@ export default function VignetteTemplate({
           </div>
         </div>
       </div>
+
+      {/* Try It With the Agent */}
+      {agentPrompts && agentPrompts.length > 0 && openAgentChat && (
+        <div className="section-card overflow-hidden">
+          <div className="section-card-header">
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+              Try It With the Agent
+            </h2>
+            <div className="flex items-center gap-1.5">
+              <Sparkles size={11} className="text-siemens-accent" />
+              <span className="text-[10px] text-siemens-accent font-medium uppercase tracking-wider">Live Demo</span>
+            </div>
+          </div>
+          <div className="section-card-body">
+            <p className="text-xs text-gray-500 mb-4">
+              Ask the Agentforce agent a question related to this story — it will query live Salesforce data and respond in real time.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {agentPrompts.map((ap, i) => {
+                const isTradeAgent = ap.agent === 'trade';
+                return (
+                  <button
+                    key={i}
+                    onClick={() => openAgentChat(ap.agent, ap.prompt)}
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-lg border transition-all cursor-pointer group ${
+                      isTradeAgent
+                        ? 'border-amber-500/20 text-amber-300/80 bg-amber-500/5 hover:bg-amber-500/15 hover:border-amber-500/40'
+                        : 'border-siemens-teal/20 text-siemens-accent/80 bg-siemens-teal/5 hover:bg-siemens-teal/15 hover:border-siemens-teal/40'
+                    }`}
+                  >
+                    {isTradeAgent ? (
+                      <Shield size={12} className="text-amber-400 shrink-0" />
+                    ) : (
+                      <Zap size={12} className="text-siemens-accent shrink-0" />
+                    )}
+                    <span className="text-left">{ap.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex items-center justify-between py-4">

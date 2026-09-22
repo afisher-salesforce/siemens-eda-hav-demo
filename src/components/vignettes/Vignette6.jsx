@@ -78,6 +78,10 @@ export default function Vignette6() {
             'Live margin impact analysis connecting repair costs to customer profitability and contract terms.',
         },
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"Are there any critical alerts or errors across the fleet?"', prompt: 'Are there any critical alerts or errors across the fleet?' },
+        { agent: 'hav', label: '"Which assets have the highest error rates in the last 24 hours?"', prompt: 'Which assets have the highest error rates in the last 24 hours?' },
+      ]}
     />
   );
 }

@@ -48,6 +48,9 @@ export default function Vignette3() {
         { name: "Data Harmonization", description: "Automated transformation rules matching multi-level BOMs to sellable part numbers across regions." },
         { name: "Account Management", description: "Complete customer financial history — contracts, orders, revenue, and margin — in a single account record." }
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"Give me a summary of revenue by product line."', prompt: 'Give me a summary of revenue by product line.' },
+      ]}
     />
   );
 }

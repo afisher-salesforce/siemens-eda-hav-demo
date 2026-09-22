@@ -8,9 +8,13 @@ const SUGGESTED_PROMPTS = [
   { label: 'Capacity Forecast', prompt: 'Show me the capacity forecast for the next quarter.' },
   { label: 'Open Alerts', prompt: 'Are there any critical alerts or errors across the fleet?' },
   { label: 'Revenue Summary', prompt: 'Give me a summary of revenue by product line.' },
+  { label: 'Error Rates', prompt: 'Which assets have the highest error rates in the last 24 hours?' },
+  { label: 'Work Orders', prompt: 'Show me all work orders currently in progress.' },
+  { label: 'HSC1 Utilization', prompt: 'What is the rack utilization at Santa Clara HSC1?' },
+  { label: 'Expiring Contracts', prompt: 'List all contract renewals expiring in the next 30 days.' },
 ];
 
-export default function AgentChat({ open, onClose }) {
+export default function AgentChat({ open, onClose, prefill, onPrefillConsumed }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
@@ -33,6 +37,14 @@ export default function AgentChat({ open, onClose }) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [open]);
+
+  // Handle pre-fill from vignette "Try It" buttons
+  useEffect(() => {
+    if (open && prefill && !loading && messages.length === 0) {
+      sendMessage(prefill);
+      if (onPrefillConsumed) onPrefillConsumed();
+    }
+  }, [open, prefill]);
 
   // Create a new agent session
   const createSession = useCallback(async () => {

@@ -73,6 +73,10 @@ export default function Vignette4() {
             'AI-assisted order management with natural language queries and automated status updates in team channels.',
         },
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"Show me all work orders currently in progress."', prompt: 'Show me all work orders currently in progress.' },
+        { agent: 'trade', label: '"Screen a shipment of Calibre software to India."', prompt: 'Screen a shipment of Calibre software to India.' },
+      ]}
     />
   );
 }

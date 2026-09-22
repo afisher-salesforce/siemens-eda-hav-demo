@@ -48,6 +48,10 @@ export default function Vignette2() {
         { name: "Unified Customer Profile", description: "Customer commitment history, usage patterns, and renewal timelines in a single view." },
         { name: "Predictive AI Scoring", description: "Machine learning models predicting future capacity demand based on pipeline, seasonality, and customer growth." }
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"What is the rack utilization at Santa Clara HSC1?"', prompt: 'What is the rack utilization at Santa Clara HSC1?' },
+        { agent: 'hav', label: '"Show me the capacity forecast for the next quarter."', prompt: 'Show me the capacity forecast for the next quarter.' },
+      ]}
     />
   );
 }

@@ -9,9 +9,12 @@ const SUGGESTED_PROMPTS = [
   { label: 'ECCN Classify', prompt: 'Classify the dual-use products on the latest Veloce quote.' },
   { label: 'Tariff Lookup', prompt: 'What is the import tariff for HS 8542.31 from US to China?' },
   { label: 'Reg Monitor', prompt: 'Run a regulatory monitoring check for any embargo changes.' },
+  { label: 'India Shipment', prompt: 'Screen a shipment of Calibre software to India.' },
+  { label: 'Restricted Party', prompt: 'Is Rostec Corporation on any restricted party list?' },
+  { label: 'Syria Embargo', prompt: 'What happens if we try to ship to Syria?' },
 ];
 
-export default function TradeAgentChat({ open, onClose }) {
+export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsumed }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
@@ -34,6 +37,14 @@ export default function TradeAgentChat({ open, onClose }) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [open]);
+
+  // Handle pre-fill from vignette "Try It" buttons
+  useEffect(() => {
+    if (open && prefill && !loading && messages.length === 0) {
+      sendMessage(prefill);
+      if (onPrefillConsumed) onPrefillConsumed();
+    }
+  }, [open, prefill]);
 
   // Create a new agent session
   const createSession = useCallback(async () => {

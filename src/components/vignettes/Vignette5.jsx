@@ -78,6 +78,9 @@ export default function Vignette5() {
             'Role-specific views of shared data — every stakeholder sees what they need without building separate reports.',
         },
       ]}
+      agentPrompts={[
+        { agent: 'hav', label: '"What is the current status of our emulator fleet?"', prompt: 'What is the current status of our emulator fleet?' },
+      ]}
     />
   );
 }
