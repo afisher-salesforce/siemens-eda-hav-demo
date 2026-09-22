@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Custom hook for fetching data from Salesforce API endpoints.
+ *
+ * Uses a ref for fetchFn so callers can pass inline arrow functions
+ * without causing infinite re-render loops.
  *
  * @param {Function} fetchFn - The API function to call (from salesforce.js)
  * @param {Array} deps - Dependency array for re-fetching
@@ -14,11 +17,15 @@ export function useSalesforceData(fetchFn, deps = [], options = {}) {
   const [loading, setLoading] = useState(immediate);
   const [error, setError] = useState(null);
 
+  // Store fetchFn in a ref so it's always current without triggering effects
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
+
   const refetch = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchFn();
+      const result = await fetchFnRef.current();
       setData(result);
       return result;
     } catch (err) {
@@ -30,14 +37,14 @@ export function useSalesforceData(fetchFn, deps = [], options = {}) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchFn]);
+  }, []);
 
   useEffect(() => {
     if (immediate) {
       refetch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, refetch]);
+  }, [...deps]);
 
   return { data, loading, error, refetch };
 }
