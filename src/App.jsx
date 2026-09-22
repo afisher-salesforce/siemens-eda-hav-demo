@@ -8,7 +8,9 @@ import CapacityView from './components/CapacityView';
 import TelemetryView from './components/TelemetryView';
 import FinancialsView from './components/FinancialsView';
 import WorkOrdersView from './components/WorkOrdersView';
+import WorkOrderDetail from './components/WorkOrderDetail';
 import OrdersView from './components/OrdersView';
+import OrderDetail from './components/OrderDetail';
 import TravelerView from './components/TravelerView';
 import ComplianceChecklist from './components/ComplianceChecklist';
 import COGSReconciliation from './components/COGSReconciliation';
@@ -31,9 +33,11 @@ export default function App() {
         <Route path="/workorders" element={<WorkOrdersView />} />
         <Route path="/workorders/failures" element={<FailureTimeline />} />
         <Route path="/workorders/spares" element={<SpareInventory />} />
+        <Route path="/workorders/:workOrderId" element={<WorkOrderDetail />} />
         <Route path="/orders" element={<OrdersView />} />
         <Route path="/orders/travelers" element={<TravelerView />} />
         <Route path="/orders/compliance" element={<ComplianceChecklist />} />
+        <Route path="/orders/:orderId" element={<OrderDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

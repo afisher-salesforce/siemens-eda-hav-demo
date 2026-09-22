@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
@@ -106,8 +107,13 @@ export default function OrdersView() {
                 {filtered.length > 0 ? (
                   filtered.map((order, i) => (
                     <tr key={order.id || i}>
-                      <td className="font-medium text-siemens-accent whitespace-nowrap">
-                        {order.orderNumber || '--'}
+                      <td className="font-medium whitespace-nowrap">
+                        <Link
+                          to={`/orders/${order.id}`}
+                          className="text-siemens-accent hover:underline"
+                        >
+                          {order.orderNumber || '--'}
+                        </Link>
                       </td>
                       <td className="text-gray-200">{order.agreementName || '--'}</td>
                       <td className="text-gray-400">{order.customer || '--'}</td>

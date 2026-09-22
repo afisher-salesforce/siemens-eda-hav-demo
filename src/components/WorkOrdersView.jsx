@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, Wrench } from 'lucide-react';
 import { getWorkOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
@@ -152,8 +153,13 @@ export default function WorkOrdersView() {
                 {filtered.length > 0 ? (
                   filtered.map((wo, i) => (
                     <tr key={wo.id || i}>
-                      <td className="font-medium text-siemens-accent whitespace-nowrap">
-                        {wo.workOrderNumber || '--'}
+                      <td className="font-medium whitespace-nowrap">
+                        <Link
+                          to={`/workorders/${wo.id}`}
+                          className="text-siemens-accent hover:underline"
+                        >
+                          {wo.workOrderNumber || '--'}
+                        </Link>
                       </td>
                       <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
                       <td>

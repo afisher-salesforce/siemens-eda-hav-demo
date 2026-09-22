@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   DollarSign,
   AlertTriangle,
@@ -288,8 +289,13 @@ export default function COGSReconciliation() {
                 {filtered.length > 0 ? (
                   filtered.map((r, i) => (
                     <tr key={r.id || i}>
-                      <td className="font-medium text-siemens-accent whitespace-nowrap">
-                        {r.orderNumber || '--'}
+                      <td className="font-medium whitespace-nowrap">
+                        <Link
+                          to={`/orders/${r.id}`}
+                          className="text-siemens-accent hover:underline"
+                        >
+                          {r.orderNumber || '--'}
+                        </Link>
                       </td>
                       <td className="text-gray-400">{r.customer || '--'}</td>
                       <td className="text-gray-400">{r.product || '--'}</td>
