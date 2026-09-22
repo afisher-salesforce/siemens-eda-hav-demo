@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Server,
   Activity,
@@ -14,6 +14,13 @@ import {
   RefreshCcw,
   Shield,
   Factory,
+  ChevronRight,
+  ChevronDown,
+  MapPin,
+  Cpu,
+  Calendar,
+  Hash,
+  Plug,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -140,6 +147,7 @@ const darkTooltipStyle = {
 
 export default function DashboardView() {
   const { data, loading, error, refetch } = useSalesforceData(getDashboardSummary);
+  const [expandedRenewal, setExpandedRenewal] = useState(null);
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -434,6 +442,7 @@ export default function DashboardView() {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th className="w-8"></th>
                     <th>Customer</th>
                     <th>Asset</th>
                     <th>Contract End</th>
@@ -449,41 +458,156 @@ export default function DashboardView() {
                           (new Date(r.contractEnd) - new Date()) / (1000 * 60 * 60 * 24)
                         )
                       : null;
+                    const isExpanded = expandedRenewal === i;
                     return (
-                      <tr key={i}>
-                        <td className="font-medium text-gray-200">{r.customer || '--'}</td>
-                        <td className="text-gray-400">{r.assetName || '--'}</td>
-                        <td className="text-gray-400">
-                          {r.contractEnd
-                            ? new Date(r.contractEnd).toLocaleDateString()
-                            : '--'}
-                        </td>
-                        <td>
-                          <span className="badge badge-teal">{r.leaseType || '--'}</span>
-                        </td>
-                        <td className="text-white font-semibold">
-                          {r.monthlyValue != null
-                            ? `$${r.monthlyValue.toLocaleString()}`
-                            : '--'}
-                        </td>
-                        <td>
-                          {daysLeft != null ? (
-                            <span
-                              className={`badge ${
-                                daysLeft <= 30
-                                  ? 'badge-red'
-                                  : daysLeft <= 90
-                                  ? 'badge-yellow'
-                                  : 'badge-green'
-                              }`}
-                            >
-                              {daysLeft}d
-                            </span>
-                          ) : (
-                            '--'
-                          )}
-                        </td>
-                      </tr>
+                      <React.Fragment key={i}>
+                        <tr
+                          className="cursor-pointer hover:bg-white/[0.03] transition-colors"
+                          onClick={() => setExpandedRenewal(isExpanded ? null : i)}
+                        >
+                          <td className="w-8 text-center">
+                            {isExpanded ? (
+                              <ChevronDown size={14} className="text-siemens-accent inline" />
+                            ) : (
+                              <ChevronRight size={14} className="text-gray-500 inline" />
+                            )}
+                          </td>
+                          <td className="font-medium text-gray-200">{r.customer || '--'}</td>
+                          <td className="text-gray-400">{r.assetName || '--'}</td>
+                          <td className="text-gray-400">
+                            {r.contractEnd
+                              ? new Date(r.contractEnd).toLocaleDateString()
+                              : '--'}
+                          </td>
+                          <td>
+                            <span className="badge badge-teal">{r.leaseType || '--'}</span>
+                          </td>
+                          <td className="text-white font-semibold">
+                            {r.monthlyValue != null
+                              ? `$${r.monthlyValue.toLocaleString()}`
+                              : '--'}
+                          </td>
+                          <td>
+                            {daysLeft != null ? (
+                              <span
+                                className={`badge ${
+                                  daysLeft <= 30
+                                    ? 'badge-red'
+                                    : daysLeft <= 90
+                                    ? 'badge-yellow'
+                                    : 'badge-green'
+                                }`}
+                              >
+                                {daysLeft}d
+                              </span>
+                            ) : (
+                              '--'
+                            )}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={7} className="bg-[#0a0f1a] border-b border-surface-border p-0">
+                              <div className="px-6 py-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  <div className="flex items-start gap-2">
+                                    <Cpu size={14} className="text-siemens-accent mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Product</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.product || '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Hash size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Serial Number</div>
+                                      <div className="text-sm text-gray-200 mt-0.5 font-mono">{r.serialNumber || '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <MapPin size={14} className="text-blue-400 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Location</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.location || '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Server size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Rack Position</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.rackPosition || '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Activity size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Status</div>
+                                      <div className="text-sm mt-0.5">
+                                        <span className={`badge ${r.status === 'Installed' ? 'badge-green' : r.status === 'Shipped' ? 'badge-blue' : 'badge-gray'}`}>
+                                          {r.status || '--'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Gauge size={14} className="text-amber-400 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Utilization</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.utilization != null ? `${r.utilization}%` : '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Plug size={14} className="text-yellow-400 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Power Draw</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.powerDraw != null ? `${r.powerDraw} kW` : '--'}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2">
+                                    <Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <div>
+                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Install Date</div>
+                                      <div className="text-sm text-gray-200 mt-0.5">{r.installDate ? new Date(r.installDate).toLocaleDateString() : '--'}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* Annual value callout */}
+                                {r.monthlyValue > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-surface-border flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                      <DollarSign size={14} className="text-emerald-400" />
+                                      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Annual Contract Value</span>
+                                      <span className="text-sm text-emerald-400 font-bold ml-1">${(r.monthlyValue * 12).toLocaleString()}</span>
+                                    </div>
+                                    {r.id && (
+                                      <Link
+                                        to={`/assets/${r.id}`}
+                                        className="ml-auto flex items-center gap-1.5 text-xs text-siemens-accent hover:text-white transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        View Asset Detail
+                                        <ArrowUpRight size={12} />
+                                      </Link>
+                                    )}
+                                  </div>
+                                )}
+                                {r.monthlyValue === 0 && r.id && (
+                                  <div className="mt-4 pt-3 border-t border-surface-border flex justify-end">
+                                    <Link
+                                      to={`/assets/${r.id}`}
+                                      className="flex items-center gap-1.5 text-xs text-siemens-accent hover:text-white transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      View Asset Detail
+                                      <ArrowUpRight size={12} />
+                                    </Link>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

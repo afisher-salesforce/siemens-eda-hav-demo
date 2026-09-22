@@ -135,8 +135,17 @@ function transformDashboard(raw, telemetryRaw, assetsRaw) {
           }
         }
         contractRenewals.push({
+          id: a.Id,
           customer: a.AccountName,
           assetName: a.Name,
+          serialNumber: a.SerialNumber,
+          product: a.ProductName,
+          location: a.LocationName,
+          status: a.Status,
+          installDate: a.InstallDate,
+          rackPosition: a.RackPosition,
+          powerDraw: a.PowerDrawKW,
+          utilization: a.UtilizationPct,
           contractEnd: a.ContractEndDate,
           leaseType: a.LeaseType,
           monthlyValue,
