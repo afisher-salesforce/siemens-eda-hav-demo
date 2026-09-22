@@ -1,5 +1,16 @@
 import React from 'react';
 import { MapPin, Zap, Thermometer, AlertTriangle, BarChart3 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import { getCapacity } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
@@ -219,7 +230,7 @@ export default function CapacityView() {
         </div>
       </div>
 
-      {/* Tableau Next Analytics Embed */}
+      {/* Capacity Analytics */}
       <div className="section-card">
         <div className="section-card-header">
           <div className="flex items-center gap-2">
@@ -230,26 +241,134 @@ export default function CapacityView() {
           </div>
           <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-siemens-teal animate-pulse" />
-            Tableau Next
+            Live
           </span>
         </div>
         <div className="section-card-body">
-          <div className="bg-surface-bg rounded-lg border border-surface-border overflow-hidden">
-            <div className="flex items-center justify-center py-20 text-center">
-              <div>
-                <BarChart3 size={40} className="text-siemens-teal/30 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 font-medium mb-1">Capacity Utilization Dashboard</p>
-                <p className="text-xs text-gray-600 max-w-sm">
-                  Tableau Next visualization showing occupied vs total racks by data center,
-                  projected demand trends, and capacity utilization metrics from Data Cloud.
-                </p>
-                <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-siemens-teal/10 border border-siemens-teal/20 text-[10px] text-siemens-accent uppercase tracking-wider font-medium">
-                  <BarChart3 size={10} />
-                  HAV_Operations_Dashboard
+          {locations.length > 0 || forecast.length > 0 ? (
+            <div className="space-y-6">
+              {/* Occupied vs Total Racks by Location */}
+              {locations.length > 0 && (
+                <div>
+                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                    Occupied vs. Total Racks by Data Center
+                  </h3>
+                  <ResponsiveContainer width="100%" height={Math.max(200, locations.length * 50 + 40)}>
+                    <BarChart
+                      data={locations.map((loc) => ({
+                        name: (loc.name || '--').replace('Siemens ', ''),
+                        occupied: loc.usedRacks || 0,
+                        available: (loc.totalRacks || 0) - (loc.usedRacks || 0),
+                        total: loc.totalRacks || 0,
+                      }))}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        axisLine={{ stroke: '#1e293b' }}
+                        tickLine={{ stroke: '#1e293b' }}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={120}
+                        tick={{ fontSize: 11, fill: '#94a3b8' }}
+                        axisLine={{ stroke: '#1e293b' }}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: '1px solid #1e293b',
+                          backgroundColor: '#111827',
+                          fontSize: '12px',
+                          color: '#94a3b8',
+                        }}
+                        formatter={(value, name) => [value, name === 'occupied' ? 'Occupied' : 'Available']}
+                      />
+                      <Legend
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
+                      />
+                      <Bar dataKey="occupied" name="Occupied" stackId="racks" radius={[0, 0, 0, 0]} maxBarSize={24}>
+                        {locations.map((loc, idx) => {
+                          const pct = loc.totalRacks > 0 ? (loc.usedRacks / loc.totalRacks) * 100 : 0;
+                          return (
+                            <Cell
+                              key={idx}
+                              fill={pct > 85 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#009999'}
+                            />
+                          );
+                        })}
+                      </Bar>
+                      <Bar dataKey="available" name="Available" stackId="racks" fill="#1e293b" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
+              )}
+
+              {/* Forecast: Projected Demand vs Available */}
+              {forecast.length > 0 && (
+                <div>
+                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                    Projected Demand vs. Available Capacity
+                  </h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart
+                      data={forecast.map((f) => ({
+                        label: `${(f.location || '--').replace('Siemens ', '')} · ${f.quarter}`,
+                        demand: f.projectedDemand || 0,
+                        available: f.available || 0,
+                      }))}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: '#64748b' }}
+                        axisLine={{ stroke: '#1e293b' }}
+                        tickLine={{ stroke: '#1e293b' }}
+                        interval={0}
+                        angle={-20}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        axisLine={{ stroke: '#1e293b' }}
+                        tickLine={{ stroke: '#1e293b' }}
+                        label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#64748b' } }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: '1px solid #1e293b',
+                          backgroundColor: '#111827',
+                          fontSize: '12px',
+                          color: '#94a3b8',
+                        }}
+                      />
+                      <Legend
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
+                      />
+                      <Bar dataKey="demand" name="Projected Demand" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                      <Bar dataKey="available" name="Available" fill="#009999" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+              No capacity data available
+            </div>
+          )}
         </div>
       </div>
     </div>
