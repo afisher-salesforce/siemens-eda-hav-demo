@@ -4,15 +4,25 @@
     <label>HAV Heroku App</label>
     <oauthConfig>
         <callbackUrl>https://siemens-eda-hav.herokuapp.com/oauth/callback</callbackUrl>
+        <consumerKey>3MVG9azVmavckRRQkIL0a_Y..AXldFO54vDiJeLR1jtcEtgTFVnKXroAdg3yA_0J_0j5A_gH4W27rGu9D4Rhf</consumerKey>
         <isAdminApproved>true</isAdminApproved>
         <isClientCredentialEnabled>true</isClientCredentialEnabled>
+        <isCodeCredentialEnabled>false</isCodeCredentialEnabled>
+        <isCodeCredentialPostOnly>false</isCodeCredentialPostOnly>
         <isConsumerSecretOptional>false</isConsumerSecretOptional>
         <isIntrospectAllTokens>false</isIntrospectAllTokens>
+        <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
+        <isPkceRequired>true</isPkceRequired>
+        <isRefreshTokenRotationEnabled>true</isRefreshTokenRotationEnabled>
+        <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+        <isSecretRequiredForTokenExchange>false</isSecretRequiredForTokenExchange>
+        <isTokenExchangeEnabled>false</isTokenExchangeEnabled>
         <scopes>Api</scopes>
         <scopes>RefreshToken</scopes>
     </oauthConfig>
     <oauthPolicy>
         <ipRelaxation>BYPASS</ipRelaxation>
+        <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
         <refreshTokenPolicy>infinite</refreshTokenPolicy>
     </oauthPolicy>
 </ConnectedApp>

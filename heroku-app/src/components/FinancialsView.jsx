@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import { DollarSign, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -267,6 +267,40 @@ export default function FinancialsView() {
           </div>
         </div>
       )}
+
+      {/* Tableau Next Financial Analytics Embed */}
+      <div className="section-card">
+        <div className="section-card-header">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={14} className="text-siemens-accent" />
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+              Revenue Intelligence
+            </h2>
+          </div>
+          <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-siemens-teal animate-pulse" />
+            Tableau Next
+          </span>
+        </div>
+        <div className="section-card-body">
+          <div className="bg-surface-bg rounded-lg border border-surface-border overflow-hidden">
+            <div className="flex items-center justify-center py-20 text-center">
+              <div>
+                <BarChart3 size={40} className="text-siemens-teal/30 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium mb-1">Financial Analytics Dashboard</p>
+                <p className="text-xs text-gray-600 max-w-sm">
+                  Tableau Next visualization showing revenue trends, COGS reconciliation,
+                  and actuals vs. plan metrics powered by Data Cloud semantic models.
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-siemens-teal/10 border border-siemens-teal/20 text-[10px] text-siemens-accent uppercase tracking-wider font-medium">
+                  <BarChart3 size={10} />
+                  HAV_Operations_Dashboard
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
