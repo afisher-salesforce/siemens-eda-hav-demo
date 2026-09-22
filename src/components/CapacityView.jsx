@@ -176,44 +176,45 @@ export default function CapacityView() {
                   <tr>
                     <th>Location</th>
                     <th>Quarter</th>
-                    <th>Current Racks</th>
+                    <th>Occupied</th>
+                    <th>Total Capacity</th>
                     <th>Projected Demand</th>
-                    <th>Available</th>
-                    <th>Delta</th>
+                    <th>Headroom</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {forecast.map((f, i) => {
-                    const delta = (f.available || 0) - (f.projectedDemand || 0);
+                    const totalCapacity = (f.currentRacks || 0) + (f.available || 0);
+                    const headroom = totalCapacity - (f.projectedDemand || 0);
                     return (
                       <tr key={i}>
                         <td className="font-medium text-gray-200">{f.location || '--'}</td>
                         <td className="text-gray-400">{f.quarter || '--'}</td>
                         <td className="text-gray-400">{f.currentRacks ?? '--'}</td>
+                        <td className="text-gray-300">{totalCapacity || '--'}</td>
                         <td className="text-gray-200 font-medium">{f.projectedDemand ?? '--'}</td>
-                        <td className="text-gray-400">{f.available ?? '--'}</td>
                         <td>
                           <span
                             className={`font-semibold font-mono ${
-                              delta < 0 ? 'text-red-400' : 'text-emerald-400'
+                              headroom < 0 ? 'text-red-400' : 'text-emerald-400'
                             }`}
                           >
-                            {delta >= 0 ? '+' : ''}
-                            {delta}
+                            {headroom >= 0 ? '+' : ''}
+                            {headroom}
                           </span>
                         </td>
                         <td>
                           <span
                             className={`badge ${
-                              delta < 0
+                              headroom < 0
                                 ? 'badge-red'
-                                : delta <= 3
+                                : headroom <= 5
                                 ? 'badge-yellow'
                                 : 'badge-green'
                             }`}
                           >
-                            {delta < 0 ? 'Over Capacity' : delta <= 3 ? 'Tight' : 'Available'}
+                            {headroom < 0 ? 'Over Capacity' : headroom <= 5 ? 'Near Capacity' : 'Available'}
                           </span>
                         </td>
                       </tr>
@@ -311,19 +312,22 @@ export default function CapacityView() {
                 </div>
               )}
 
-              {/* Forecast: Projected Demand vs Available */}
+              {/* Forecast: Projected Demand vs Total Capacity */}
               {forecast.length > 0 && (
                 <div>
                   <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
-                    Projected Demand vs. Available Capacity
+                    Projected Demand vs. Total Capacity
                   </h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart
-                      data={forecast.map((f) => ({
-                        label: `${(f.location || '--').replace('Siemens ', '')} · ${f.quarter}`,
-                        demand: f.projectedDemand || 0,
-                        available: f.available || 0,
-                      }))}
+                      data={forecast.map((f) => {
+                        const totalCapacity = (f.currentRacks || 0) + (f.available || 0);
+                        return {
+                          label: `${(f.location || '--').replace('Siemens ', '')} · ${f.quarter}`,
+                          demand: f.projectedDemand || 0,
+                          capacity: totalCapacity,
+                        };
+                      })}
                       margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -357,8 +361,19 @@ export default function CapacityView() {
                         iconSize={8}
                         wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
                       />
-                      <Bar dataKey="demand" name="Projected Demand" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={30} />
-                      <Bar dataKey="available" name="Available" fill="#009999" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                      <Bar dataKey="demand" name="Projected Demand" radius={[4, 4, 0, 0]} maxBarSize={30}>
+                        {forecast.map((f, idx) => {
+                          const totalCapacity = (f.currentRacks || 0) + (f.available || 0);
+                          const ratio = totalCapacity > 0 ? (f.projectedDemand || 0) / totalCapacity : 0;
+                          return (
+                            <Cell
+                              key={idx}
+                              fill={ratio > 1 ? '#ef4444' : ratio > 0.9 ? '#f59e0b' : '#009999'}
+                            />
+                          );
+                        })}
+                      </Bar>
+                      <Bar dataKey="capacity" name="Total Capacity" fill="#1e293b" radius={[4, 4, 0, 0]} maxBarSize={30} stroke="#334155" strokeWidth={1} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

@@ -17,6 +17,8 @@ import COGSReconciliation from './components/COGSReconciliation';
 import SpareInventory from './components/SpareInventory';
 import FailureTimeline from './components/FailureTimeline';
 import AllocationTimeline from './components/AllocationTimeline';
+import LoanerConversionView from './components/LoanerConversionView';
+import ManufacturerPortalView from './components/ManufacturerPortalView';
 
 export default function App() {
   return (
@@ -24,6 +26,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<DashboardView />} />
         <Route path="/assets" element={<AssetsView />} />
+        <Route path="/assets/loaners" element={<LoanerConversionView />} />
         <Route path="/assets/:assetId" element={<AssetDetail />} />
         <Route path="/capacity" element={<CapacityView />} />
         <Route path="/capacity/allocations" element={<AllocationTimeline />} />
@@ -31,6 +34,7 @@ export default function App() {
         <Route path="/financials" element={<FinancialsView />} />
         <Route path="/financials/cogs" element={<COGSReconciliation />} />
         <Route path="/workorders" element={<WorkOrdersView />} />
+        <Route path="/workorders/manufacturer" element={<ManufacturerPortalView />} />
         <Route path="/workorders/failures" element={<FailureTimeline />} />
         <Route path="/workorders/spares" element={<SpareInventory />} />
         <Route path="/workorders/:workOrderId" element={<WorkOrderDetail />} />

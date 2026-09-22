@@ -1,38 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, RefreshCw, User, Sparkles } from 'lucide-react';
+import { Bell, RefreshCw, User, Sparkles, Search } from 'lucide-react';
 import Sidebar from './Sidebar';
 import AgentChat from './AgentChat';
 import TradeAgentChat from './TradeAgentChat';
+import GlobalSearch from './GlobalSearch';
 
 const pageTitles = {
   '/': 'Operations Command Center',
   '/assets': 'Asset Fleet Management',
+  '/assets/loaners': 'Loaner-to-Sale Conversion',
   '/capacity': 'Capacity Planning',
   '/telemetry': 'Real-Time Telemetry',
   '/financials': 'Financial Reconciliation',
   '/workorders': 'Field Service Work Orders',
+  '/workorders/manufacturer': 'Contract Manufacturer Portal',
   '/orders': 'Order Orchestration',
 };
 
 export default function Layout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarPeeking, setSidebarPeeking] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [tradeChatOpen, setTradeChatOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
+  const peekTimerRef = useRef(null);
 
   const pageTitle = pageTitles[location.pathname] || 'HAV Operations';
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e) {
+      // Cmd+B / Ctrl+B — toggle sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarCollapsed((prev) => !prev);
+        setSidebarPeeking(false);
+      }
+      // Cmd+K / Ctrl+K — open global search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Hover-to-peek: debounced enter, immediate leave
+  const handlePeekEnter = useCallback(() => {
+    if (!sidebarCollapsed) return;
+    peekTimerRef.current = setTimeout(() => {
+      setSidebarPeeking(true);
+    }, 200);
+  }, [sidebarCollapsed]);
+
+  const handlePeekLeave = useCallback(() => {
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    setSidebarPeeking(false);
+  }, []);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-surface-bg">
       <Sidebar
         collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        peeking={sidebarPeeking}
+        onToggle={() => {
+          setSidebarCollapsed(!sidebarCollapsed);
+          setSidebarPeeking(false);
+        }}
         onOpenChat={() => { setTradeChatOpen(false); setChatOpen(true); }}
         onOpenTradeChat={() => { setChatOpen(false); setTradeChatOpen(true); }}
+        onPeekEnter={handlePeekEnter}
+        onPeekLeave={handlePeekLeave}
       />
 
-      {/* Main Content */}
+      {/* Main Content — margin always tracks actual collapsed state, not peek */}
       <div
         className={`transition-all duration-300 ${
           sidebarCollapsed ? 'ml-16' : 'ml-56'
@@ -52,6 +106,18 @@ export default function Layout({ children }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Search Button */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-gray-500 hover:text-siemens-accent hover:bg-white/5 transition-colors border border-transparent hover:border-surface-border group"
+              title="Search (⌘K)"
+            >
+              <Search size={14} />
+              <span className="text-xs text-gray-600 group-hover:text-gray-400 hidden sm:inline">Search</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-gray-700 text-[10px] text-gray-600 font-mono hidden sm:inline">
+                ⌘K
+              </kbd>
+            </button>
             <button
               onClick={() => window.location.reload()}
               className="p-2 rounded-md text-gray-500 hover:text-siemens-accent hover:bg-white/5 transition-colors"
@@ -79,6 +145,9 @@ export default function Layout({ children }) {
         {/* Page Content */}
         <main className="p-6">{children}</main>
       </div>
+
+      {/* Global Search Overlay */}
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Agent Chat Panels */}
       <AgentChat open={chatOpen} onClose={() => setChatOpen(false)} />

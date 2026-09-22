@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, AlertTriangle, Server } from 'lucide-react';
-import { getAssets } from '../api/salesforce';
+import { Search, Filter, AlertTriangle, Server, RefreshCcw } from 'lucide-react';
+import { getAssets, getLoaners } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function UtilizationBadge({ value }) {
@@ -29,12 +29,28 @@ function StatusBadge({ status }) {
 
 export default function AssetsView() {
   const { data, loading, error, refetch } = useSalesforceData(getAssets);
+  const { data: loanerData } = useSalesforceData(getLoaners);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
   const assets = data || [];
+
+  // Build loaner lookup set
+  const loanerIds = useMemo(() => {
+    if (!loanerData?.loaners) return new Set();
+    return new Set(loanerData.loaners.map((l) => l.id));
+  }, [loanerData]);
+
+  const loanerStatusMap = useMemo(() => {
+    if (!loanerData?.loaners) return {};
+    const map = {};
+    for (const l of loanerData.loaners) {
+      map[l.id] = l.loanerStatus;
+    }
+    return map;
+  }, [loanerData]);
 
   const locations = useMemo(
     () => [...new Set(assets.map((a) => a.location).filter(Boolean))].sort(),
@@ -191,7 +207,15 @@ export default function AssetsView() {
                         {asset.powerDraw != null ? asset.powerDraw.toFixed(1) : '--'}
                       </td>
                       <td>
-                        <span className="badge badge-teal">{asset.leaseType || '--'}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="badge badge-teal">{asset.leaseType || '--'}</span>
+                          {loanerIds.has(asset.id) && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20" title={`Loaner: ${loanerStatusMap[asset.id] || ''}`}>
+                              <RefreshCcw size={9} />
+                              Loaner
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="text-gray-500 whitespace-nowrap">
                         {asset.contractEnd

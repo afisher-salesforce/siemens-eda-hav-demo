@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,6 +10,9 @@ import {
   AlertTriangle,
   Clock,
   ChevronRight,
+  GitBranch,
+  ArrowRightLeft,
+  Wrench,
 } from 'lucide-react';
 import {
   LineChart,
@@ -20,7 +23,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getAssets, getTelemetry } from '../api/salesforce';
+import { getAssets, getTelemetry, getAssetLineage } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -67,12 +70,19 @@ export default function AssetDetail() {
     () => getTelemetry(null, 500)
   );
 
+  // Fetch lineage once we know the Salesforce record ID
   const asset = useMemo(() => {
     if (!allAssets) return null;
     return allAssets.find(
       (a) => a.id === assetId || a.serialNumber === assetId
     );
   }, [allAssets, assetId]);
+
+  const lineageFetcher = useCallback(
+    () => (asset?.id ? getAssetLineage(asset.id) : Promise.resolve(null)),
+    [asset?.id]
+  );
+  const { data: lineageData, loading: lineageLoading } = useSalesforceData(lineageFetcher);
 
   // Find child assets (same location, same customer — simulated hierarchy)
   const childAssets = useMemo(() => {
@@ -264,6 +274,174 @@ export default function AssetDetail() {
         recordLabel={asset.name}
         recordType="asset"
       />
+
+      {/* Serial Number Lineage Timeline */}
+      {lineageData && (lineageData.hasPredecessors || lineageData.hasSuccessors) && (
+        <div className="section-card">
+          <div className="section-card-header">
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+              <GitBranch size={13} className="text-siemens-accent" />
+              Serial Number Lineage
+            </h2>
+            <span className="text-[10px] text-gray-500">
+              {lineageData.lineage.length} replacement{lineageData.lineage.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="section-card-body">
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-5 top-0 bottom-0 w-px bg-surface-border" />
+
+              {/* Predecessor entries */}
+              {lineageData.lineage
+                .filter((e) => e.type === 'predecessor')
+                .map((entry, i) => (
+                  <div key={`pred-${i}`} className="relative flex items-start gap-4 mb-6 last:mb-0">
+                    <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+                      <ArrowRightLeft size={16} className="text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">
+                          Replaced
+                        </span>
+                        <span className="text-[10px] text-gray-600">
+                          {entry.date
+                            ? new Date(entry.date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            : ''}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-1">
+                        This asset replaced{' '}
+                        {entry.asset ? (
+                          <Link
+                            to={`/assets/${entry.asset.id}`}
+                            className="font-medium text-siemens-accent hover:underline"
+                          >
+                            {entry.asset.name}
+                          </Link>
+                        ) : (
+                          'an unknown asset'
+                        )}
+                        {entry.asset?.serialNumber && (
+                          <span className="text-gray-500 font-mono text-xs ml-1.5">
+                            (S/N: {entry.asset.serialNumber})
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        {entry.reason && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            {entry.reason}
+                          </span>
+                        )}
+                        {entry.workOrderNumber && (
+                          <span className="text-gray-500 flex items-center gap-1">
+                            <Wrench size={11} />
+                            WO #{entry.workOrderNumber}
+                          </span>
+                        )}
+                        {entry.asset?.status && (
+                          <span className="text-gray-600">
+                            Previous status: {entry.asset.status}
+                          </span>
+                        )}
+                      </div>
+                      {entry.notes && (
+                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed italic">
+                          {entry.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+              {/* Current asset marker */}
+              <div className="relative flex items-start gap-4 mb-6">
+                <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-siemens-teal/20 border-2 border-siemens-accent flex items-center justify-center">
+                  <Server size={16} className="text-siemens-accent" />
+                </div>
+                <div className="flex-1 pt-2">
+                  <span className="text-sm font-semibold text-white">{asset.name}</span>
+                  <span className="text-xs text-gray-500 ml-2">Current Asset</span>
+                </div>
+              </div>
+
+              {/* Successor entries */}
+              {lineageData.lineage
+                .filter((e) => e.type === 'successor')
+                .map((entry, i) => (
+                  <div key={`succ-${i}`} className="relative flex items-start gap-4 mb-6 last:mb-0">
+                    <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                      <ArrowRightLeft size={16} className="text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
+                          Replaced By
+                        </span>
+                        <span className="text-[10px] text-gray-600">
+                          {entry.date
+                            ? new Date(entry.date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })
+                            : ''}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-1">
+                        This asset was replaced by{' '}
+                        {entry.asset ? (
+                          <Link
+                            to={`/assets/${entry.asset.id}`}
+                            className="font-medium text-siemens-accent hover:underline"
+                          >
+                            {entry.asset.name}
+                          </Link>
+                        ) : (
+                          'an unknown asset'
+                        )}
+                        {entry.asset?.serialNumber && (
+                          <span className="text-gray-500 font-mono text-xs ml-1.5">
+                            (S/N: {entry.asset.serialNumber})
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        {entry.reason && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            {entry.reason}
+                          </span>
+                        )}
+                        {entry.workOrderNumber && (
+                          <span className="text-gray-500 flex items-center gap-1">
+                            <Wrench size={11} />
+                            WO #{entry.workOrderNumber}
+                          </span>
+                        )}
+                        {entry.asset?.status && (
+                          <span className="text-gray-600">
+                            Current status: {entry.asset.status}
+                          </span>
+                        )}
+                      </div>
+                      {entry.notes && (
+                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed italic">
+                          {entry.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Related Assets (Hierarchy) */}
       {childAssets.length > 0 && (

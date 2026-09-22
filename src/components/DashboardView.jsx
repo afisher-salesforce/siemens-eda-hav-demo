@@ -11,7 +11,11 @@ import {
   Sparkles,
   Zap,
   TrendingUp,
+  RefreshCcw,
+  Shield,
+  Factory,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -334,6 +338,81 @@ export default function DashboardView() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Loaner Conversion Banner */}
+      {(metrics.activeLoaners > 0 || metrics.loanersExpiringSoon > 0) && (
+        <Link
+          to="/assets/loaners"
+          className="block section-card group hover:border-amber-500/30 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                <RefreshCcw size={20} className="text-amber-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-200">
+                  Loaner-to-Sale Conversion
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {metrics.activeLoaners} active loaner{metrics.activeLoaners !== 1 ? 's' : ''} in field
+                  {metrics.loanersExpiringSoon > 0 && (
+                    <span className="text-amber-400 ml-2">
+                      · {metrics.loanersExpiringSoon} expiring within 90 days
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-gray-500 group-hover:text-siemens-accent transition-colors">
+              <span className="text-xs">View Pipeline</span>
+              <ArrowUpRight size={14} />
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* Operations Quick Links */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          to="/orders/compliance"
+          className="section-card group hover:border-red-500/30 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+                <Shield size={20} className="text-red-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-200">Trade Compliance</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Embargo screening, restricted parties, ECCN classifications
+                </div>
+              </div>
+            </div>
+            <ArrowUpRight size={14} className="text-gray-500 group-hover:text-siemens-accent transition-colors" />
+          </div>
+        </Link>
+        <Link
+          to="/workorders/manufacturer"
+          className="section-card group hover:border-blue-500/30 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+                <Factory size={20} className="text-blue-400" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-200">Manufacturer Portal</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Vendor performance, cost breakdown, work order tracking
+                </div>
+              </div>
+            </div>
+            <ArrowUpRight size={14} className="text-gray-500 group-hover:text-siemens-accent transition-colors" />
+          </div>
+        </Link>
       </div>
 
       {/* Contract Renewals — styled like the accounts/opportunities list */}
