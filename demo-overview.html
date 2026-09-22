@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siemens EDA HAV — Aiforce Demo Overview</title>
+  <script src="https://assets.meshmesh.io/system/tailwindcss-browser-4.js"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-siemens-teal: #009999;
+      --color-siemens-dark: #0C2340;
+      --color-siemens-light: #E6F7F7;
+      --color-siemens-petrol: #006B75;
+      --color-accent-amber: #F59E0B;
+      --color-accent-red: #EF4444;
+      --color-accent-green: #10B981;
+      --color-slate-50: #F8FAFC;
+      --color-slate-100: #F1F5F9;
+      --color-slate-200: #E2E8F0;
+      --color-slate-300: #CBD5E1;
+      --color-slate-500: #64748B;
+      --color-slate-600: #475569;
+      --color-slate-700: #334155;
+      --color-slate-800: #1E293B;
+      --color-slate-900: #0F172A;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', system-ui, sans-serif; }</style>
+</head>
+<body class="bg-white text-slate-800 antialiased">
+
+  <!-- HEADER -->
+  <header class="bg-siemens-dark text-white">
+    <div class="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-8 h-8 rounded bg-siemens-teal flex items-center justify-center font-bold text-sm">S</div>
+          <span class="text-sm font-medium tracking-wide uppercase text-slate-300">Siemens EDA · Hardware-Assisted Verification</span>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tight">Aiforce — Headless 360 Demo</h1>
+        <p class="text-siemens-teal text-sm font-medium mt-1">Connected Customer Vision · Build & Demonstration Overview</p>
+      </div>
+      <div class="text-right text-sm text-slate-300 hidden sm:block">
+        <div>Session Dates</div>
+        <div class="text-white font-semibold">July 27 & 30, 2026</div>
+        <div class="mt-1 text-xs">Two 90-minute windows</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <section class="max-w-6xl mx-auto px-8 pt-8 pb-2">
+    <div class="bg-siemens-light border border-siemens-teal/20 rounded-xl p-6">
+      <h2 class="text-lg font-bold text-siemens-dark mb-2">What This Demo Is</h2>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        A working prototype that replaces the spreadsheets, SharePoint travelers, and email chains running EDA's HAV operations today with a <strong>single Salesforce-connected platform</strong>. It shows — with live data from the Salesforce org — how orders, capacity, finance, compliance, work orders, and asset management can operate from one data model, with an Agentforce AI agent that answers questions in natural language.
+      </p>
+      <p class="text-sm text-slate-600 mt-2 italic">
+        This is not a slide deck. Every screen in the demo is a live application connected to real Salesforce data. The goal is to make the transformation tangible — not theoretical.
+      </p>
+    </div>
+  </section>
+
+  <!-- THE PROBLEM / THE SHIFT -->
+  <section class="max-w-6xl mx-auto px-8 py-6">
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- TODAY -->
+      <div class="border border-accent-red/30 rounded-xl p-5 bg-red-50/50">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 rounded-full bg-accent-red/10 flex items-center justify-center">
+            <svg class="w-4 h-4 text-accent-red" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </div>
+          <h3 class="font-bold text-accent-red text-sm uppercase tracking-wide">Today's Reality</h3>
+        </div>
+        <ul class="text-sm text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Capacity planning lives in <strong>three Excel spreadsheets</strong> updated biweekly</span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Order travelers are <strong>SharePoint documents emailed</strong> between five teams</span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Quarter close takes <strong>two weeks</strong> to reconcile revenue vs. COGS in Excel</span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Export compliance checks are <strong>manual, emailed individually</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Blade failures discovered when <strong>the customer calls</strong></span></li>
+        </ul>
+      </div>
+      <!-- TOMORROW -->
+      <div class="border border-accent-green/30 rounded-xl p-5 bg-green-50/50">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 rounded-full bg-accent-green/10 flex items-center justify-center">
+            <svg class="w-4 h-4 text-accent-green" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h3 class="font-bold text-accent-green text-sm uppercase tracking-wide">What the Demo Shows</h3>
+        </div>
+        <ul class="text-sm text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Capacity, power, and PUE in <strong>one real-time dashboard</strong> per facility</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Travelers are <strong>system-tracked workflows</strong> visible to all stakeholders</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Revenue, COGS, and BOM reconciliation in <strong>one always-current view</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Five compliance checks <strong>automated with audit trail</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Failures detected by <strong>live telemetry → auto work orders</strong></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO STRUCTURE: 6 VIGNETTES -->
+  <section class="max-w-6xl mx-auto px-8 py-4">
+    <h2 class="text-xl font-bold text-siemens-dark mb-1">Demo Flow — Six Vignettes</h2>
+    <p class="text-sm text-slate-500 mb-5">Each vignette tells a story that a specific stakeholder lives every day. Total runtime: ~80 minutes.</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- V5 Opener -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-teal text-white text-xs font-bold">V5</span>
+          <span class="text-xs text-slate-500 font-medium">10 min · Opener</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">The Platform That Connects It All</h4>
+        <p class="text-xs text-slate-600 leading-relaxed">Big-picture walkthrough — dashboard home, KPIs, rack occupancy, telemetry signals, contract renewals, and the Agentforce chat teaser. Sets the stage for everything that follows.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">All Stakeholders</span>
+        </div>
+      </div>
+
+      <!-- V1 -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-teal text-white text-xs font-bold">V1</span>
+          <span class="text-xs text-slate-500 font-medium">10 min</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">The Order That Almost Didn't Close</h4>
+        <p class="text-xs text-slate-600 leading-relaxed">A loan-to-sale conversion stuck because five teams can't coordinate. Walk through orders pipeline → compliance checks → traveler → agent assist.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Sales Coordinator</span>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Ops</span>
+        </div>
+      </div>
+
+      <!-- V2 -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-teal text-white text-xs font-bold">V2</span>
+          <span class="text-xs text-slate-500 font-medium">15 min</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">The Capacity Nobody Could See</h4>
+        <p class="text-xs text-slate-600 leading-relaxed">"Can we add 8 racks at Santa Clara?" — today takes 48 hours of spreadsheet work. Demo shows real-time occupancy, power, PUE, allocation timelines, and Tableau Next analytics.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Russell</span>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Ken</span>
+        </div>
+      </div>
+
+      <!-- V3 -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-teal text-white text-xs font-bold">V3</span>
+          <span class="text-xs text-slate-500 font-medium">15 min</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">The Spreadsheet That Owns the Quarter Close</h4>
+        <p class="text-xs text-slate-600 leading-relaxed">Revenue, COGS, BOM reconciliation, and margin analysis — all in one system. Replace two weeks of Excel with always-current data and audit-ready BOM match tracking.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Shari (Finance)</span>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Miriam</span>
+        </div>
+      </div>
+
+      <!-- V4 -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-teal text-white text-xs font-bold">V4</span>
+          <span class="text-xs text-slate-500 font-medium">10 min</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">The Traveler That Traveled by Email</h4>
+        <p class="text-xs text-slate-600 leading-relaxed">The SharePoint traveler replaced by a 6-stage system-tracked workflow: Order → Compliance → Logistics → Shipped → Receipt → Install Verified. Real-time, no email.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Sales Coordinator</span>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Ops</span>
+        </div>
+      </div>
+
+      <!-- V6 Closer -->
+      <div class="border-2 border-siemens-teal rounded-xl p-4 bg-siemens-light hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-siemens-dark text-white text-xs font-bold">V6</span>
+          <span class="text-xs text-siemens-petrol font-semibold">20 min · Hero Story</span>
+        </div>
+        <h4 class="font-bold text-sm text-slate-900 mb-1">From Heroic Manual Efforts to Closed-Loop Automation</h4>
+        <p class="text-xs text-slate-700 leading-relaxed">The full loop: blade failure detected → work order auto-created → spare identified → tech dispatched → cost captured → SAP synced. Minutes, not days.</p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span class="text-[10px] bg-siemens-teal/10 text-siemens-petrol px-1.5 py-0.5 rounded font-medium">Ken</span>
+          <span class="text-[10px] bg-siemens-teal/10 text-siemens-petrol px-1.5 py-0.5 rounded font-medium">Field Service</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE AT A GLANCE -->
+  <section class="max-w-6xl mx-auto px-8 py-6">
+    <h2 class="text-xl font-bold text-siemens-dark mb-4">How It's Built</h2>
+    <div class="grid md:grid-cols-3 gap-5">
+      <!-- Salesforce Backend -->
+      <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-siemens-dark flex items-center justify-center">
+            <svg class="w-4 h-4 text-siemens-teal" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z"/><path stroke-linecap="round" d="M9 12h6M12 9v6"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-siemens-dark">Salesforce Org</h3>
+        </div>
+        <ul class="text-xs text-slate-600 space-y-1.5">
+          <li>Custom objects: Assets, Work Orders, Telemetry, Orders, Locations</li>
+          <li>7 Apex REST APIs serving all data</li>
+          <li>250+ demo records (real customer names, serial numbers, facilities)</li>
+          <li>Agentforce agent with natural-language access to all data</li>
+        </ul>
+      </div>
+
+      <!-- React Frontend -->
+      <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-siemens-dark flex items-center justify-center">
+            <svg class="w-4 h-4 text-siemens-teal" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-siemens-dark">React Dashboard</h3>
+        </div>
+        <ul class="text-xs text-slate-600 space-y-1.5">
+          <li>14 views: Dashboard, Assets, Capacity, Financials, Work Orders, Orders, Telemetry + 7 sub-views</li>
+          <li>Collapsible sidebar with auto-expanding sub-navigation</li>
+          <li>Recharts visualizations (bar, line, pie, Gantt timelines)</li>
+          <li>Embedded Tableau Next analytics</li>
+        </ul>
+      </div>
+
+      <!-- Hosting & Integration -->
+      <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-siemens-dark flex items-center justify-center">
+            <svg class="w-4 h-4 text-siemens-teal" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+          </div>
+          <h3 class="font-bold text-sm text-siemens-dark">Hosting & Integration</h3>
+        </div>
+        <ul class="text-xs text-slate-600 space-y-1.5">
+          <li>Heroku deployment (Node.js + Express server)</li>
+          <li>GitHub CI/CD from <code class="bg-slate-200 px-1 rounded text-[10px]">afisher-salesforce/siemens-eda-hav-demo</code></li>
+          <li>Salesforce Connected App (OAuth 2.0 JWT)</li>
+          <li>Agentforce Agent API for AI-powered chat</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEY STAKEHOLDERS -->
+  <section class="max-w-6xl mx-auto px-8 py-4">
+    <h2 class="text-xl font-bold text-siemens-dark mb-4">Key Stakeholders & What They See</h2>
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-siemens-dark text-white text-left">
+            <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wide">Stakeholder</th>
+            <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wide">Role</th>
+            <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wide">Their Pain Today</th>
+            <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wide">What the Demo Solves</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="bg-white">
+            <td class="px-4 py-3 font-semibold text-xs">Kendrick (Ken) Snyder</td>
+            <td class="px-4 py-3 text-xs text-slate-600">HAV Operations Lead</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Checks systems manually, tribal knowledge for failures</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Real-time telemetry, auto work orders, failure timeline</td>
+          </tr>
+          <tr class="bg-slate-50">
+            <td class="px-4 py-3 font-semibold text-xs">Russell Forsyth</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Operational PM</td>
+            <td class="px-4 py-3 text-xs text-slate-600">48-hour capacity answers from stale spreadsheets</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Live capacity dashboard, allocation timelines, forecasts</td>
+          </tr>
+          <tr class="bg-white">
+            <td class="px-4 py-3 font-semibold text-xs">Shari Massihpour</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Finance Controller</td>
+            <td class="px-4 py-3 text-xs text-slate-600">2-week quarter close, Excel COGS reconciliation</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Real-time revenue/COGS/margin, BOM match tracking</td>
+          </tr>
+          <tr class="bg-slate-50">
+            <td class="px-4 py-3 font-semibold text-xs">Miriam Borrelli</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Head of Finance, EDA</td>
+            <td class="px-4 py-3 text-xs text-slate-600">No unified view across revenue streams</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Financial dashboard with Tableau Next analytics</td>
+          </tr>
+          <tr class="bg-white">
+            <td class="px-4 py-3 font-semibold text-xs">Gunnar Scholl</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Head of Operations (Champion)</td>
+            <td class="px-4 py-3 text-xs text-slate-600">Disconnected systems, no single source of truth</td>
+            <td class="px-4 py-3 text-xs text-slate-600">One platform, every stakeholder, real-time</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- WHY NOW -->
+  <section class="max-w-6xl mx-auto px-8 py-6">
+    <div class="bg-gradient-to-r from-siemens-dark to-siemens-petrol rounded-xl p-6 text-white">
+      <h2 class="text-lg font-bold mb-3">Why Now</h2>
+      <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div>
+          <div class="text-siemens-teal font-semibold text-xs uppercase tracking-wide mb-1">Fiscal Year-End</div>
+          <p class="text-xs text-slate-300 leading-relaxed">September 2026 — budget window for next-year deployment is open now. Delay means another year on spreadsheets.</p>
+        </div>
+        <div>
+          <div class="text-siemens-teal font-semibold text-xs uppercase tracking-wide mb-1">Platform Already Paid For</div>
+          <p class="text-xs text-slate-300 leading-relaxed">Field Service, Asset Lifecycle, Manufacturing Cloud, and Revenue Cloud are available within the Siemens SELA. Activation, not new spend.</p>
+        </div>
+        <div>
+          <div class="text-siemens-teal font-semibold text-xs uppercase tracking-wide mb-1">Competitive Pressure</div>
+          <p class="text-xs text-slate-300 leading-relaxed">Cadence Palladium competes directly. Synopsys absorbed Ansys for $35B. Internal operations must be as efficient as the product roadmap.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SALESFORCE CAPABILITY MAP -->
+  <section class="max-w-6xl mx-auto px-8 py-4 pb-8">
+    <h2 class="text-xl font-bold text-siemens-dark mb-4">Salesforce Capabilities Demonstrated</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Sales Cloud</div>
+        <div class="text-[10px] text-slate-500">Order pipeline, agreements, loan-to-sale</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Field Service</div>
+        <div class="text-[10px] text-slate-500">Work orders, spares, dispatch, asset tracking</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Manufacturing Cloud</div>
+        <div class="text-[10px] text-slate-500">Capacity planning, BOM matching, demand</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Asset Lifecycle Mgmt</div>
+        <div class="text-[10px] text-slate-500">Serial tracking, utilization, 5-year lifecycle</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Tableau Next</div>
+        <div class="text-[10px] text-slate-500">Embedded analytics, revenue intelligence</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Agentforce</div>
+        <div class="text-[10px] text-slate-500">Natural-language access to all HAV data</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">MuleSoft</div>
+        <div class="text-[10px] text-slate-500">SAP integration, EDI, vendor forecasts</div>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-center">
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Revenue Cloud</div>
+        <div class="text-[10px] text-slate-500">Order orchestration, revenue recognition</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-4 text-center">
+    <p>Siemens EDA HAV — Aiforce (Headless 360) Demo · Prepared by Salesforce Account Team · Confidential</p>
+  </footer>
+
+</body>
+</html>
