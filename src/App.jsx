@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import DashboardView from './components/DashboardView';
 import AssetsView from './components/AssetsView';
 import AssetDetail from './components/AssetDetail';
@@ -30,6 +31,7 @@ import Vignette6 from './components/vignettes/Vignette6';
 export default function App() {
   return (
     <Layout>
+      <ErrorBoundary>
       <Routes>
         <Route path="/" element={<DashboardView />} />
         <Route path="/assets" element={<AssetsView />} />
@@ -58,6 +60,7 @@ export default function App() {
         <Route path="/vignettes/automation" element={<Vignette6 />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ErrorBoundary>
     </Layout>
   );
 }

@@ -100,7 +100,7 @@ export default function ComplianceChecklist() {
     if (!searchTerm || activeTab !== 'parties') return complianceData.restrictedParties;
     const term = searchTerm.toLowerCase();
     return complianceData.restrictedParties.filter(
-      (p) => p.entityName.toLowerCase().includes(term) || p.country.toLowerCase().includes(term)
+      (p) => (p.entityName && p.entityName.toLowerCase().includes(term)) || (p.country && p.country.toLowerCase().includes(term))
     );
   }, [complianceData, searchTerm, activeTab]);
 
@@ -114,6 +114,17 @@ export default function ComplianceChecklist() {
         (e.productCategory && e.productCategory.toLowerCase().includes(term))
     );
   }, [complianceData, searchTerm, activeTab]);
+
+  // Group restricted parties by country — must be before any early returns to satisfy Rules of Hooks
+  const partiesByCountry = useMemo(() => {
+    const groups = {};
+    for (const p of filteredParties) {
+      const country = p.country || 'Unknown';
+      if (!groups[country]) groups[country] = [];
+      groups[country].push(p);
+    }
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredParties]);
 
   // Show loading if either data source is still fetching
   const loading = compLoading || ordersLoading;
@@ -157,16 +168,6 @@ export default function ComplianceChecklist() {
     0
   );
   const failedChecks = totalChecks - passedChecks - pendingChecks;
-
-  // Group restricted parties by country
-  const partiesByCountry = useMemo(() => {
-    const groups = {};
-    for (const p of filteredParties) {
-      if (!groups[p.country]) groups[p.country] = [];
-      groups[p.country].push(p);
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredParties]);
 
   return (
     <div className="space-y-6">
