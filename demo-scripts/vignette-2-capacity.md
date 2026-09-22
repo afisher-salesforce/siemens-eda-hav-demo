@@ -42,12 +42,12 @@
 - Point to the amber/red indicators: "Contracts ending within 30 days are red, 90 days amber."
 - "Ken, this is the view you've been asking for — when does capacity become available, and who has committed vs. uncommitted?"
 
-### Step 4: Tableau Next Embed (2 min)
+### Step 4: Capacity Analytics (2 min)
 **Scroll down on:** `/capacity`
 
 **Talk track:**
-- Point to the **Capacity Analytics** section with Tableau Next badge.
-- "For deeper analysis — occupied vs. total racks by data center, projected demand trends — this embeds the Tableau Next visualization powered by Data Cloud semantic models."
+- Point to the **Capacity Analytics** section.
+- "For deeper analysis — occupied vs. total racks by data center, projected demand trends — the analytics are built right into the dashboard."
 - "Same data, deeper analysis, no tool-switching."
 
 ### Step 5: Agent Assist (3 min)

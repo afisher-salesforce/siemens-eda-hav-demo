@@ -1,58 +1,113 @@
-# Salesforce DX Project
+# Siemens EDA HAV — Aiforce (Headless 360) Demo
 
-Salesforce DX is a development approach that brings source-driven development, team collaboration, and continuous integration to the Salesforce Platform. Instead of working directly in an org through a web browser, you work with metadata as source files in a local DX project, track changes in version control, and deploy through automated processes.
+A working prototype that replaces spreadsheets, SharePoint travelers, and email chains running Siemens EDA's Hardware-Assisted Verification (HAV) operations with a single Salesforce-connected platform.
 
-This project template gets you started with the tools and structure you need to build Salesforce applications using source control, scratch orgs, and the Salesforce CLI.
+**Live:** [siemens-eda-hav-aiforce-5e287277b67a.aster-virginia.herokuapp.com](https://siemens-eda-hav-aiforce-5e287277b67a.aster-virginia.herokuapp.com)
 
-## Prerequisites
+## What This Is
 
-Before you start, make sure you have:
+Every screen in the demo is a live application connected to real Salesforce data. It shows how orders, capacity, finance, compliance, work orders, and asset management can operate from one data model, with an Agentforce AI agent that answers questions in natural language.
 
-- **Salesforce CLI** - Download from [developer.salesforce.com/tools/salesforcecli](https://developer.salesforce.com/tools/salesforcecli). See [Install Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm) for details.
-- **VS Code with Salesforce Extension Pack** - See [Installation Instructions](https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/install.html) for details. Includes the Agentforce Vibes extension.
-- **A development org** - Sign up for a free Developer Edition org [here](https://developer.salesforce.com/signup).
-- **Dev Hub enabled** (optional, required to create scratch orgs) - You can enable Dev Hub in your development org under Setup > Dev Hub.  See [Provide Developers Access to Salesforce DX Tools](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_dx_tools.htm).
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  React Dashboard (Vite + Tailwind + Recharts)               │
+│  14 views: Dashboard, Assets, Capacity, Financials,         │
+│  Telemetry, Work Orders, Orders + 7 sub-views               │
+├─────────────────────────────────────────────────────────────┤
+│  Express Proxy (Node.js)                                     │
+│  /api/hav/* → Salesforce Apex REST                           │
+│  /api/agent/* → Agentforce Agent API (SSE streaming)         │
+│  OAuth 2.0 Client Credentials flow                           │
+├─────────────────────────────────────────────────────────────┤
+│  Salesforce Org                                              │
+│  Custom objects · 7 Apex REST APIs · 250+ demo records       │
+│  Agentforce agent · Data Cloud semantic models               │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Project Structure
 
-Your DX project follows this structure:
+```
+├── force-app/           # Salesforce metadata (Apex, objects, fields)
+│   └── main/default/
+│       ├── classes/     # 7 Apex REST services (HAV_*)
+│       └── objects/     # Custom objects and fields
+├── heroku-app/          # React frontend + Express server (main branch source)
+│   ├── src/
+│   │   ├── api/         # Salesforce API client with transform layer
+│   │   ├── components/  # React views and sub-views
+│   │   └── hooks/       # useSalesforceData custom hook
+│   ├── server.js        # Express proxy with OAuth + Agentforce API
+│   └── package.json
+├── demo-scripts/        # 6 demo vignette scripts (~80 min total)
+└── demo-overview.html   # Single-page demo overview (shareable)
+```
 
-- **`force-app/main/default/`** - Your metadata source files live in this default package directory. You can configure additional package directories in the `sfdx-project.json` file.
-- **`config/`** - Scratch org definitions and project settings
-- **`scripts/`** - Automation scripts for common tasks
-- **`sfdx-project.json`** - Project manifest that defines package directories, namespace, API version, and other project-level settings
+## Branches
 
-See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm).
+- **`main`** — Source of truth. Salesforce metadata in `force-app/`, React app in `heroku-app/`.
+- **`heroku`** — Flat structure for Heroku deployment. React app at root, `dist/` committed. Auto-deployed on push.
 
-## Get Started
+## Salesforce Backend
 
-Ready to start developing? The [Get Started with Salesforce DX](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_get_started_dx.htm) guide walks you through your first project, from creating a scratch org to creating a simple Apex class or LWC to deploying your code to a sandbox.
+7 Apex REST endpoints under `/services/apexrest/hav/`:
 
-## Common Salesforce CLI Commands
+| Endpoint | Description |
+|----------|-------------|
+| `/dashboard-summary` | Fleet KPIs, location occupancy |
+| `/assets` | Full asset fleet with filters |
+| `/capacity` | Rack/power/PUE by location + forecasts |
+| `/telemetry` | Live hardware signals (CPU, temp, errors) |
+| `/financials` | Revenue, COGS, lease breakdown |
+| `/workorders` | Work orders with priority/status filters |
+| `/orders` | Sales agreements and orders pipeline |
 
-Here are common CLI commands that you'll use the most:
+## React Frontend
 
-- `sf org login web`: Authorize an org
-- `sf org open`: Open your org in a browser
-- `sf org create scratch`: Create a scratch org
-- `sf project deploy start`: Deploy metadata to your org
-- `sf project retrieve start`: Retrieve metadata from your org
-- `sf template generate <artifact>`: Scaffold new components, such as Apex classes and triggers, LWC components, Lightning apps, and more
-- `sf apex <command>`: Run Apex tests, run anonymous Apex blocks, and view logs
-- `sf data <command>`: Work with test data
-- `sf alias <command>`: Manage org aliases
-- `sf config <command>`: Configure CLI settings
+Built with Vite, React 18, Tailwind CSS, and Recharts. Key views:
 
-## Use Agentforce Vibes to Build Lightning Apps
+- **Dashboard** — KPIs, rack occupancy, telemetry alerts, contract renewals
+- **Asset Fleet** — Searchable/filterable asset table with drill-down
+- **Capacity** — Location cards, forecast table, allocation timeline (Gantt)
+- **Financials** — Revenue/COGS charts, lease breakdown, Revenue Intelligence analytics
+- **Telemetry** — Live hardware signals with status indicators
+- **Work Orders** — RMAs, failure timeline, spare parts inventory
+- **Orders** — Pipeline, compliance checks, order travelers (6-stage workflow)
+- **Agent Chat** — Agentforce natural-language interface
 
-Transform your ideas into custom Lightning apps that extend CRM workflows directly in Lightning Experience. Through natural conversations with Agentforce Vibes, implement custom objects and fields, complex business logic, and dynamic UI components. See [Build a Lightning App Using Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/lexapp-overview.html).
+## Environment Variables (Heroku)
 
-## Additional Resources
+| Variable | Description |
+|----------|-------------|
+| `SF_CLIENT_ID` | Connected App consumer key |
+| `SF_CLIENT_SECRET` | Connected App consumer secret |
+| `SF_INSTANCE_URL` | Salesforce My Domain URL |
+| `SF_LOGIN_URL` | OAuth token endpoint (defaults to instance URL) |
+| `SF_AGENT_ID` | Agentforce Agent record ID |
 
-- [Agentforce Vibes Developer Guide](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/einstein-overview.html)
-- [Salesforce CLI Installation Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/)
-- [Salesforce CLI Plugin Development Guide](https://developer.salesforce.com/docs/platform/salesforce-cli-plugin/guide/conceptual-overview.html)
-- [Salesforce VS Code Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
+## Demo Scripts
 
+See `demo-scripts/` for the six vignette scripts:
+
+1. **V5 — The Platform** (Opener, 10 min)
+2. **V1 — The Order** (10 min)
+3. **V2 — The Capacity** (15 min)
+4. **V3 — The Finance** (15 min)
+5. **V4 — The Traveler** (10 min)
+6. **V6 — The Automation** (Hero story, 20 min)
+
+## Local Development
+
+```bash
+# Frontend (from heroku-app/)
+npm install
+npm run dev          # Vite dev server on :5173
+
+# Server (from heroku-app/)
+npm run dev:server   # Express proxy on :3001
+
+# Deploy metadata to org
+sf project deploy start --target-org <alias>
+```

@@ -56,12 +56,13 @@
   - Point to **Matched** badges: "These are audit-ready."
 - "Today this takes two weeks of Excel work. Here it's always current."
 
-### Step 6: Tableau Next Embed (1 min)
+### Step 6: Revenue Intelligence (1 min)
 **Scroll down on:** `/financials`
 
 **Talk track:**
-- Point to the **Revenue Intelligence** section with Tableau Next badge.
-- "For deeper financial analysis — revenue trends, COGS reconciliation drilldowns, actuals vs. plan — Tableau Next is embedded directly."
+- Point to the **Revenue Intelligence** section.
+- "This shows trailing-12-month revenue trends — actuals vs. plan, plus a product-line breakdown showing how each product contributes to total revenue."
+- "The data flows directly from the same Salesforce backend — always current, always consistent."
 
 ### Step 7: Agent Assist (1 min)
 **Open:** Agent Chat
