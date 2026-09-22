@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPlanner xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Screens Siemens EDA sales quotes for trade compliance: embargoes, restricted parties, dual-use export controls, tariffs, and audit trail creation.</description>
+    <masterLabel>Trade Compliance Sentinel</masterLabel>
+    <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+</GenAiPlanner>

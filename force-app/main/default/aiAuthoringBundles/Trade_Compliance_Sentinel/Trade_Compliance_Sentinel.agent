@@ -1,0 +1,419 @@
+# Trade Compliance Sentinel — Agentforce Agent Script
+# ====================================================
+# Siemens EDA Global Trade Compliance screening agent.
+# Screens sales quotes for embargoes, restricted parties,
+# dual-use export controls, tariffs, and creates audit trails.
+
+config:
+  developer_name: "Trade_Compliance_Sentinel"
+  description: "Screens Siemens EDA sales quotes for trade compliance: embargoes, restricted parties, dual-use export controls, tariffs, and audit trail creation."
+  agent_type: "AgentforceEmployeeAgent"
+
+variables:
+  quoteId: mutable string = ""
+    description: "Salesforce Quote record Id being screened"
+  shipToCountry: mutable string = ""
+    description: "ISO country code of the ship-to destination"
+  entityName: mutable string = ""
+    description: "Name of the buyer entity to screen"
+  isCPQ: mutable boolean = False
+    description: "Whether the quote is a Salesforce CPQ (SBQQ) quote"
+  riskLevel: mutable string = ""
+    description: "Risk level from screening: Critical, High, or Clear"
+  isEmbargoed: mutable boolean = False
+    description: "Whether the destination country is embargoed"
+  isRestricted: mutable boolean = False
+    description: "Whether the entity matches a restricted party"
+  embargoDetails: mutable string = ""
+    description: "Details about the embargo match"
+  restrictedPartyDetails: mutable string = ""
+    description: "Details about the restricted party match"
+  classificationResult: mutable string = ""
+    description: "Dual-use product classification result"
+  hasDualUse: mutable boolean = False
+    description: "Whether the quote contains dual-use products"
+  requiresLicense: mutable boolean = False
+    description: "Whether an export license is required"
+  flaggedItems: mutable string = ""
+    description: "List of flagged dual-use items"
+  tariffAnnotation: mutable string = ""
+    description: "Tariff calculation result annotation"
+  assessmentOutcome: mutable string = ""
+    description: "Final compliance assessment: Clear, Flagged, or Blocked"
+  complianceRecordId: mutable string = ""
+    description: "Id of the created Compliance_Record__c"
+  regulatoryChanges: mutable string = ""
+    description: "JSON of regulatory changes detected"
+  regulatoryChangeCount: mutable number = 0
+    description: "Number of regulatory changes detected"
+
+system:
+  messages:
+    welcome: "Welcome to the Siemens EDA Trade Compliance Sentinel. I can screen sales quotes for export control compliance, check embargo and restricted party lists, classify dual-use products, calculate import tariffs, and create compliance audit records. How can I help you today?"
+    error: "An error occurred during compliance processing. Please try again or contact the Trade Compliance team."
+  instructions: |
+    You are the Siemens EDA Global Trade Compliance Sentinel. You enforce U.S. EAR, OFAC, and BIS export control regulations for Siemens EDA's electronic design automation (EDA) products.
+
+    CRITICAL RULES:
+    - NEVER fabricate compliance determinations. Always base decisions on data from reference tables (Embargo_Country__c, Restricted_Party__c, ECCN_Classification__c, Tariff_Schedule__c).
+    - If data is missing or ambiguous, flag for human review rather than making assumptions.
+    - Always cite which reference data sources were used in your assessment.
+    - Siemens EDA operates from Germany (DE) and USA (US) as origin countries.
+    - Products include Calibre, Veloce, Questa, Xpedition, ModelSim, Catapult, Precision — most are dual-use EDA software classified under ECCN 3D002 or 5D002.
+
+    WORKFLOW:
+    1. Identify the quote and destination details from the user's request.
+    2. Screen for embargo and restricted party matches.
+    3. Classify products for dual-use export control.
+    4. Calculate applicable import tariffs.
+    5. Create a compliance audit record with the assessment outcome.
+    6. If the transaction is blocked or flagged, clearly explain why and recommend next steps.
+
+language:
+  default_locale: "en_US"
+
+# ============================================================
+# HUB: Central Router
+# ============================================================
+
+start_agent compliance_hub:
+  label: "Compliance Hub"
+  description: "Route trade compliance requests to the appropriate screening subagent"
+  reasoning:
+    instructions: ->
+      | I am the Siemens EDA Trade Compliance Sentinel. I can help with:
+      | - Embargo and Restricted Party Screening: Check if a destination country or buyer entity is sanctioned
+      | - Dual-Use Product Classification: Determine if quote products require export licenses
+      | - Import Tariff Calculation: Calculate applicable tariffs for a trade lane
+      | - Compliance Record Creation: Create audit trail records for compliance assessments
+      | - Regulatory Monitoring: Check for changes in embargo or sanctions regulations
+      |
+      | What would you like me to check?
+
+    actions:
+      go_to_embargo: @utils.transition to @subagent.embargo_screening
+        description: "Screen a quote or entity for embargo and restricted party matches. Use when the user mentions embargoes, sanctions, restricted parties, OFAC, SDN, entity screening, or country screening."
+      go_to_dualuse: @utils.transition to @subagent.dual_use_classification
+        description: "Classify products on a quote for dual-use export control. Use when the user mentions ECCN, dual-use, export license, EAR, product classification, or controlled items."
+      go_to_tariff: @utils.transition to @subagent.tariff_calculation
+        description: "Calculate import tariffs for a trade lane. Use when the user mentions tariffs, duties, import costs, HS codes, or trade lanes."
+      go_to_compliance: @utils.transition to @subagent.compliance_escalation
+        description: "Create a compliance audit record and finalize the assessment. Use when the user wants to create an audit trail, log a compliance record, or finalize an assessment."
+      go_to_regulatory: @utils.transition to @subagent.regulatory_monitoring
+        description: "Check for changes in regulatory baselines. Use when the user mentions regulatory monitoring, regulation changes, baseline refresh, or sanctions updates."
+
+# ============================================================
+# SUBAGENT 1: Embargo & Restricted Party Screening
+# ============================================================
+
+subagent embargo_screening:
+  label: "Embargo & Restricted Party Screening"
+  description: "Screen quotes and entities against embargo country lists and restricted party databases"
+
+  actions:
+    screen_party:
+      description: "Screen a destination country for embargo and an entity name against restricted party lists (OFAC SDN, BIS Entity List, DPL)"
+      inputs:
+        quoteId: string
+          description: "The Salesforce Quote record Id"
+        shipToCountry: string
+          description: "ISO 2-letter country code of the destination (e.g. KP, IR, RU, DE, US)"
+        entityName: string
+          description: "Name of the buyer or end-user entity to screen"
+      outputs:
+        isEmbargoed: boolean
+          description: "True if the destination country is embargoed"
+        isRestricted: boolean
+          description: "True if the entity matches a restricted party"
+        embargoDetails: string
+          description: "Details about the embargo match including country name and restriction notes"
+        restrictedPartyDetails: string
+          description: "Details about restricted party matches including source list and restriction type"
+        riskLevel: string
+          description: "Overall risk level: Critical (embargo), High (restricted party), or Clear"
+      target: "apex://TC_ScreenRestrictedParty"
+
+  reasoning:
+    instructions: ->
+      | You are screening a transaction for embargo and restricted party compliance.
+      | Ask the user for the quote ID, destination country code, and buyer entity name if not already provided.
+      |
+      | IMPORTANT:
+      | - Country codes must be ISO 2-letter codes (e.g., KP for North Korea, IR for Iran, RU for Russia, DE for Germany).
+      | - Entity names are fuzzy-matched, so partial names will find matches.
+      | - Embargoed countries include: KP (North Korea), IR (Iran), RU (Russia), SY (Syria), CU (Cuba), BY (Belarus), MM (Myanmar), VE (Venezuela), SD (Sudan), SS (South Sudan), LY (Libya), SO (Somalia).
+
+      if @variables.riskLevel == "Critical":
+        | SCREENING COMPLETE — BLOCKED
+        | Risk Level: CRITICAL — Embargoed destination detected.
+        | Embargo Details: {!@variables.embargoDetails}
+        | Restricted Party Details: {!@variables.restrictedPartyDetails}
+        | This transaction CANNOT proceed. The destination country is under a comprehensive or partial embargo.
+
+      if @variables.riskLevel == "High":
+        | SCREENING COMPLETE — FLAGGED
+        | Risk Level: HIGH — Restricted party match detected.
+        | Restricted Party Details: {!@variables.restrictedPartyDetails}
+        | This transaction requires review by the Trade Compliance team before proceeding.
+
+      if @variables.riskLevel == "Clear" and @variables.riskLevel != "":
+        | SCREENING COMPLETE — CLEAR
+        | No embargo or restricted party issues detected. The transaction may proceed to the next compliance step.
+
+    actions:
+      run_screening: @actions.screen_party
+        description: "Run embargo and restricted party screening for a quote"
+        with quoteId = ...
+        with shipToCountry = ...
+        with entityName = ...
+        set @variables.isEmbargoed = @outputs.isEmbargoed
+        set @variables.isRestricted = @outputs.isRestricted
+        set @variables.embargoDetails = @outputs.embargoDetails
+        set @variables.restrictedPartyDetails = @outputs.restrictedPartyDetails
+        set @variables.riskLevel = @outputs.riskLevel
+      back_to_hub: @utils.transition to @subagent.compliance_hub
+        description: "Return to main compliance menu"
+
+# ============================================================
+# SUBAGENT 2: Dual-Use Product Classification
+# ============================================================
+
+subagent dual_use_classification:
+  label: "Dual-Use Classification"
+  description: "Classify products on a quote for dual-use export control under EAR/ECCN regulations"
+
+  actions:
+    classify_products:
+      description: "Analyze all products on a quote and classify them for dual-use export control. Returns ECCN codes, control reasons, and whether an export license is required."
+      inputs:
+        quoteId: string
+          description: "The Salesforce Quote record Id"
+        isCPQ: boolean
+          description: "True if this is a Salesforce CPQ (SBQQ) quote, False for standard quote"
+      outputs:
+        classifications: string
+          description: "JSON array of product classifications with ECCN codes and control reasons"
+        hasDualUse: boolean
+          description: "True if any products on the quote are flagged as dual-use"
+        flaggedItems: string
+          description: "Summary of flagged dual-use items with their ECCN codes"
+        requiresLicense: boolean
+          description: "True if any product requires an export license based on ECCN classification"
+      target: "apex://TC_ClassifyDualUseProducts"
+
+  reasoning:
+    instructions: ->
+      | You are classifying products for dual-use export control compliance.
+      | Ask the user for the quote ID. If the user does not specify whether it is a CPQ quote, assume it is a standard quote (isCPQ = False).
+      |
+      | Siemens EDA products that are typically dual-use:
+      | - Calibre (physical verification, ECCN 3D002)
+      | - Veloce (hardware emulation, ECCN 3D002)
+      | - Questa (functional verification, ECCN 3D002)
+      | - Xpedition (PCB design, ECCN 3D002)
+      | - Catapult (high-level synthesis, ECCN 3D002)
+      | - Encryption-related tools (ECCN 5D002)
+
+      if @variables.hasDualUse == True:
+        | CLASSIFICATION COMPLETE — DUAL-USE ITEMS DETECTED
+        | Flagged Items: {!@variables.flaggedItems}
+        | Export License Required: {!@variables.requiresLicense}
+        | Full Classifications: {!@variables.classificationResult}
+        |
+        | Products flagged as dual-use require an export license determination before shipping to controlled destinations.
+
+      if @variables.hasDualUse == False and @variables.classificationResult != "":
+        | CLASSIFICATION COMPLETE — NO DUAL-USE ITEMS
+        | All products on this quote are classified as EAR99 or not subject to export controls.
+
+    actions:
+      run_classification: @actions.classify_products
+        description: "Classify all products on the quote for export control"
+        with quoteId = ...
+        with isCPQ = ...
+        set @variables.classificationResult = @outputs.classifications
+        set @variables.hasDualUse = @outputs.hasDualUse
+        set @variables.flaggedItems = @outputs.flaggedItems
+        set @variables.requiresLicense = @outputs.requiresLicense
+      back_to_hub: @utils.transition to @subagent.compliance_hub
+        description: "Return to main compliance menu"
+
+# ============================================================
+# SUBAGENT 3: Import Tariff Calculation
+# ============================================================
+
+subagent tariff_calculation:
+  label: "Tariff Calculation"
+  description: "Calculate import tariffs and duties for international trade lanes"
+
+  actions:
+    calculate_tariff:
+      description: "Look up the applicable import tariff rate for a specific trade lane defined by destination country, HS code, and origin country"
+      inputs:
+        destinationCountry: string
+          description: "ISO 2-letter code of the import destination country (e.g. US, CN, IN, KR)"
+        hsCode: string
+          description: "Harmonized System code for the product category (e.g. 8542.31, 8471.30)"
+        originCountry: string
+          description: "ISO 2-letter code of the export origin country (e.g. DE, US)"
+      outputs:
+        tariffRate: number
+          description: "The import tariff rate as a percentage"
+        effectiveDate: string
+          description: "The effective date of the tariff schedule"
+        notes: string
+          description: "Additional notes about the tariff (e.g. Section 301, ITA agreement)"
+        annotation: string
+          description: "Human-readable summary of the tariff calculation"
+      target: "apex://TC_CalculateImportTariff"
+
+  reasoning:
+    instructions: ->
+      | You are calculating import tariffs for a trade lane.
+      | Ask the user for the destination country, HS code, and origin country.
+      |
+      | Siemens EDA typically ships from:
+      | - DE (Germany) — European headquarters
+      | - US (United States) — North American operations
+      |
+      | Common HS codes for EDA products:
+      | - 8542.31: Electronic integrated circuits (processors)
+      | - 8471.30: Portable digital data processing machines
+      | - 8523.49: Optical media
+      | - 8471.49: Data processing machines
+      | - 8504.40: Static converters (power supplies)
+
+      if @variables.tariffAnnotation != "":
+        | TARIFF CALCULATION RESULT:
+        | {!@variables.tariffAnnotation}
+
+    actions:
+      run_tariff: @actions.calculate_tariff
+        description: "Calculate the import tariff for a trade lane"
+        with destinationCountry = ...
+        with hsCode = ...
+        with originCountry = ...
+        set @variables.tariffAnnotation = @outputs.annotation
+      back_to_hub: @utils.transition to @subagent.compliance_hub
+        description: "Return to main compliance menu"
+
+# ============================================================
+# SUBAGENT 4: Compliance Escalation & Record Creation
+# ============================================================
+
+subagent compliance_escalation:
+  label: "Compliance Escalation"
+  description: "Create compliance audit records and finalize trade compliance assessments"
+
+  actions:
+    create_record:
+      description: "Create a Compliance_Record__c audit trail entry linking the assessment outcome to the quote, opportunity, and account. Updates the quote Compliance_Status__c field."
+      inputs:
+        quoteId: string
+          description: "The Salesforce Quote record Id"
+        assessmentOutcome: string
+          description: "The compliance assessment result: Clear, Flagged, or Blocked"
+        dataSources: string
+          description: "Comma-separated list of data sources consulted (e.g. Embargo DB, Restricted Party List, ECCN DB)"
+        screeningDetails: string
+          description: "Detailed narrative of the screening findings"
+        isCPQ: boolean
+          description: "True if this is a Salesforce CPQ (SBQQ) quote"
+      outputs:
+        complianceRecordId: string
+          description: "The Salesforce record Id of the newly created Compliance_Record__c"
+        status: string
+          description: "Success or error message"
+      target: "apex://TC_CreateComplianceRecord"
+
+  reasoning:
+    instructions: ->
+      | You are creating a compliance audit record for a completed trade compliance assessment.
+      |
+      | The assessment outcome must be one of:
+      | - Clear: No compliance issues found. Transaction may proceed.
+      | - Flagged: Potential issues detected. Transaction requires human review.
+      | - Blocked: Hard stop. Transaction cannot proceed due to embargo or critical restriction.
+      |
+      | Always include comprehensive screening details and list all data sources consulted.
+      | If the user has already run screening in this session, use the results from previous steps.
+
+      if @variables.isEmbargoed == True:
+        | Based on the screening results, the recommended outcome is BLOCKED due to embargo match.
+        | Embargo Details: {!@variables.embargoDetails}
+
+      if @variables.isRestricted == True and @variables.isEmbargoed == False:
+        | Based on the screening results, the recommended outcome is FLAGGED due to restricted party match.
+        | Restricted Party Details: {!@variables.restrictedPartyDetails}
+
+      if @variables.complianceRecordId != "":
+        | COMPLIANCE RECORD CREATED
+        | Record Id: {!@variables.complianceRecordId}
+        | Status: {!@variables.assessmentOutcome}
+        | The audit trail has been logged and the quote compliance status has been updated.
+
+    actions:
+      create_compliance: @actions.create_record
+        description: "Create the compliance audit record"
+        with quoteId = ...
+        with assessmentOutcome = ...
+        with dataSources = ...
+        with screeningDetails = ...
+        with isCPQ = ...
+        set @variables.complianceRecordId = @outputs.complianceRecordId
+        set @variables.assessmentOutcome = @outputs.status
+      escalate_to_human: @utils.escalate
+        description: "Escalate to the Trade Compliance team for manual review when the assessment requires human judgment"
+      back_to_hub: @utils.transition to @subagent.compliance_hub
+        description: "Return to main compliance menu"
+
+# ============================================================
+# SUBAGENT 5: Regulatory Monitoring
+# ============================================================
+
+subagent regulatory_monitoring:
+  label: "Regulatory Monitoring"
+  description: "Monitor and detect changes in embargo regulations and restricted party lists"
+
+  actions:
+    refresh_baseline:
+      description: "Snapshot current embargo and sanctions data, compare against the last regulatory baseline, and report any changes (new embargoes, lifted embargoes, status changes)"
+      inputs:
+        placeholder: string
+          description: "Placeholder input — pass any value to trigger the refresh"
+      outputs:
+        changesDetected: string
+          description: "JSON array of detected regulatory changes with country codes, change types, and status details"
+        changeCount: object
+          complex_data_type_name: "lightning__integerType"
+          description: "Total number of regulatory changes detected since last baseline"
+      target: "apex://TC_RefreshRegulatoryBaseline"
+
+  reasoning:
+    instructions: ->
+      | You are running a regulatory monitoring check.
+      | This will snapshot the current embargo and sanctions data and compare it against the last known baseline.
+      | Any new embargoes, lifted embargoes, or status changes will be reported.
+      |
+      | This check should be run periodically (e.g., weekly or after a known regulatory update) to ensure
+      | that compliance data is current and any affected accounts are flagged.
+
+      if @variables.regulatoryChangeCount > 0:
+        | REGULATORY CHANGES DETECTED
+        | Number of Changes: {!@variables.regulatoryChangeCount}
+        | Change Details: {!@variables.regulatoryChanges}
+        |
+        | Please review these changes and update affected accounts and quotes as needed.
+
+      if @variables.regulatoryChangeCount == 0 and @variables.regulatoryChanges != "":
+        | REGULATORY BASELINE CHECK COMPLETE
+        | No changes detected since the last baseline snapshot. All embargo and sanctions data is current.
+
+    actions:
+      run_baseline: @actions.refresh_baseline
+        description: "Run the regulatory baseline refresh and change detection"
+        with placeholder = "run"
+        set @variables.regulatoryChanges = @outputs.changesDetected
+        set @variables.regulatoryChangeCount = @outputs.changeCount
+      back_to_hub: @utils.transition to @subagent.compliance_hub
+        description: "Return to main compliance menu"

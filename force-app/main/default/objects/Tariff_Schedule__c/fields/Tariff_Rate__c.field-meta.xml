@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tariff_Rate__c</fullName>
+    <label>Tariff Rate</label>
+    <type>Percent</type>
+    <precision>8</precision>
+    <scale>5</scale>
+    <required>false</required>
+</CustomField>
