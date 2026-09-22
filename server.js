@@ -331,6 +331,36 @@ async function getSlackUser(userId) {
   }
 }
 
+/**
+ * Parse seeded bot messages that follow the "Name: message" pattern.
+ * Returns { displayName, text } if the pattern matches, or null if not.
+ * Recognizes names like "Sarah Chen", "Kim Joon-ho", "Raj Krishnan", etc.
+ */
+function parseBotPersona(text) {
+  if (!text) return null;
+  // Match "FirstName LastName: rest of message" at start of text
+  // Names can contain hyphens (Joon-ho), letters, spaces
+  const match = text.match(/^([A-Z][a-zA-Z'-]+(?: [A-Z][a-zA-Z'-]+){1,2}):\s+(.+)$/s);
+  if (match) {
+    return { displayName: match[1], text: match[2] };
+  }
+  return null;
+}
+
+// Simple deterministic color from a name string (for avatar backgrounds)
+const AVATAR_COLORS = [
+  '#009999', '#6366f1', '#f59e0b', '#10b981', '#ef4444',
+  '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316',
+];
+function nameToColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash |= 0;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 // GET /api/slack/config — expose workspace URL and configured status
 app.get('/api/slack/config', (_req, res) => {
   res.json({
@@ -396,12 +426,36 @@ app.get('/api/slack/channels/:channelId/history', async (req, res) => {
     const messages = await Promise.all(
       (data.messages || []).map(async (msg) => {
         let user = null;
+        let messageText = msg.text;
+
         if (msg.user) {
           user = await getSlackUser(msg.user);
         }
+
+        // For bot-posted messages with "Name: message" pattern, extract the persona
+        if (user?.isBot || msg.bot_id || msg.subtype === 'bot_message') {
+          const persona = parseBotPersona(msg.text);
+          if (persona) {
+            messageText = persona.text;
+            user = {
+              id: user?.id || msg.user || msg.bot_id,
+              name: persona.displayName,
+              displayName: persona.displayName,
+              avatar: null, // no avatar — component renders initials
+              isBot: false, // present as human for display
+              avatarColor: nameToColor(persona.displayName),
+            };
+          }
+        }
+
+        // Skip bot "has joined the channel" messages
+        if (msg.subtype === 'channel_join' && (user?.isBot || msg.bot_id)) {
+          return null;
+        }
+
         return {
           ts: msg.ts,
-          text: msg.text,
+          text: messageText,
           user: user || { name: msg.username || 'Unknown', displayName: msg.username || 'Unknown' },
           threadTs: msg.thread_ts,
           replyCount: msg.reply_count || 0,
@@ -410,7 +464,10 @@ app.get('/api/slack/channels/:channelId/history', async (req, res) => {
       })
     );
 
-    res.json({ messages: messages.reverse(), channelId: req.params.channelId });
+    // Filter out nulls (skipped messages)
+    const filteredMessages = messages.filter(Boolean);
+
+    res.json({ messages: filteredMessages.reverse(), channelId: req.params.channelId });
   } catch (err) {
     console.error('[Slack] History error:', err.message);
     if (err.slackError === 'not_in_channel') {

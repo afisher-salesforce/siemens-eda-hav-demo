@@ -58,7 +58,13 @@ function MessageBubble({ message }) {
           className="w-7 h-7 rounded-md object-cover shrink-0 mt-0.5"
         />
       ) : (
-        <div className="w-7 h-7 rounded-md bg-siemens-teal/20 text-siemens-accent flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+        <div
+          className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
+          style={{
+            backgroundColor: user.avatarColor ? `${user.avatarColor}25` : 'rgba(0,153,153,0.2)',
+            color: user.avatarColor || '#009999',
+          }}
+        >
           {initials}
         </div>
       )}
