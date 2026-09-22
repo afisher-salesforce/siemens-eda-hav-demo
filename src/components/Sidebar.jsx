@@ -35,6 +35,7 @@ const navItems = [
       { to: '/assets/loaners', icon: RefreshCcw, label: 'Loaners' },
     ],
   },
+  { to: '/telemetry', icon: Activity, label: 'Telemetry' },
   {
     to: '/capacity',
     icon: BarChart3,
@@ -43,13 +44,13 @@ const navItems = [
       { to: '/capacity/allocations', icon: Calendar, label: 'Allocations' },
     ],
   },
-  { to: '/telemetry', icon: Activity, label: 'Telemetry' },
   {
-    to: '/financials',
-    icon: DollarSign,
-    label: 'Financials',
+    to: '/orders',
+    icon: ShoppingCart,
+    label: 'Orders',
     children: [
-      { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
+      { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
+      { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
     ],
   },
   {
@@ -63,12 +64,11 @@ const navItems = [
     ],
   },
   {
-    to: '/orders',
-    icon: ShoppingCart,
-    label: 'Orders',
+    to: '/financials',
+    icon: DollarSign,
+    label: 'Financials',
     children: [
-      { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
-      { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
+      { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
     ],
   },
   {
