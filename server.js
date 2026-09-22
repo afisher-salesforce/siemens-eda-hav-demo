@@ -280,23 +280,22 @@ app.use('/assets', express.static(join(distPath, 'assets'), {
   immutable: true,
 }));
 
-// All other static files — no caching for index.html
-app.use(express.static(distPath, {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    }
-  },
-}));
-
 // Return 404 for missing asset files instead of SPA fallback
 app.use('/assets', (_req, res) => {
   res.status(404).send('Not found');
 });
 
-// SPA fallback — serve index.html for any non-API route
+// Serve other static files EXCEPT index.html (we handle that in SPA fallback)
+app.use(express.static(distPath, {
+  index: false,  // Don't auto-serve index.html for directory requests
+  etag: false,   // Disable ETags for non-hashed files
+}));
+
+// SPA fallback — serve index.html for any non-API route with NO caching
 app.get('*', (_req, res) => {
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(join(distPath, 'index.html'));
 });
 
