@@ -14,6 +14,7 @@
 - Scroll to the **Telemetry Signals** table.
 - Point to a **Critical** severity row: "This is a blade failure — the system detected it automatically through telemetry."
 - "In the current process, Ken might not know about this for hours. He'd find out when the customer calls. Here, the system detected it in real time."
+- Click into the affected asset: "Notice the breadcrumb — it shows the Facility, the Rack, and this specific blade. Ken knows exactly where in the colo this hardware sits without checking a spreadsheet."
 
 ### Step 2: Telemetry Deep Dive (3 min)
 **Navigate to:** `/telemetry`

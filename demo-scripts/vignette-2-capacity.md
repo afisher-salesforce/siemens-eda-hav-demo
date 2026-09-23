@@ -59,12 +59,23 @@
 - Follow up by typing: **"What capacity is available at Santa Clara?"**
 - "This replaces the 48-hour spreadsheet lookup with a 5-second answer."
 
+### Step 6: Asset Hierarchy Drill-Down (2 min)
+**Navigate to:** `/assets`
+
+**Talk track:**
+- "One more thing Russell asked for — when you look at the asset fleet, you can now filter by tier."
+- Use the **Tier dropdown** to select **Facility** — "These are your six colocation sites, represented as top-level assets."
+- Switch to **Rack** — "These are the physical racks inside each facility."
+- Click into any rack — "The detail page shows a breadcrumb: Facility → Rack — and lists every blade in that rack below."
+- "This is the hierarchy you've been tracking in the spreadsheet. Now it's live, connected, and navigable."
+
 ## Key Messages
 - Real-time capacity visibility — no stale spreadsheets
 - Power, racks, and PUE in one view per location
 - Forward-looking forecasts tied to pipeline demand
 - Contract timelines show when capacity will free up
 - Agent can answer capacity questions instantly
+- Physical asset hierarchy — Facility → Rack → Blade — navigable and filterable
 
 ## Transition to V3
 > "So we can see capacity. But the bigger question Shari keeps asking: What does it cost? Let's look at the quarter-close spreadsheet problem."

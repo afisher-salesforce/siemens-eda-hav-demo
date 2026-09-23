@@ -43,7 +43,7 @@
 ### Step 5: Navigate to Key Views (3 min)
 **Navigate through sidebar quickly:**
 
-1. **Asset Fleet** (`/assets`) — "Every Veloce system, serialized, with customer allocation and utilization."
+1. **Asset Fleet** (`/assets`) — "Every emulation asset organized in a physical hierarchy — Facility → Rack → Blade — with tier filtering and parent drill-down."
 2. **Capacity** (`/capacity`) — "Rack occupancy, power draw, PUE, and demand forecasts."
 3. **Financials** (`/financials`) — "Revenue by product, lease type breakdown, repair costs."
 4. **Work Orders** (`/workorders`) — "Every RMA, preventive maintenance, and break-fix — all tracked."
