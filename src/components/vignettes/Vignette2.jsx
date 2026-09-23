@@ -44,7 +44,7 @@ export default function Vignette2() {
       ]}
       capabilities={[
         { name: "Demand Planning", description: "Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance. A waterfall forecast shows Current Base + Pipeline − Expiring Contracts = Projected demand, with an adjustable confidence slider for what-if scenario modeling." },
-        { name: "Asset Lifecycle Management", description: "Every emulator tracked with serial number, software version, customer allocation, and contract dates." },
+        { name: "Asset Lifecycle Management", description: "Every emulator tracked in a physical hierarchy — Facility → Rack → Blade — with serial number, customer allocation, and contract dates. Drill from a colocation facility down to the individual blade." },
         { name: "Proactive Insights", description: "Automated analysis surfacing capacity trends, utilization patterns, and expansion timing recommendations." },
         { name: "Unified Customer Profile", description: "Customer commitment history, usage patterns, and renewal timelines in a single view." },
         { name: "Predictive AI Scoring", description: "Machine learning models predicting future capacity demand based on pipeline, seasonality, and customer growth." }

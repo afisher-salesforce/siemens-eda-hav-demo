@@ -11,7 +11,7 @@ export default function Vignette6() {
       icon={Zap}
       iconColor="#8b5cf6"
       challenge={[
-        "A blade card fails in a colocation facility at 2 AM. In today's world, the operations team doesn't learn about it until IT opens a service request — often days later. A technician then walks the colo floor scanning barcodes for two days to identify affected hardware. The repair gets tracked in a disconnected system. Costs are manually entered into SAP weeks after the fact.",
+        "A blade card fails in a colocation facility at 2 AM. In today's world, the operations team doesn't learn about it until IT opens a service request — often days later. A technician then walks the colo floor scanning barcodes for two days to identify affected hardware — they can't even tell which rack or facility the blade belongs to without cross-referencing a spreadsheet. The repair gets tracked in a disconnected system. Costs are manually entered into SAP weeks after the fact.",
         "Between the failure and the resolution, a customer's emulation capacity is degraded. No automated alert. No automated dispatch. No automated cost tracking. Every step requires a person to notice something, tell someone else, and manually record what happened.",
         "Even when the repair is complete, the financial picture isn't. Cost data from the contract manufacturer lives in a separate system. Margin impact isn't visible until the next monthly reconciliation. The business runs on lagging indicators because the systems aren't connected.",
       ]}
@@ -50,7 +50,7 @@ export default function Vignette6() {
         {
           name: 'Remote Monitoring & Proactive Service',
           description:
-            'Real-time telemetry streams triggering automated work orders when performance degrades or failures occur.',
+            'Real-time telemetry streams triggering automated work orders when performance degrades or failures occur. The asset hierarchy shows exactly which facility, rack, and blade is affected.',
         },
         {
           name: 'Field Service Worker Mobility',

@@ -63,6 +63,11 @@ export default function Vignette5() {
             'Automated resolution of conflicting data across source systems into a trusted, unified view.',
         },
         {
+          name: 'Physical Asset Hierarchy',
+          description:
+            'Assets organized in a Facility → Rack → Blade hierarchy with breadcrumb navigation and drill-down — replacing flat spreadsheet rows with a connected physical model.',
+        },
+        {
           name: 'Account Management',
           description:
             'Complete customer lifecycle from first contact through revenue recognition in one record.',
