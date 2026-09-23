@@ -48,29 +48,53 @@ export default function COGSReconciliation() {
   const loading = finLoading || ordLoading;
   const error = finError;
 
-  // Build BOM / COGS reconciliation data from orders
-  const reconciliation = useMemo(() => {
-    if (!orders) return [];
-    return orders
-      .filter((o) => o.status !== 'Cancelled' && o.status !== 'Expired')
-      .map((o) => {
-        const revenue = o.totalValue || 0;
-        // Simulate COGS as 55-75% of revenue
-        const cogsRate = 0.55 + Math.random() * 0.2;
-        const cogs = Math.round(revenue * cogsRate);
-        const margin = revenue - cogs;
-        const marginPct = revenue > 0 ? ((margin / revenue) * 100).toFixed(1) : 0;
+  // Deterministic hash for consistent values per order (no Math.random flickering)
+  function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < (str || '').length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
 
-        return {
-          ...o,
-          revenue,
-          cogs,
-          margin,
-          marginPct: parseFloat(marginPct),
-          bomMatched: Math.random() > 0.15, // 85% match rate
-        };
-      });
-  }, [orders]);
+  // Build BOM / COGS reconciliation data from orders,
+  // anchored to Financials annual revenue so totals match between pages
+  const reconciliation = useMemo(() => {
+    if (!orders || !financials) return [];
+
+    const activeOrders = orders.filter((o) => o.status !== 'Cancelled' && o.status !== 'Expired');
+    if (activeOrders.length === 0) return [];
+
+    // Use Financials annual revenue as the total, then distribute to orders proportionally
+    const financialsAnnualRevenue = financials.revenue?.total || 0;
+    const rawTotal = activeOrders.reduce((s, o) => s + (o.totalValue || 0), 0);
+
+    return activeOrders.map((o) => {
+      // Scale each order's value proportionally so the sum matches Financials
+      const proportion = rawTotal > 0 ? (o.totalValue || 0) / rawTotal : 1 / activeOrders.length;
+      const revenue = Math.round(financialsAnnualRevenue * proportion);
+
+      // Deterministic COGS rate: 55-75% based on hash of order ID
+      const hash = simpleHash(o.id || o.orderNumber || '');
+      const cogsRate = 0.55 + (hash % 21) / 100; // 0.55 to 0.75 in 1% steps
+      const cogs = Math.round(revenue * cogsRate);
+      const margin = revenue - cogs;
+      const marginPct = revenue > 0 ? ((margin / revenue) * 100).toFixed(1) : 0;
+
+      // Deterministic BOM match: ~85% match rate based on hash
+      const bomMatched = (hash % 100) >= 15;
+
+      return {
+        ...o,
+        revenue,
+        cogs,
+        margin,
+        marginPct: parseFloat(marginPct),
+        bomMatched,
+      };
+    });
+  }, [orders, financials]);
 
   const filtered = useMemo(() => {
     if (!searchTerm) return reconciliation;
