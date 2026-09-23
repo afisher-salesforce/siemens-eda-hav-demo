@@ -458,8 +458,8 @@ async function getSlackUser(userId) {
 function parseBotPersona(text) {
   if (!text) return null;
   // Match "FirstName LastName: rest of message" at start of text
-  // Names can contain hyphens (Joon-ho), letters, spaces
-  const match = text.match(/^([A-Z][a-zA-Z'-]+(?: [A-Z][a-zA-Z'-]+){1,2}):\s+(.+)$/s);
+  // Names can contain hyphens (Joon-ho), accented letters (Müller), etc.
+  const match = text.match(/^([\p{Lu}][\p{L}'-]+(?: [\p{Lu}][\p{L}'-]+){1,2}):\s+(.+)$/su);
   if (match) {
     return { displayName: match[1], text: match[2] };
   }
