@@ -18,6 +18,7 @@ import {
 import { getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
+import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 // Workflow stages that replace the SharePoint/email traveler
@@ -227,9 +228,12 @@ function TravelerCard({ order, isExpanded, onToggle }) {
       {isExpanded && (
         <>
           <div className="mt-4 pt-4 border-t border-surface-border space-y-2">
-            <h4 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
-              Stage Detail
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                Stage Detail
+              </h4>
+              <SalesforceLink recordId={order.id} />
+            </div>
             {WORKFLOW_STAGES.map((stage, i) => {
               const status = i < completedStages ? 'completed' : i === completedStages ? 'current' : 'pending';
               const Icon = stage.icon;

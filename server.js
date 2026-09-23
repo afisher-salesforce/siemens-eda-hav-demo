@@ -86,6 +86,11 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// Salesforce org URL for record links (consumed by SalesforceLink component)
+app.get('/api/sf-org-url', (_req, res) => {
+  res.json({ url: SF_INSTANCE_URL || null });
+});
+
 // ─── Salesforce API Proxy ────────────────────────────────────────────────────
 // All /api/hav/* requests are forwarded to SF_INSTANCE_URL/services/apexrest/hav/*
 app.all('/api/hav/*', async (req, res) => {

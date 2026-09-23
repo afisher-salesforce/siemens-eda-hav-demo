@@ -17,6 +17,7 @@ import {
 import { getComplianceData, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
+import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 // Tab definitions for the compliance dashboard
@@ -307,6 +308,9 @@ export default function ComplianceChecklist() {
                               <tr>
                                 <td colSpan={7} className="bg-[#0a0f1a] border-b border-surface-border p-0">
                                   <div className="px-6 py-4 space-y-3">
+                                    <div className="flex justify-end">
+                                      <SalesforceLink recordId={cr.id} />
+                                    </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                       <div>
                                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Compliance Status</div>

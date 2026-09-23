@@ -26,6 +26,7 @@ import {
 import { getOrders, getWorkOrders, getAssets } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
+import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 const darkTooltipStyle = {
@@ -205,6 +206,7 @@ export default function OrderDetail() {
             {order.customer || 'Unknown customer'}
             {order.agreementName ? ` \u00b7 ${order.agreementName}` : ''}
           </p>
+          <SalesforceLink recordId={order.id} />
         </div>
         <StatusBadge status={order.status} />
       </div>

@@ -33,6 +33,7 @@ import {
 import { getAssets, getTelemetry, getAssetLineage, createAssetRecord, getLoaners, getWorkOrders, getCases } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
+import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 const darkTooltipStyle = {
@@ -278,6 +279,7 @@ export default function AssetDetail() {
           <p className="text-sm text-gray-500 mt-1">
             {asset.product} &middot; S/N: {asset.serialNumber || 'N/A'}
           </p>
+          <SalesforceLink recordId={asset.id} />
         </div>
         <div className="flex items-center gap-2">
           <button

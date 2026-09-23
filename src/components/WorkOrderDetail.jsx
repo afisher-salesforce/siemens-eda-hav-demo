@@ -18,6 +18,7 @@ import {
 import { getWorkOrders, getAssets, getTelemetry, updateWorkOrderStatus } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
+import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 // Status transitions: current status → allowed next statuses
@@ -213,6 +214,7 @@ export default function WorkOrderDetail() {
             {workOrder.workOrderNumber}
           </h1>
           <p className="text-sm text-gray-500 mt-1">{workOrder.subject || 'No subject'}</p>
+          <SalesforceLink recordId={workOrder.id} />
         </div>
         <div className="flex items-center gap-2">
           <PriorityBadge priority={workOrder.priority} />
