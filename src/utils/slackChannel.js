@@ -16,6 +16,7 @@ export function getSlackChannelName(recordType, recordIdentifier) {
     asset: 'hav-asset',
     workorder: 'hav-wo',
     order: 'hav-order',
+    compliance: 'hav-compliance',
   }[recordType] || 'hav';
 
   // Sanitize: lowercase, replace non-alphanum (except hyphens) with hyphens, collapse

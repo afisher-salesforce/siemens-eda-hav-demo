@@ -8,7 +8,7 @@ import { MessageSquare, Send, ExternalLink, Hash, RefreshCw, AlertCircle, Plus }
  * Props:
  *   channelName  — Slack channel name (without #), e.g. "hav-asset-pf-blr1-002"
  *   recordLabel  — Display name for the record, e.g. "PF-BLR1-002"
- *   recordType   — "asset" | "workorder" | "order" | "traveler"
+ *   recordType   — "asset" | "workorder" | "order" | "traveler" | "compliance"
  */
 
 const SLACK_API = '/api/slack';
@@ -129,6 +129,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
     workorder: `🔧 Collaboration channel for work order *${recordLabel}* — coordinate repairs, share diagnostics, and track resolution.`,
     order: `📦 Collaboration channel for order *${recordLabel}* — track fulfillment, compliance, and delivery updates.`,
     traveler: `📦 Collaboration channel for order *${recordLabel}* — track fulfillment, compliance, and delivery updates.`,
+    compliance: `🛡️ Compliance review channel for *${recordLabel}* — screening results, escalations, and audit coordination.`,
   };
 
   // Create a new Slack channel for this record

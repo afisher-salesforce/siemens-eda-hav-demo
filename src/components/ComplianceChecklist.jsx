@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { getComplianceData, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import SlackFeed from './SlackFeed';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 // Tab definitions for the compliance dashboard
 const TABS = [
@@ -341,6 +343,14 @@ export default function ComplianceChecklist() {
                                         </div>
                                       </div>
                                     )}
+                                    {/* Slack Collaboration */}
+                                    <div className="mt-2">
+                                      <SlackFeed
+                                        channelName={getSlackChannelName('compliance', cr.name)}
+                                        recordLabel={cr.name}
+                                        recordType="compliance"
+                                      />
+                                    </div>
                                   </div>
                                 </td>
                               </tr>
