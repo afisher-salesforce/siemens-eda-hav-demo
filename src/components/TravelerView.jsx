@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import SlackFeed from './SlackFeed';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 // Workflow stages that replace the SharePoint/email traveler
 const WORKFLOW_STAGES = [
@@ -223,78 +225,89 @@ function TravelerCard({ order, isExpanded, onToggle }) {
 
       {/* Expanded Stage Detail */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-surface-border space-y-2">
-          <h4 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
-            Stage Detail
-          </h4>
-          {WORKFLOW_STAGES.map((stage, i) => {
-            const status = i < completedStages ? 'completed' : i === completedStages ? 'current' : 'pending';
-            const Icon = stage.icon;
-            const timestamp = status !== 'pending' ? generateStageTimestamp(order, i, completedStages) : null;
-            const note = getStageNote(order, i, completedStages);
+        <>
+          <div className="mt-4 pt-4 border-t border-surface-border space-y-2">
+            <h4 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
+              Stage Detail
+            </h4>
+            {WORKFLOW_STAGES.map((stage, i) => {
+              const status = i < completedStages ? 'completed' : i === completedStages ? 'current' : 'pending';
+              const Icon = stage.icon;
+              const timestamp = status !== 'pending' ? generateStageTimestamp(order, i, completedStages) : null;
+              const note = getStageNote(order, i, completedStages);
 
-            return (
-              <div
-                key={stage.key}
-                className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                  status === 'completed'
-                    ? 'border-emerald-500/20 bg-emerald-500/5'
-                    : status === 'current'
-                    ? 'border-siemens-teal/30 bg-siemens-teal/5'
-                    : 'border-surface-border bg-transparent opacity-50'
-                }`}
-              >
+              return (
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  key={stage.key}
+                  className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                     status === 'completed'
-                      ? 'bg-emerald-500/20 text-emerald-400'
+                      ? 'border-emerald-500/20 bg-emerald-500/5'
                       : status === 'current'
-                      ? 'bg-siemens-teal/20 text-siemens-accent'
-                      : 'bg-gray-800 text-gray-600'
+                      ? 'border-siemens-teal/30 bg-siemens-teal/5'
+                      : 'border-surface-border bg-transparent opacity-50'
                   }`}
                 >
-                  {status === 'completed' ? <CheckCircle2 size={14} /> : <Icon size={14} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-semibold ${
-                      status === 'completed' ? 'text-emerald-400' :
-                      status === 'current' ? 'text-siemens-accent' : 'text-gray-600'
-                    }`}>
-                      {stage.label}
-                    </span>
-                    {status === 'current' && (
-                      <span className="badge badge-teal text-[8px]">In Progress</span>
-                    )}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      status === 'completed'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : status === 'current'
+                        ? 'bg-siemens-teal/20 text-siemens-accent'
+                        : 'bg-gray-800 text-gray-600'
+                    }`}
+                  >
+                    {status === 'completed' ? <CheckCircle2 size={14} /> : <Icon size={14} />}
                   </div>
-                  {status !== 'pending' && (
-                    <div className="mt-1 space-y-1">
-                      <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <User size={10} />
-                          {STAGE_OWNERS[i]}
-                        </span>
-                        {timestamp && (
-                          <span className="flex items-center gap-1">
-                            <CalendarDays size={10} />
-                            {timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            {status === 'completed' && ` at ${timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
-                          </span>
-                        )}
-                      </div>
-                      {note && (
-                        <div className="flex items-start gap-1 text-[10px] text-gray-500">
-                          <MessageSquare size={10} className="mt-0.5 shrink-0" />
-                          <span>{note}</span>
-                        </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-semibold ${
+                        status === 'completed' ? 'text-emerald-400' :
+                        status === 'current' ? 'text-siemens-accent' : 'text-gray-600'
+                      }`}>
+                        {stage.label}
+                      </span>
+                      {status === 'current' && (
+                        <span className="badge badge-teal text-[8px]">In Progress</span>
                       )}
                     </div>
-                  )}
+                    {status !== 'pending' && (
+                      <div className="mt-1 space-y-1">
+                        <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <User size={10} />
+                            {STAGE_OWNERS[i]}
+                          </span>
+                          {timestamp && (
+                            <span className="flex items-center gap-1">
+                              <CalendarDays size={10} />
+                              {timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              {status === 'completed' && ` at ${timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+                            </span>
+                          )}
+                        </div>
+                        {note && (
+                          <div className="flex items-start gap-1 text-[10px] text-gray-500">
+                            <MessageSquare size={10} className="mt-0.5 shrink-0" />
+                            <span>{note}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Slack Collaboration Feed */}
+          <div className="mt-4">
+            <SlackFeed
+              channelName={getSlackChannelName('order', order.orderNumber)}
+              recordLabel={order.orderNumber || order.agreementName || 'Traveler'}
+              recordType="traveler"
+            />
+          </div>
+        </>
       )}
     </div>
   );
