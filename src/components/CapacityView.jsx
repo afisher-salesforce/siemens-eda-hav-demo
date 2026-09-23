@@ -13,6 +13,8 @@ import {
 } from 'recharts';
 import { getCapacity, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 
 function ProgressBar({ value, max = 100, colorClass }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
@@ -153,6 +155,7 @@ export default function CapacityView() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.capacity} />
       {/* Location Cards */}
       <div>
         <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.1em] mb-4">

@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import { getFinancials } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 
 const COLORS = ['#009999', '#006666', '#00b8b8', '#003333', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'];
 
@@ -109,6 +111,7 @@ export default function FinancialsView() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.financials} />
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="metric-card relative overflow-hidden">

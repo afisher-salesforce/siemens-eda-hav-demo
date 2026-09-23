@@ -8,6 +8,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { getAssets } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 // Simulated spare parts derived from asset data
@@ -119,6 +121,7 @@ export default function SpareInventory() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.spares} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

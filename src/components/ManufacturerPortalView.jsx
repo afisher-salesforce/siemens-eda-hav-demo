@@ -25,6 +25,8 @@ import {
   Legend,
 } from 'recharts';
 import { getManufacturerData } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 const darkTooltipStyle = {
@@ -139,6 +141,7 @@ export default function ManufacturerPortalView() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.manufacturer} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

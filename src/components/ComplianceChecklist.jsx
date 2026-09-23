@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { getComplianceData, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -175,6 +177,7 @@ export default function ComplianceChecklist() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.compliance} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

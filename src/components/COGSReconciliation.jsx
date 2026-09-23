@@ -24,6 +24,8 @@ import {
 } from 'recharts';
 import { getFinancials, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 
 const darkTooltipStyle = {
   borderRadius: '8px',
@@ -174,6 +176,7 @@ export default function COGSReconciliation() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.cogs} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

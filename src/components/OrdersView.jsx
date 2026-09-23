@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { getOrders } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { useSlackChannels } from '../hooks/useSlackChannels';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -71,6 +73,7 @@ export default function OrdersView() {
 
   return (
     <div className="space-y-4">
+      <DemoContextPanel {...CONTEXT.orders} />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">

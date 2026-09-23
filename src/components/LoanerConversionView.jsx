@@ -13,6 +13,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { getLoaners } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function MetricCard({ icon: Icon, label, value, color, subtitle }) {
@@ -152,6 +154,7 @@ export default function LoanerConversionView() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.loaners} />
       {/* Hero Banner */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

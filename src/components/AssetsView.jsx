@@ -5,6 +5,8 @@ import { getAssets, getLoaners } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { useSlackChannels } from '../hooks/useSlackChannels';
 import { getSlackChannelName } from '../utils/slackChannel';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 
 function UtilizationBadge({ value }) {
   if (value == null) return <span className="text-gray-600">--</span>;
@@ -110,6 +112,7 @@ export default function AssetsView() {
 
   return (
     <div className="space-y-4">
+      <DemoContextPanel {...CONTEXT.assets} />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">

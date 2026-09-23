@@ -12,6 +12,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { getWorkOrders, getTelemetry } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function PriorityBadge({ priority }) {
@@ -249,6 +251,7 @@ export default function FailureTimeline() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.failures} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

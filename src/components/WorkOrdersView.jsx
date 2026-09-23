@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, Wrench } from 'lucide-react';
 import { getWorkOrders } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { useSlackChannels } from '../hooks/useSlackChannels';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -94,6 +96,7 @@ export default function WorkOrdersView() {
 
   return (
     <div className="space-y-4">
+      <DemoContextPanel {...CONTEXT.workorders} />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">

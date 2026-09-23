@@ -11,6 +11,8 @@ import {
   X,
 } from 'lucide-react';
 import { getTelemetry, getAssets, createAssetRecord } from '../api/salesforce';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function StatusBadge({ status }) {
@@ -213,6 +215,7 @@ export default function TelemetryView() {
 
   return (
     <div className="space-y-4">
+      <DemoContextPanel {...CONTEXT.telemetry} />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">

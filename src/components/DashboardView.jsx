@@ -35,6 +35,8 @@ import {
 } from 'recharts';
 import { getDashboardSummary } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 
 function MetricCard({ icon: Icon, label, value, change, changeType, color, glowColor }) {
   return (
@@ -160,6 +162,7 @@ export default function DashboardView() {
 
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.dashboard} />
       {/* Hero Region Banner — like the SAN FRANCISCO banner in Claudeforce */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
