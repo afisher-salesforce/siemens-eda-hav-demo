@@ -11,6 +11,7 @@ import {
   Sparkles,
   ChevronDown,
   Calendar,
+  TrendingUp,
   FileSpreadsheet,
   FileText,
   Shield,
@@ -42,6 +43,7 @@ const navItems = [
     label: 'Capacity',
     children: [
       { to: '/capacity/allocations', icon: Calendar, label: 'Allocations' },
+      { to: '/capacity/forecast', icon: TrendingUp, label: 'Forecast' },
     ],
   },
   {

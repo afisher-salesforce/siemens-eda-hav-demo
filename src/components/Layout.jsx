@@ -26,6 +26,7 @@ const pageTitles = {
   '/workorders/failures': 'Failure Timeline',
   '/workorders/spares': 'Spare Parts Inventory',
   '/capacity/allocations': 'Allocation Timeline',
+  '/capacity/forecast': 'Capacity Forecast',
   '/financials/cogs': 'COGS Reconciliation',
   '/vignettes': 'Solution Vignettes',
   '/vignettes/order-close': 'The Order That Almost Didn\'t Close',

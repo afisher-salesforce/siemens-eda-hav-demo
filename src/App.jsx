@@ -18,6 +18,7 @@ import COGSReconciliation from './components/COGSReconciliation';
 import SpareInventory from './components/SpareInventory';
 import FailureTimeline from './components/FailureTimeline';
 import AllocationTimeline from './components/AllocationTimeline';
+import CapacityForecast from './components/CapacityForecast';
 import LoanerConversionView from './components/LoanerConversionView';
 import ManufacturerPortalView from './components/ManufacturerPortalView';
 import VignetteIndex from './components/vignettes/VignetteIndex';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/assets/:assetId" element={<AssetDetail />} />
         <Route path="/capacity" element={<CapacityView />} />
         <Route path="/capacity/allocations" element={<AllocationTimeline />} />
+        <Route path="/capacity/forecast" element={<CapacityForecast />} />
         <Route path="/telemetry" element={<TelemetryView />} />
         <Route path="/financials" element={<FinancialsView />} />
         <Route path="/financials/cogs" element={<COGSReconciliation />} />
