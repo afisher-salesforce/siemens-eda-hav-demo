@@ -423,6 +423,77 @@ export default function DashboardView() {
         </Link>
       </div>
 
+      {/* Exceptions & Escalations — surfaces problem records */}
+      <div className="section-card border-amber-500/20">
+        <div className="section-card-header">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="text-amber-400" />
+            <h2 className="text-[11px] font-semibold text-amber-400 uppercase tracking-[0.1em]">
+              Exceptions & Escalations
+            </h2>
+          </div>
+          <span className="badge badge-yellow">
+            {2} Requires Attention
+          </span>
+        </div>
+        <div className="section-card-body p-0">
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Reference</th>
+                  <th>Issue</th>
+                  <th>Assigned To</th>
+                  <th>Age</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="bg-red-500/[0.03]">
+                  <td>
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <Wrench size={12} className="text-amber-400" />
+                      <span className="text-gray-300">Work Order</span>
+                    </span>
+                  </td>
+                  <td className="font-medium text-gray-200 font-mono">WO-2024-0847</td>
+                  <td className="text-gray-400 text-xs max-w-xs">
+                    Serial number mismatch — field asset SN VLX-7842 does not match CRM record SN VLX-7824. Board swap pending verification.
+                  </td>
+                  <td className="text-gray-300 text-xs">Ken Snyder</td>
+                  <td>
+                    <span className="text-red-400 font-mono text-xs font-semibold">12d</span>
+                  </td>
+                  <td>
+                    <span className="badge badge-red">Escalated</span>
+                  </td>
+                </tr>
+                <tr className="bg-amber-500/[0.03]">
+                  <td>
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <Shield size={12} className="text-red-400" />
+                      <span className="text-gray-300">Order</span>
+                    </span>
+                  </td>
+                  <td className="font-medium text-gray-200 font-mono">ORD-2024-1203</td>
+                  <td className="text-gray-400 text-xs max-w-xs">
+                    Compliance hold — end-user entity flagged for additional EAR screening. Awaiting export control review before shipment release.
+                  </td>
+                  <td className="text-gray-300 text-xs">Russell Forsyth</td>
+                  <td>
+                    <span className="text-amber-400 font-mono text-xs font-semibold">3d</span>
+                  </td>
+                  <td>
+                    <span className="badge badge-orange">On Hold</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Contract Renewals — styled like the accounts/opportunities list */}
       <div className="section-card">
         <div className="section-card-header">

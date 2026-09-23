@@ -8,6 +8,8 @@ import {
   FileSpreadsheet,
   ArrowUpRight,
   ArrowDownRight,
+  Database,
+  Clock,
 } from 'lucide-react';
 import {
   BarChart,
@@ -168,6 +170,7 @@ export default function COGSReconciliation() {
   const bomMatchRate = reconciliation.length > 0
     ? ((reconciliation.filter((r) => r.bomMatched).length / reconciliation.length) * 100).toFixed(0)
     : 0;
+  const todayStr = new Date().toLocaleDateString();
 
   return (
     <div className="space-y-6">
@@ -193,6 +196,12 @@ export default function COGSReconciliation() {
               Total Revenue
             </span>
             <div className="text-2xl font-bold text-white mt-1">{formatCurrency(totalRevenue)}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+                <Database size={8} />CRM Forecast
+              </span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+            </div>
           </div>
         </div>
         <div className="metric-card relative overflow-hidden">
@@ -202,6 +211,12 @@ export default function COGSReconciliation() {
               Total COGS
             </span>
             <div className="text-2xl font-bold text-white mt-1">{formatCurrency(totalCOGS)}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+                <Database size={8} />SAP Actuals
+              </span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+            </div>
           </div>
         </div>
         <div className="metric-card relative overflow-hidden">
@@ -213,6 +228,12 @@ export default function COGSReconciliation() {
             <div className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-2">
               {overallMarginPct}%
               <ArrowUpRight size={16} />
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+                <Database size={8} />CRM + SAP
+              </span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>
@@ -229,6 +250,12 @@ export default function COGSReconciliation() {
               ) : (
                 <AlertTriangle size={16} className="text-amber-400" />
               )}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+                <Database size={8} />SAP BOM
+              </span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>

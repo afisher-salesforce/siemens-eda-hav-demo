@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
+import { DollarSign, AlertTriangle, TrendingUp, BarChart3, Database, Clock } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -21,6 +21,23 @@ import { getFinancials } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 const COLORS = ['#009999', '#006666', '#00b8b8', '#003333', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'];
+
+function DataSourceBadge({ source, timestamp }) {
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+        <Database size={8} className="text-gray-500" />
+        {source}
+      </span>
+      {timestamp && (
+        <span className="inline-flex items-center gap-1 text-[9px] text-gray-600">
+          <Clock size={8} />
+          {timestamp}
+        </span>
+      )}
+    </div>
+  );
+}
 
 const darkTooltipStyle = {
   borderRadius: '8px',
@@ -109,6 +126,7 @@ export default function FinancialsView() {
             {revenue.period && (
               <div className="text-xs text-gray-500 mt-1">{revenue.period}</div>
             )}
+            <DataSourceBadge source="CRM Forecast" timestamp={new Date().toLocaleDateString()} />
           </div>
         </div>
 
@@ -125,6 +143,7 @@ export default function FinancialsView() {
               {formatCurrency(revenue.monthlyRecurring)}
             </div>
             <div className="text-xs text-gray-500 mt-1">Per month</div>
+            <DataSourceBadge source="CRM Forecast" timestamp={new Date().toLocaleDateString()} />
           </div>
         </div>
 
@@ -143,6 +162,7 @@ export default function FinancialsView() {
             <div className="text-xs text-gray-500 mt-1">
               {repairCosts.openCount ?? '--'} open work orders
             </div>
+            <DataSourceBadge source="Field Service" timestamp={new Date().toLocaleDateString()} />
           </div>
         </div>
       </div>

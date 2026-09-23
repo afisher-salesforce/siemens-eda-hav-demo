@@ -27,20 +27,22 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
   {
     to: '/assets',
     icon: Server,
     label: 'Asset Fleet',
+    persona: 'Ken',
     children: [
       { to: '/assets/loaners', icon: RefreshCcw, label: 'Loaners' },
     ],
   },
-  { to: '/telemetry', icon: Activity, label: 'Telemetry' },
+  { to: '/telemetry', icon: Activity, label: 'Telemetry', persona: 'Ken' },
   {
     to: '/capacity',
     icon: BarChart3,
     label: 'Capacity',
+    persona: 'Russell',
     children: [
       { to: '/capacity/allocations', icon: Calendar, label: 'Allocations' },
       { to: '/capacity/forecast', icon: TrendingUp, label: 'Forecast' },
@@ -50,6 +52,7 @@ const navItems = [
     to: '/orders',
     icon: ShoppingCart,
     label: 'Orders',
+    persona: 'Russell',
     children: [
       { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
       { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
@@ -59,6 +62,7 @@ const navItems = [
     to: '/workorders',
     icon: Wrench,
     label: 'Work Orders',
+    persona: 'Ken',
     children: [
       { to: '/workorders/manufacturer', icon: Factory, label: 'Manufacturer' },
       { to: '/workorders/failures', icon: AlertTriangle, label: 'Failures' },
@@ -69,6 +73,7 @@ const navItems = [
     to: '/financials',
     icon: DollarSign,
     label: 'Financials',
+    persona: 'Shari',
     children: [
       { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
     ],
@@ -163,7 +168,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
 
       {/* Navigation */}
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
-        {navItems.map(({ to, icon: Icon, label, children }) => {
+        {navItems.map(({ to, icon: Icon, label, children, persona }) => {
           const hasChildren = children && children.length > 0;
           const isActive =
             location.pathname === to ||
@@ -195,13 +200,16 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                 >
                   <Icon size={18} className="shrink-0" />
                   <span
-                    className={`ml-3 whitespace-nowrap transition-all duration-200 ease-in-out ${
+                    className={`ml-3 whitespace-nowrap transition-all duration-200 ease-in-out flex items-center gap-2 ${
                       isExpanded
                         ? 'opacity-100 max-w-[160px] translate-x-0'
                         : 'opacity-0 max-w-0 -translate-x-1 overflow-hidden'
                     }`}
                   >
                     {label}
+                    {persona && persona !== 'All' && (
+                      <span className="text-[8px] text-gray-600 font-medium tracking-wider uppercase">{persona}</span>
+                    )}
                   </span>
                 </NavLink>
                 {hasChildren && (

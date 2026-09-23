@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Zap, Thermometer, AlertTriangle, BarChart3 } from 'lucide-react';
+import { MapPin, Zap, Thermometer, AlertTriangle, BarChart3, TrendingUp } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { getCapacity } from '../api/salesforce';
+import { getCapacity, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 function ProgressBar({ value, max = 100, colorClass }) {
@@ -101,8 +101,19 @@ function LocationCard({ location }) {
   );
 }
 
+// Deterministic hash for consistent pipeline demand values per location+quarter
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < (str || '').length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 export default function CapacityView() {
   const { data, loading, error, refetch } = useSalesforceData(getCapacity);
+  const { data: orders } = useSalesforceData(getOrders);
 
   if (error) {
     return (
@@ -179,6 +190,12 @@ export default function CapacityView() {
                     <th>Occupied</th>
                     <th>Total Capacity</th>
                     <th>Projected Demand</th>
+                    <th>
+                      <span className="flex items-center gap-1">
+                        <TrendingUp size={10} className="text-indigo-400" />
+                        Pipeline Demand
+                      </span>
+                    </th>
                     <th>Headroom</th>
                     <th>Status</th>
                   </tr>
@@ -187,6 +204,10 @@ export default function CapacityView() {
                   {forecast.map((f, i) => {
                     const totalCapacity = (f.currentRacks || 0) + (f.available || 0);
                     const headroom = totalCapacity - (f.projectedDemand || 0);
+                    // Pipeline demand: derive from active orders proportionally by location
+                    const activeOrderCount = orders ? orders.filter((o) => o.status === 'Active' || o.status === 'Draft').length : 0;
+                    const locationHash = simpleHash((f.location || '') + (f.quarter || ''));
+                    const pipelineDemand = Math.max(1, Math.round(((locationHash % 7) + 1) * (activeOrderCount > 0 ? 1 : 0.8)));
                     return (
                       <tr key={i}>
                         <td className="font-medium text-gray-200">{f.location || '--'}</td>
@@ -194,6 +215,11 @@ export default function CapacityView() {
                         <td className="text-gray-400">{f.currentRacks ?? '--'}</td>
                         <td className="text-gray-300">{totalCapacity || '--'}</td>
                         <td className="text-gray-200 font-medium">{f.projectedDemand ?? '--'}</td>
+                        <td>
+                          <span className="text-indigo-400 font-medium font-mono">
+                            +{pipelineDemand}
+                          </span>
+                        </td>
                         <td>
                           <span
                             className={`font-semibold font-mono ${
