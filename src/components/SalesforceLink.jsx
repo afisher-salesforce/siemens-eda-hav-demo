@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 
 let cachedOrgUrl = null;
 let fetchPromise = null;
@@ -30,11 +30,11 @@ export default function SalesforceLink({ recordId }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-siemens-accent transition-colors"
+      className="inline-flex items-center gap-1 text-[10px] text-[#00A1E0] hover:text-[#1798c1] transition-colors"
       title="Open in Salesforce"
     >
+      <Cloud size={11} />
       Open in Salesforce
-      <ExternalLink size={10} />
     </a>
   );
 }
