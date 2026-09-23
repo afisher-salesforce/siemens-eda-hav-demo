@@ -16,6 +16,7 @@ export default function Vignette2() {
       ]}
       outcomes={[
         { metric: "Real-Time", label: "Capacity utilization visibility" },
+        { metric: "What-If", label: "Waterfall forecast with pipeline confidence modeling" },
         { metric: "Months Earlier", label: "Expansion decision lead time" },
         { metric: "Auto-Surfaced", label: "Idle capacity identification" }
       ]}
@@ -38,11 +39,11 @@ export default function Vignette2() {
         {
           icon: FileX,
           title: "End the Spreadsheet Era",
-          description: "The master capacity spreadsheet is replaced by a live dashboard connected to actual asset records, contract dates, and pipeline signals."
+          description: "The master capacity spreadsheet is replaced by a live dashboard with allocation timelines, per-facility waterfall forecasts, and a pipeline confidence slider — all connected to actual asset records, contract dates, and pipeline signals."
         }
       ]}
       capabilities={[
-        { name: "Demand Planning", description: "Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance." },
+        { name: "Demand Planning", description: "Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance. A waterfall forecast shows Current Base + Pipeline − Expiring Contracts = Projected demand, with an adjustable confidence slider for what-if scenario modeling." },
         { name: "Asset Lifecycle Management", description: "Every emulator tracked with serial number, software version, customer allocation, and contract dates." },
         { name: "Proactive Insights", description: "Automated analysis surfacing capacity trends, utilization patterns, and expansion timing recommendations." },
         { name: "Unified Customer Profile", description: "Customer commitment history, usage patterns, and renewal timelines in a single view." },
@@ -51,6 +52,7 @@ export default function Vignette2() {
       agentPrompts={[
         { agent: 'hav', label: '"What is the rack utilization at Santa Clara HSC1?"', prompt: 'What is the rack utilization at Santa Clara HSC1?' },
         { agent: 'hav', label: '"Show me the capacity forecast for the next quarter."', prompt: 'Show me the capacity forecast for the next quarter.' },
+        { agent: 'hav', label: '"Which facilities are at risk of exceeding capacity if 75% of pipeline closes?"', prompt: 'Which facilities are at risk of exceeding capacity if 75% of pipeline closes?' },
       ]}
     />
   );

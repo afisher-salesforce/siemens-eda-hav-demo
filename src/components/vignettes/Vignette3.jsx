@@ -16,14 +16,14 @@ export default function Vignette3() {
       ]}
       outcomes={[
         { metric: "Days → Click", label: "Audit preparation time" },
-        { metric: "Live", label: "Revenue forecast vs. actuals visibility" },
+        { metric: "Live", label: "Revenue forecast vs. actuals — single source of truth across all views" },
         { metric: "Automated", label: "BOM-to-part-number matching" }
       ]}
       whySalesforce={[
         {
           icon: Database,
           title: "One System for the Sales Process",
-          description: "Revenue, COGS, and margin are live metrics on a unified dashboard — pulling from both transaction actuals and the CRM forecast in a single view."
+          description: "Revenue, COGS, and margin are live metrics on a unified dashboard — anchored to a single authoritative revenue source so totals match across every view. No more mismatched numbers between finance and operations reports."
         },
         {
           icon: MessageSquare,
@@ -42,7 +42,7 @@ export default function Vignette3() {
         }
       ]}
       capabilities={[
-        { name: "Embedded BI & Dashboards", description: "Live financial dashboards replacing manual Excel reporting with automated actuals-vs-plan visualization." },
+        { name: "Embedded BI & Dashboards", description: "Live financial dashboards replacing manual Excel reporting with automated actuals-vs-plan visualization. Revenue figures are anchored to one source of truth — Financials and COGS reconciliation always agree." },
         { name: "Revenue Intelligence", description: "AI-powered revenue forecasting combining pipeline data with historical booking patterns." },
         { name: "Enterprise Integration", description: "Bi-directional SAP synchronization ensuring financial data flows automatically between transaction and intelligence systems." },
         { name: "Data Harmonization", description: "Automated transformation rules matching multi-level BOMs to sellable part numbers across regions." },
