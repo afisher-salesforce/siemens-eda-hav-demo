@@ -38,6 +38,7 @@ export default function AssetsView() {
   const [filterLocation, setFilterLocation] = useState('');
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterTier, setFilterTier] = useState('');
 
   const assets = data || [];
 
@@ -75,12 +76,17 @@ export default function AssetsView() {
     () => [...new Set(assets.map((a) => a.status).filter(Boolean))].sort(),
     [assets]
   );
+  const tiers = useMemo(
+    () => [...new Set(assets.map((a) => a.assetTier).filter(Boolean))].sort(),
+    [assets]
+  );
 
   const filtered = useMemo(() => {
     return assets.filter((a) => {
       if (filterLocation && a.location !== filterLocation) return false;
       if (filterCustomer && a.customer !== filterCustomer) return false;
       if (filterStatus && a.status !== filterStatus) return false;
+      if (filterTier && a.assetTier !== filterTier) return false;
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         return (
@@ -92,7 +98,7 @@ export default function AssetsView() {
       }
       return true;
     });
-  }, [assets, filterLocation, filterCustomer, filterStatus, searchTerm]);
+  }, [assets, filterLocation, filterCustomer, filterStatus, filterTier, searchTerm]);
 
   if (error) {
     return (
@@ -158,6 +164,16 @@ export default function AssetsView() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <select
+            value={filterTier}
+            onChange={(e) => setFilterTier(e.target.value)}
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+          >
+            <option value="">All Tiers</option>
+            {tiers.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
         </div>
 
         <span className="text-xs text-gray-500 ml-auto flex items-center gap-1">
@@ -181,6 +197,7 @@ export default function AssetsView() {
                 <tr>
                   <th className="w-10 text-center"><span className="sr-only">Slack</span></th>
                   <th>Name</th>
+                  <th>Tier</th>
                   <th>Serial #</th>
                   <th>Product</th>
                   <th>Customer</th>
@@ -214,6 +231,20 @@ export default function AssetsView() {
                         >
                           {asset.name || '--'}
                         </Link>
+                      </td>
+                      <td>
+                        {asset.assetTier && (
+                          <span className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${
+                            asset.assetTier === 'Facility' ? 'bg-purple-500/15 text-purple-400' :
+                            asset.assetTier === 'Rack' ? 'bg-blue-500/15 text-blue-400' :
+                            asset.assetTier === 'Blade' ? 'bg-emerald-500/15 text-emerald-400' :
+                            asset.assetTier === 'Module' ? 'bg-amber-500/15 text-amber-400' :
+                            asset.assetTier === 'Card' ? 'bg-pink-500/15 text-pink-400' :
+                            'bg-gray-500/15 text-gray-400'
+                          }`}>
+                            {asset.assetTier}
+                          </span>
+                        )}
                       </td>
                       <td className="text-gray-500 font-mono text-xs">
                         {asset.serialNumber || '--'}

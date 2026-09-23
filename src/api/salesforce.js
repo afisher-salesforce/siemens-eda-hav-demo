@@ -165,10 +165,12 @@ function transformDashboard(raw, telemetryRaw, assetsRaw) {
  * Assets: Apex returns array of PascalCase → React expects camelCase
  *
  * Apex: Id, Name, SerialNumber, Status, InstallDate, ProductName, AccountName,
- *       LocationName, RackPosition, PowerDrawKW, UtilizationPct, ContractEndDate, LeaseType
+ *       LocationName, RackPosition, PowerDrawKW, UtilizationPct, ContractEndDate, LeaseType,
+ *       AssetTier, ParentAssetId, ParentAssetName, ParentAssetTier
  *
  * React: id, name, serialNumber, status, installDate, product, customer,
- *        location, rackPosition, powerDraw, utilization, contractEnd, leaseType
+ *        location, rackPosition, powerDraw, utilization, contractEnd, leaseType,
+ *        assetTier, parentAssetId, parentAssetName, parentAssetTier
  */
 function transformAssets(raw) {
   if (!raw || !Array.isArray(raw)) return [];
@@ -186,6 +188,10 @@ function transformAssets(raw) {
     utilization: a.UtilizationPct,
     contractEnd: a.ContractEndDate,
     leaseType: a.LeaseType,
+    assetTier: a.AssetTier,
+    parentAssetId: a.ParentAssetId,
+    parentAssetName: a.ParentAssetName,
+    parentAssetTier: a.ParentAssetTier,
   }));
 }
 
@@ -446,6 +452,36 @@ export async function getAssets(filters = {}) {
   const qs = params.toString();
   const raw = await request(`/assets${qs ? `?${qs}` : ''}`);
   return transformAssets(raw);
+}
+
+/**
+ * Get the asset hierarchy for a specific asset (ancestors + children)
+ * @param {string} assetId - Asset ID to get hierarchy for
+ * @returns {{ assetId, assetTier, ancestors: [{id,name,assetTier,serialNumber}], children: [{id,name,...}], siblingCount }}
+ */
+export async function getAssetHierarchy(assetId) {
+  const raw = await request(`/assets?hierarchyAssetId=${assetId}`);
+  return {
+    assetId: raw.assetId,
+    assetTier: raw.assetTier,
+    siblingCount: raw.siblingCount || 0,
+    ancestors: (raw.ancestors || []).map((a) => ({
+      id: a.Id,
+      name: a.Name,
+      assetTier: a.AssetTier,
+      serialNumber: a.SerialNumber,
+    })),
+    children: (raw.children || []).map((c) => ({
+      id: c.Id,
+      name: c.Name,
+      serialNumber: c.SerialNumber,
+      status: c.Status,
+      assetTier: c.AssetTier,
+      rackPosition: c.RackPosition,
+      powerDraw: c.PowerDrawKW,
+      utilization: c.UtilizationPct,
+    })),
+  };
 }
 
 /**

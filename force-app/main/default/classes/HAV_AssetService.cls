@@ -8,6 +8,13 @@ global with sharing class HAV_AssetService {
         res.addHeader('Content-Type', 'application/json');
 
         try {
+            // Check for hierarchy request mode
+            String hierarchyAssetId = req.params.get('hierarchyAssetId');
+            if (String.isNotBlank(hierarchyAssetId)) {
+                handleHierarchyRequest(hierarchyAssetId, res);
+                return;
+            }
+
             String locationId = req.params.get('locationId');
             String accountId = req.params.get('accountId');
             String status = req.params.get('status');
@@ -15,7 +22,8 @@ global with sharing class HAV_AssetService {
             String query = 'SELECT Id, Name, SerialNumber, Status, InstallDate, '
                 + 'Product2.Name, Account.Name, LocationId, '
                 + 'Rack_Position__c, Power_Draw_kW__c, Utilization_Pct__c, '
-                + 'Contract_End_Date__c, Lease_Type__c '
+                + 'Contract_End_Date__c, Lease_Type__c, '
+                + 'Asset_Tier__c, Parent_Asset__c, Parent_Asset__r.Name, Parent_Asset__r.Asset_Tier__c '
                 + 'FROM Asset '
                 + 'WHERE Product2.Family = \'Emulation Systems\'';
 
@@ -64,6 +72,10 @@ global with sharing class HAV_AssetService {
                 row.put('UtilizationPct', a.Utilization_Pct__c);
                 row.put('ContractEndDate', a.Contract_End_Date__c);
                 row.put('LeaseType', a.Lease_Type__c);
+                row.put('AssetTier', a.Asset_Tier__c);
+                row.put('ParentAssetId', a.Parent_Asset__c);
+                row.put('ParentAssetName', a.Parent_Asset__r != null ? a.Parent_Asset__r.Name : null);
+                row.put('ParentAssetTier', a.Parent_Asset__r != null ? a.Parent_Asset__r.Asset_Tier__c : null);
                 results.add(row);
             }
 
@@ -77,6 +89,86 @@ global with sharing class HAV_AssetService {
                 'type' => e.getTypeName()
             }));
         }
+    }
+
+    private static void handleHierarchyRequest(String assetId, RestResponse res) {
+        // Get the target asset with parent chain
+        Asset target = [
+            SELECT Id, Name, SerialNumber, Status, Asset_Tier__c,
+                   Parent_Asset__c, Parent_Asset__r.Name, Parent_Asset__r.Asset_Tier__c, Parent_Asset__r.SerialNumber,
+                   Parent_Asset__r.Parent_Asset__c, Parent_Asset__r.Parent_Asset__r.Name,
+                   Parent_Asset__r.Parent_Asset__r.Asset_Tier__c, Parent_Asset__r.Parent_Asset__r.SerialNumber,
+                   LocationId, Rack_Position__c
+            FROM Asset
+            WHERE Id = :assetId
+            LIMIT 1
+        ];
+
+        // Build ancestors list (walk up the chain)
+        List<Map<String, Object>> ancestors = new List<Map<String, Object>>();
+        if (target.Parent_Asset__c != null) {
+            Map<String, Object> parent = new Map<String, Object>();
+            parent.put('Id', target.Parent_Asset__c);
+            parent.put('Name', target.Parent_Asset__r.Name);
+            parent.put('AssetTier', target.Parent_Asset__r.Asset_Tier__c);
+            parent.put('SerialNumber', target.Parent_Asset__r.SerialNumber);
+            ancestors.add(parent);
+
+            // Grandparent
+            if (target.Parent_Asset__r.Parent_Asset__c != null) {
+                Map<String, Object> grandparent = new Map<String, Object>();
+                grandparent.put('Id', target.Parent_Asset__r.Parent_Asset__c);
+                grandparent.put('Name', target.Parent_Asset__r.Parent_Asset__r.Name);
+                grandparent.put('AssetTier', target.Parent_Asset__r.Parent_Asset__r.Asset_Tier__c);
+                grandparent.put('SerialNumber', target.Parent_Asset__r.Parent_Asset__r.SerialNumber);
+                ancestors.add(grandparent);
+            }
+        }
+
+        // Get children (assets whose Parent_Asset__c = this asset)
+        List<Asset> childAssets = [
+            SELECT Id, Name, SerialNumber, Status, Asset_Tier__c,
+                   Rack_Position__c, Power_Draw_kW__c, Utilization_Pct__c
+            FROM Asset
+            WHERE Parent_Asset__c = :assetId
+            ORDER BY Name ASC
+            LIMIT 100
+        ];
+
+        List<Map<String, Object>> children = new List<Map<String, Object>>();
+        for (Asset c : childAssets) {
+            Map<String, Object> child = new Map<String, Object>();
+            child.put('Id', c.Id);
+            child.put('Name', c.Name);
+            child.put('SerialNumber', c.SerialNumber);
+            child.put('Status', c.Status);
+            child.put('AssetTier', c.Asset_Tier__c);
+            child.put('RackPosition', c.Rack_Position__c);
+            child.put('PowerDrawKW', c.Power_Draw_kW__c);
+            child.put('UtilizationPct', c.Utilization_Pct__c);
+            children.add(child);
+        }
+
+        // Get sibling count (same parent, excluding self)
+        Integer siblingCount = 0;
+        if (target.Parent_Asset__c != null) {
+            siblingCount = [
+                SELECT COUNT()
+                FROM Asset
+                WHERE Parent_Asset__c = :target.Parent_Asset__c
+                  AND Id != :assetId
+            ];
+        }
+
+        Map<String, Object> result = new Map<String, Object>();
+        result.put('assetId', assetId);
+        result.put('assetTier', target.Asset_Tier__c);
+        result.put('ancestors', ancestors);
+        result.put('children', children);
+        result.put('siblingCount', siblingCount);
+
+        res.statusCode = 200;
+        res.responseBody = Blob.valueOf(JSON.serialize(result));
     }
 
     @HttpPost

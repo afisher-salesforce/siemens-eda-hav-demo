@@ -30,7 +30,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getAssets, getTelemetry, getAssetLineage, createAssetRecord, getLoaners, getWorkOrders, getCases } from '../api/salesforce';
+import { getAssets, getTelemetry, getAssetLineage, getAssetHierarchy, createAssetRecord, getLoaners, getWorkOrders, getCases } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
@@ -91,6 +91,13 @@ export default function AssetDetail() {
     [asset?.id]
   );
   const { data: lineageData, loading: lineageLoading } = useSalesforceData(lineageFetcher);
+
+  // Fetch asset hierarchy (ancestors + children)
+  const hierarchyFetcher = useCallback(
+    () => (asset?.id ? getAssetHierarchy(asset.id) : Promise.resolve(null)),
+    [asset?.id]
+  );
+  const { data: hierarchyData, loading: hierarchyLoading } = useSalesforceData(hierarchyFetcher);
 
   // Fetch loaner data to check if this asset is a loaner
   const { data: loanerData } = useSalesforceData(getLoaners);
@@ -256,8 +263,8 @@ export default function AssetDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm">
+      {/* Breadcrumb with hierarchy path */}
+      <div className="flex items-center gap-2 text-sm flex-wrap">
         <button
           onClick={() => navigate('/assets')}
           className="flex items-center gap-1.5 text-gray-400 hover:text-siemens-accent transition-colors"
@@ -265,8 +272,28 @@ export default function AssetDetail() {
           <ArrowLeft size={16} />
           Asset Fleet
         </button>
+        {/* Hierarchy ancestors (reversed: grandparent → parent) */}
+        {hierarchyData?.ancestors?.slice().reverse().map((ancestor) => (
+          <React.Fragment key={ancestor.id}>
+            <ChevronRight size={14} className="text-gray-600" />
+            <Link
+              to={`/assets/${ancestor.id}`}
+              className="text-gray-400 hover:text-siemens-accent transition-colors flex items-center gap-1"
+            >
+              <span className="text-[9px] uppercase tracking-wider text-gray-600 font-semibold">
+                {ancestor.assetTier}
+              </span>
+              {ancestor.name}
+            </Link>
+          </React.Fragment>
+        ))}
         <ChevronRight size={14} className="text-gray-600" />
         <span className="text-gray-200 font-medium">{asset.name}</span>
+        {asset.assetTier && (
+          <span className="text-[9px] uppercase tracking-wider text-siemens-accent/70 font-semibold bg-siemens-teal/10 px-1.5 py-0.5 rounded">
+            {asset.assetTier}
+          </span>
+        )}
       </div>
 
       {/* Header */}
@@ -647,51 +674,106 @@ export default function AssetDetail() {
         </div>
       )}
 
-      {/* Related Assets (Hierarchy) */}
-      {childAssets.length > 0 && (
+      {/* Asset Hierarchy — Parent chain + Child Assets */}
+      {hierarchyData && (hierarchyData.children?.length > 0 || hierarchyData.ancestors?.length > 0) && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
-              Related Assets at {asset.location}
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-2">
+              <GitBranch size={14} className="text-siemens-accent" />
+              Asset Hierarchy
             </h2>
-            <span className="text-[10px] text-gray-500">{childAssets.length} assets</span>
+            <span className="text-[10px] text-gray-500">
+              {hierarchyData.children?.length || 0} child assets
+              {hierarchyData.siblingCount > 0 && ` · ${hierarchyData.siblingCount} siblings`}
+            </span>
           </div>
-          <div className="section-card-body p-0">
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Serial #</th>
-                    <th>Product</th>
-                    <th>Status</th>
-                    <th>Utilization</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {childAssets.map((a, i) => (
-                    <tr key={a.id || i}>
-                      <td>
-                        <Link
-                          to={`/assets/${a.id}`}
-                          className="font-medium text-siemens-accent hover:underline"
-                        >
-                          {a.name || '--'}
-                        </Link>
-                      </td>
-                      <td className="text-gray-500 font-mono text-xs">{a.serialNumber || '--'}</td>
-                      <td className="text-gray-400">{a.product || '--'}</td>
-                      <td>
-                        <StatusBadge status={a.status} />
-                      </td>
-                      <td className="text-gray-400">
-                        {a.utilization != null ? `${a.utilization}%` : '--'}
-                      </td>
+          <div className="section-card-body">
+            {/* Hierarchy path visualization */}
+            {hierarchyData.ancestors?.length > 0 && (
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b border-surface-border flex-wrap">
+                <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold mr-1">Path:</span>
+                {hierarchyData.ancestors.slice().reverse().map((ancestor, i) => (
+                  <React.Fragment key={ancestor.id}>
+                    {i > 0 && <ChevronRight size={12} className="text-gray-700" />}
+                    <Link
+                      to={`/assets/${ancestor.id}`}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-card border border-surface-border hover:border-siemens-teal/30 transition-colors"
+                    >
+                      <span className={`text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${
+                        ancestor.assetTier === 'Facility' ? 'bg-purple-500/15 text-purple-400' :
+                        ancestor.assetTier === 'Rack' ? 'bg-blue-500/15 text-blue-400' :
+                        'bg-gray-500/15 text-gray-400'
+                      }`}>
+                        {ancestor.assetTier}
+                      </span>
+                      <span className="text-xs text-gray-300">{ancestor.name}</span>
+                    </Link>
+                  </React.Fragment>
+                ))}
+                <ChevronRight size={12} className="text-gray-700" />
+                <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-siemens-teal/10 border border-siemens-teal/20">
+                  <span className="text-[8px] uppercase tracking-wider font-bold text-siemens-accent px-1 py-0.5 rounded bg-siemens-teal/15">
+                    {asset.assetTier || 'Blade'}
+                  </span>
+                  <span className="text-xs text-white font-medium">{asset.name}</span>
+                </span>
+              </div>
+            )}
+
+            {/* Children table */}
+            {hierarchyData.children?.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Child Asset</th>
+                      <th>Tier</th>
+                      <th>Serial #</th>
+                      <th>Position</th>
+                      <th>Status</th>
+                      <th>Power</th>
+                      <th>Utilization</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {hierarchyData.children.map((child, i) => (
+                      <tr key={child.id || i}>
+                        <td>
+                          <Link
+                            to={`/assets/${child.id}`}
+                            className="font-medium text-siemens-accent hover:underline"
+                          >
+                            {child.name || '--'}
+                          </Link>
+                        </td>
+                        <td>
+                          <span className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${
+                            child.assetTier === 'Blade' ? 'bg-emerald-500/15 text-emerald-400' :
+                            child.assetTier === 'Rack' ? 'bg-blue-500/15 text-blue-400' :
+                            child.assetTier === 'Module' ? 'bg-amber-500/15 text-amber-400' :
+                            child.assetTier === 'Card' ? 'bg-pink-500/15 text-pink-400' :
+                            'bg-gray-500/15 text-gray-400'
+                          }`}>
+                            {child.assetTier || '--'}
+                          </span>
+                        </td>
+                        <td className="text-gray-500 font-mono text-xs">{child.serialNumber || '--'}</td>
+                        <td className="text-gray-400 text-xs">{child.rackPosition || '--'}</td>
+                        <td>
+                          <StatusBadge status={child.status} />
+                        </td>
+                        <td className="text-gray-400">
+                          {child.powerDraw != null ? `${child.powerDraw} kW` : '--'}
+                        </td>
+                        <td className="text-gray-400">
+                          {child.utilization != null ? `${child.utilization}%` : '--'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
