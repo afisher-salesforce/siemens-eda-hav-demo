@@ -17,6 +17,9 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  CalendarClock,
+  ArrowUpRight,
+  FileText,
 } from 'lucide-react';
 import {
   LineChart,
@@ -27,7 +30,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getAssets, getTelemetry, getAssetLineage, createAssetRecord } from '../api/salesforce';
+import { getAssets, getTelemetry, getAssetLineage, createAssetRecord, getLoaners, getWorkOrders, getCases } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import { getSlackChannelName } from '../utils/slackChannel';
@@ -87,6 +90,29 @@ export default function AssetDetail() {
     [asset?.id]
   );
   const { data: lineageData, loading: lineageLoading } = useSalesforceData(lineageFetcher);
+
+  // Fetch loaner data to check if this asset is a loaner
+  const { data: loanerData } = useSalesforceData(getLoaners);
+  const loanerInfo = useMemo(() => {
+    if (!loanerData?.loaners || !asset) return null;
+    return loanerData.loaners.find((l) => l.id === asset.id) || null;
+  }, [loanerData, asset]);
+
+  // Fetch work orders (all) and filter client-side for this asset
+  const { data: allWorkOrders, loading: woLoading } = useSalesforceData(getWorkOrders);
+  const relatedWorkOrders = useMemo(() => {
+    if (!allWorkOrders || !asset) return [];
+    return allWorkOrders.filter(
+      (wo) => wo.assetName === asset.name
+    );
+  }, [allWorkOrders, asset]);
+
+  // Fetch cases for this specific asset
+  const caseFetcher = useCallback(
+    () => (asset?.id ? getCases({ assetId: asset.id }) : Promise.resolve([])),
+    [asset?.id]
+  );
+  const { data: relatedCases, loading: casesLoading } = useSalesforceData(caseFetcher);
 
   // Find child assets (same location, same customer — simulated hierarchy)
   const childAssets = useMemo(() => {
@@ -310,6 +336,77 @@ export default function AssetDetail() {
             icon={Clock}
           />
         </div>
+
+        {/* Loaner Info Card — only renders for loaner assets */}
+        {loanerInfo && (
+          <div className="metric-card lg:col-span-3 bg-gradient-to-r from-amber-500/5 to-transparent border-amber-500/20">
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarClock size={14} className="text-amber-400" />
+              <h3 className="text-[10px] text-amber-400 uppercase tracking-wider font-semibold">
+                Loaner Information
+              </h3>
+              {loanerInfo.loanerStatus && (
+                <span className={`badge ${
+                  loanerInfo.loanerStatus === 'Active' ? 'badge-yellow' :
+                  loanerInfo.loanerStatus === 'Pending Return' ? 'badge-orange' :
+                  loanerInfo.loanerStatus === 'Conversion Pending' ? 'badge-blue' : 'badge-gray'
+                }`}>
+                  {loanerInfo.loanerStatus}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Loan Start</span>
+                <span className="text-sm font-medium text-gray-200">
+                  {loanerInfo.originalLoanerDate
+                    ? new Date(loanerInfo.originalLoanerDate).toLocaleDateString()
+                    : '--'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Expiry Date</span>
+                <span className={`text-sm font-medium ${
+                  loanerInfo.daysUntilExpiry != null && loanerInfo.daysUntilExpiry <= 30
+                    ? 'text-red-400' : 'text-gray-200'
+                }`}>
+                  {loanerInfo.loanerExpiryDate
+                    ? new Date(loanerInfo.loanerExpiryDate).toLocaleDateString()
+                    : '--'}
+                  {loanerInfo.daysUntilExpiry != null && (
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({loanerInfo.daysUntilExpiry}d)
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Months on Loan</span>
+                <span className="text-sm font-medium text-gray-200">
+                  {loanerInfo.monthsOnLoan != null ? `${loanerInfo.monthsOnLoan} mo` : '--'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Conversion Opp</span>
+                {loanerInfo.conversionOpportunity ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium text-siemens-accent">
+                      {loanerInfo.conversionOpportunity.stageName}
+                    </span>
+                    {loanerInfo.conversionOpportunity.amount != null && (
+                      <span className="text-xs text-gray-500">
+                        (${(loanerInfo.conversionOpportunity.amount / 1000).toFixed(0)}K)
+                      </span>
+                    )}
+                    <ArrowUpRight size={12} className="text-siemens-accent" />
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-500">None</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Telemetry Chart */}
         <div className="section-card lg:col-span-2">
@@ -656,6 +753,129 @@ export default function AssetDetail() {
                         >
                           {t.errors ?? '--'}
                         </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Related Work Orders */}
+      {relatedWorkOrders.length > 0 && (
+        <div className="section-card">
+          <div className="section-card-header">
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+              <Wrench size={13} className="text-siemens-accent" />
+              Related Work Orders
+            </h2>
+            <span className="text-[10px] text-gray-500">{relatedWorkOrders.length} work order{relatedWorkOrders.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="section-card-body p-0">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>WO #</th>
+                    <th>Subject</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>RMA #</th>
+                    <th>Est. Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {relatedWorkOrders.map((wo, i) => (
+                    <tr key={wo.id || i}>
+                      <td className="font-medium whitespace-nowrap">
+                        <Link
+                          to={`/workorders/${wo.id}`}
+                          className="text-siemens-accent hover:underline"
+                        >
+                          {wo.workOrderNumber || '--'}
+                        </Link>
+                      </td>
+                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td>
+                        <span className={`badge ${
+                          wo.priority === 'Critical' ? 'badge-red' :
+                          wo.priority === 'High' ? 'badge-orange' :
+                          wo.priority === 'Medium' ? 'badge-blue' : 'badge-gray'
+                        }`}>{wo.priority || '--'}</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          wo.status === 'New' || wo.status === 'Open' ? 'badge-blue' :
+                          wo.status === 'In Progress' ? 'badge-yellow' :
+                          wo.status === 'On Hold' ? 'badge-orange' :
+                          wo.status === 'Completed' ? 'badge-green' : 'badge-gray'
+                        }`}>{wo.status || '--'}</span>
+                      </td>
+                      <td className="font-mono text-xs text-gray-500">{wo.rmaNumber || '--'}</td>
+                      <td className="font-medium text-white">
+                        {wo.estimatedCost != null ? `$${wo.estimatedCost.toLocaleString()}` : '--'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Related Cases */}
+      {relatedCases && relatedCases.length > 0 && (
+        <div className="section-card">
+          <div className="section-card-header">
+            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+              <FileText size={13} className="text-amber-400" />
+              Related Cases
+            </h2>
+            <span className="text-[10px] text-gray-500">{relatedCases.length} case{relatedCases.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="section-card-body p-0">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Case #</th>
+                    <th>Subject</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Type</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {relatedCases.map((c, i) => (
+                    <tr key={c.id || i}>
+                      <td className="font-medium whitespace-nowrap text-siemens-accent">
+                        {c.caseNumber || '--'}
+                      </td>
+                      <td className="text-gray-200 max-w-xs truncate">{c.subject || '--'}</td>
+                      <td>
+                        <span className={`badge ${
+                          c.priority === 'Critical' ? 'badge-red' :
+                          c.priority === 'High' ? 'badge-orange' :
+                          c.priority === 'Medium' ? 'badge-blue' : 'badge-gray'
+                        }`}>{c.priority || '--'}</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          c.status === 'New' ? 'badge-blue' :
+                          c.status === 'Open' || c.status === 'Working' ? 'badge-blue' :
+                          c.status === 'Escalated' ? 'badge-red' :
+                          c.status === 'Closed' ? 'badge-green' : 'badge-gray'
+                        }`}>{c.status || '--'}</span>
+                      </td>
+                      <td className="text-gray-400">{c.type || '--'}</td>
+                      <td className="text-gray-500 text-xs whitespace-nowrap">
+                        {c.createdDate
+                          ? new Date(c.createdDate).toLocaleDateString()
+                          : '--'}
                       </td>
                     </tr>
                   ))}

@@ -734,6 +734,31 @@ export async function updateWorkOrderStatus(workOrderId, fields) {
 }
 
 /**
+ * Get cases for emulation system assets
+ * @param {Object} filters - { assetId }
+ * @returns {Array} Transformed case records
+ */
+export async function getCases(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.assetId) params.set('assetId', filters.assetId);
+  const qs = params.toString();
+  const raw = await request(`/cases${qs ? `?${qs}` : ''}`);
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((c) => ({
+    id: c.Id,
+    caseNumber: c.CaseNumber,
+    subject: c.Subject,
+    status: c.Status,
+    priority: c.Priority,
+    type: c.Type,
+    createdDate: c.CreatedDate,
+    assetId: c.AssetId,
+    assetName: c.AssetName,
+    customer: c.AccountName,
+  }));
+}
+
+/**
  * Create a Case or WorkOrder linked to an asset
  * @param {Object} params - { recordType: 'Case'|'WorkOrder', assetId, subject, description, priority }
  * @returns {Object} Created record data
@@ -759,5 +784,6 @@ export default {
   getComplianceData,
   getManufacturerData,
   updateWorkOrderStatus,
+  getCases,
   createAssetRecord,
 };
