@@ -20,7 +20,7 @@ function ProgressBar({ value, max = 100, colorClass }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const barColor =
     colorClass ||
-    (pct > 85 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-siemens-teal');
+    (pct > 85 ? 'bg-orange-500' : pct > 70 ? 'bg-amber-500' : 'bg-siemens-teal');
 
   return (
     <div className="progress-bar">
@@ -90,7 +90,7 @@ function LocationCard({ location }) {
         <span
           className={`text-sm font-bold ${
             (location.pue || 0) > 1.6
-              ? 'text-red-400'
+              ? 'text-orange-400'
               : (location.pue || 0) > 1.4
               ? 'text-amber-400'
               : 'text-emerald-400'
@@ -226,7 +226,7 @@ export default function CapacityView() {
                         <td>
                           <span
                             className={`font-semibold font-mono ${
-                              headroom < 0 ? 'text-red-400' : 'text-emerald-400'
+                              headroom < 0 ? 'text-orange-400' : 'text-emerald-400'
                             }`}
                           >
                             {headroom >= 0 ? '+' : ''}
@@ -330,7 +330,7 @@ export default function CapacityView() {
                           return (
                             <Cell
                               key={idx}
-                              fill={pct > 85 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#009999'}
+                              fill={pct > 85 ? '#f97316' : pct > 70 ? '#f59e0b' : '#009999'}
                             />
                           );
                         })}
@@ -397,7 +397,7 @@ export default function CapacityView() {
                           return (
                             <Cell
                               key={idx}
-                              fill={ratio > 1 ? '#ef4444' : ratio > 0.9 ? '#f59e0b' : '#009999'}
+                              fill={ratio > 1 ? '#f97316' : ratio > 0.9 ? '#f59e0b' : '#009999'}
                             />
                           );
                         })}

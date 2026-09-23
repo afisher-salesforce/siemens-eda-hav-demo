@@ -230,10 +230,11 @@ export default function SpareInventory() {
                       <td className="text-amber-400 font-mono text-center">{item.reserved}</td>
                       <td
                         className={`font-mono text-center font-semibold ${
-                          item.belowMin ? 'text-red-400' : 'text-emerald-400'
+                          item.belowMin ? 'text-orange-400' : 'text-emerald-400'
                         }`}
                       >
                         {item.available}
+                        {item.belowMin && <AlertTriangle size={10} className="inline ml-1 text-orange-400" />}
                       </td>
                       <td className="text-gray-500 font-mono text-center">{item.minStock}</td>
                       <td>

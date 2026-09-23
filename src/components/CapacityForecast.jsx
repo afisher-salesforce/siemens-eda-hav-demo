@@ -31,29 +31,43 @@ const darkTooltipStyle = {
   color: '#94a3b8',
 };
 
+// ── SVG pattern for subtract bars (accessibility: not color-only) ──
+function WaterfallDefs() {
+  return (
+    <defs>
+      <pattern id="subtract-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="#f97316" />
+        <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
+      </pattern>
+    </defs>
+  );
+}
+
 // ── Waterfall chart rendering ───────────────────────────────────
 
-// Custom bar shape for waterfall — renders rounded-rect bar from
-// the "base" value upward by "value" height.
+// Custom bar shape for waterfall — renders rounded-rect bar.
+// For subtract bars, renders with a diagonal-stripe pattern overlay.
 function WaterfallBar(props) {
   const { x, y, width, height, fill, payload } = props;
   if (!payload || height === 0) return null;
 
   const radius = 3;
-  // Determine if bar goes up or down relative to base
   const barHeight = Math.abs(height);
   const barY = height >= 0 ? y : y + height;
+  const isSubtract = payload.type === 'subtract';
 
   return (
-    <rect
-      x={x}
-      y={barY}
-      width={width}
-      height={barHeight}
-      rx={radius}
-      ry={radius}
-      fill={fill}
-    />
+    <g>
+      <rect
+        x={x}
+        y={barY}
+        width={width}
+        height={barHeight}
+        rx={radius}
+        ry={radius}
+        fill={isSubtract ? 'url(#subtract-stripe)' : fill}
+      />
+    </g>
   );
 }
 
@@ -80,7 +94,11 @@ function WaterfallTooltip({ active, payload, label }) {
   );
 }
 
-// Build waterfall segments for a single location
+// Build waterfall segments for a single location.
+// TRUE WATERFALL: the "−Expiring" bar hangs downward from the
+// running total after pipeline, so its base = runningAfterPipeline
+// and its value is negative.  The invisible-base trick still works:
+// invisibleBase = min(base, base+delta) and visibleValue = |delta|.
 function buildWaterfallData(location, forecast, expiringCount, pipelineConfidence) {
   const currentBase = location.usedRacks || 0;
 
@@ -94,7 +112,8 @@ function buildWaterfallData(location, forecast, expiringCount, pipelineConfidenc
   const weightedPipeline = Math.round(rawPipeline * (pipelineConfidence / 100));
 
   const expiring = expiringCount;
-  const projected = currentBase + weightedPipeline - expiring;
+  const runningAfterPipeline = currentBase + weightedPipeline;
+  const projected = runningAfterPipeline - expiring;
   const totalCapacity = location.totalRacks || 0;
 
   return {
@@ -117,11 +136,16 @@ function buildWaterfallData(location, forecast, expiringCount, pipelineConfidenc
       },
       {
         label: '−Expiring',
+        // TRUE WATERFALL: bar starts at runningAfterPipeline and
+        // extends downward by `expiring` amount.  The invisible base
+        // is set to the LOWER value (projected) so the visible bar
+        // fills from projected up to runningAfterPipeline, visually
+        // hanging below the running total.
         value: expiring,
-        base: currentBase + weightedPipeline - expiring,
+        base: projected,          // lower end
         delta: -expiring,
         type: 'subtract',
-        fill: '#ef4444',
+        fill: '#f97316',          // orange (accessible)
       },
       {
         label: 'Projected',
@@ -159,6 +183,7 @@ function MiniWaterfall({ segments, totalCapacity, height = 140 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+        <WaterfallDefs />
         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
         <XAxis
           dataKey="label"
@@ -171,7 +196,7 @@ function MiniWaterfall({ segments, totalCapacity, height = 140 }) {
           tick={{ fontSize: 9, fill: '#64748b' }}
           axisLine={{ stroke: '#1e293b' }}
           tickLine={false}
-          domain={[0, (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]}
+          domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]}
         />
         <Tooltip content={<WaterfallTooltip />} />
         {totalCapacity > 0 && (
@@ -186,6 +211,7 @@ function MiniWaterfall({ segments, totalCapacity, height = 140 }) {
             }}
           />
         )}
+        <ReferenceLine y={0} stroke="#334155" />
         {/* Invisible base bar */}
         <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
         {/* Visible value bar */}
@@ -249,10 +275,11 @@ export default function CapacityForecast() {
     const aggProjected = aggBase + aggPipeline - aggExpiring;
     const aggCapacity = waterfalls.reduce((s, w) => s + w.summary.totalCapacity, 0);
 
+    const aggRunningAfterPipeline = aggBase + aggPipeline;
     const aggSegments = [
       { label: 'Current Base', value: aggBase, base: 0, delta: aggBase, type: 'base', fill: '#009999' },
       { label: `+Pipeline (${pipelineConfidence}%)`, value: aggPipeline, base: aggBase, delta: aggPipeline, type: 'add', fill: '#22c55e' },
-      { label: '−Expiring', value: aggExpiring, base: aggBase + aggPipeline - aggExpiring, delta: -aggExpiring, type: 'subtract', fill: '#ef4444' },
+      { label: '−Expiring', value: aggExpiring, base: aggProjected, delta: -aggExpiring, type: 'subtract', fill: '#f97316' },
       { label: 'Projected', value: aggProjected, base: 0, delta: aggProjected, type: 'total', fill: aggProjected > aggCapacity ? '#f59e0b' : '#6366f1', capacity: aggCapacity },
     ];
 
@@ -382,12 +409,12 @@ export default function CapacityForecast() {
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-red-500" />
+            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-orange-500" />
             <div className="relative">
               <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
                 −Expiring
               </span>
-              <div className="text-2xl font-bold text-red-400 mt-1 flex items-center gap-2">
+              <div className="text-2xl font-bold text-orange-400 mt-1 flex items-center gap-2">
                 −{aggregateSummary.expiring}
                 <ArrowDownRight size={16} />
               </div>
@@ -408,7 +435,7 @@ export default function CapacityForecast() {
                 <span className="text-xs text-gray-500 font-normal">/ {aggregateSummary.totalCapacity}</span>
               </div>
               <div className={`text-xs font-medium mt-0.5 ${
-                aggregateSummary.headroom < 0 ? 'text-red-400' : 'text-emerald-400'
+                aggregateSummary.headroom < 0 ? 'text-orange-400' : 'text-emerald-400'
               }`}>
                 {aggregateSummary.headroom >= 0 ? '+' : ''}{aggregateSummary.headroom} headroom
               </div>
@@ -438,6 +465,7 @@ export default function CapacityForecast() {
                 }))}
                 margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
               >
+                <WaterfallDefs />
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis
                   dataKey="label"
@@ -449,7 +477,7 @@ export default function CapacityForecast() {
                   tick={{ fontSize: 11, fill: '#64748b' }}
                   axisLine={{ stroke: '#1e293b' }}
                   tickLine={false}
-                  domain={[0, (dataMax) => Math.max(dataMax, aggregateSummary.totalCapacity) * 1.1]}
+                  domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, aggregateSummary.totalCapacity) * 1.1]}
                   label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#64748b' } }}
                 />
                 <Tooltip content={<WaterfallTooltip />} />
@@ -465,6 +493,7 @@ export default function CapacityForecast() {
                     }}
                   />
                 )}
+                <ReferenceLine y={0} stroke="#334155" />
                 <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
                 <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={60} shape={<WaterfallBar />}>
                   {aggregateWaterfall.map((entry, idx) => (
@@ -483,7 +512,7 @@ export default function CapacityForecast() {
                 <span className="w-3 h-3 rounded-sm bg-[#22c55e]" /> + Pipeline
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-[#ef4444]" /> − Expiring
+                <span className="w-3 h-3 rounded-sm bg-[#f97316]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 3px)' }} /> − Expiring
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm bg-[#6366f1]" /> Projected
@@ -539,7 +568,7 @@ export default function CapacityForecast() {
                         <div className="text-[9px] text-gray-500 uppercase tracking-wider">Pipeline</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-lg font-bold text-red-400">−{summary.expiring}</div>
+                        <div className="text-lg font-bold text-orange-400">−{summary.expiring}</div>
                         <div className="text-[9px] text-gray-500 uppercase tracking-wider">Expiring</div>
                       </div>
                       <div className="text-center">

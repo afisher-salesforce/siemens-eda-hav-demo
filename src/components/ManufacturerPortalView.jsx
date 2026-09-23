@@ -42,10 +42,10 @@ const STATUS_COLORS = {
   'In Progress': '#3b82f6',
   Completed: '#10b981',
   Closed: '#6b7280',
-  'On Hold': '#ef4444',
+  'On Hold': '#f97316',
 };
 
-const PIE_COLORS = ['#009999', '#6366f1', '#f59e0b', '#ef4444', '#10b981'];
+const PIE_COLORS = ['#009999', '#6366f1', '#f59e0b', '#f97316', '#10b981'];
 
 function PriorityBadge({ priority }) {
   const styles = {
@@ -336,7 +336,7 @@ export default function ManufacturerPortalView() {
                     <td className="text-amber-400 font-mono text-xs font-medium">{wo.estimatedCost != null ? fmt(wo.estimatedCost) : '--'}</td>
                     <td className="text-gray-400 text-center">
                       {wo.turnaroundDays != null ? (
-                        <span className={wo.turnaroundDays > 30 ? 'text-red-400 font-medium' : wo.turnaroundDays > 14 ? 'text-amber-400' : 'text-gray-400'}>
+                        <span className={wo.turnaroundDays > 30 ? 'text-orange-400 font-medium' : wo.turnaroundDays > 14 ? 'text-amber-400' : 'text-gray-400'}>
                           {wo.turnaroundDays}d
                         </span>
                       ) : '--'}

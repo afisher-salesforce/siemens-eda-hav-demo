@@ -33,12 +33,12 @@ function TempDisplay({ temp }) {
   return (
     <span
       className={`font-mono text-sm ${
-        isHigh ? 'text-red-400 font-bold' : isWarn ? 'text-amber-400' : 'text-gray-300'
+        isHigh ? 'text-orange-400 font-bold' : isWarn ? 'text-amber-400' : 'text-gray-300'
       }`}
     >
       {temp.toFixed(1)}&deg;C
       {isHigh && (
-        <AlertTriangle size={12} className="inline ml-1 text-red-400" />
+        <AlertTriangle size={12} className="inline ml-1 text-orange-400" />
       )}
     </span>
   );
@@ -286,7 +286,7 @@ export default function TelemetryView() {
                             <div
                               className={`h-full rounded-full ${
                                 (r.cpuPercent || 0) > 90
-                                  ? 'bg-red-500'
+                                  ? 'bg-orange-500 animate-pulse'
                                   : (r.cpuPercent || 0) > 70
                                   ? 'bg-amber-500'
                                   : 'bg-siemens-teal'
@@ -297,6 +297,7 @@ export default function TelemetryView() {
                           <span className="text-xs text-gray-400 w-10 text-right font-mono">
                             {r.cpuPercent != null ? `${r.cpuPercent}%` : '--'}
                           </span>
+                          {(r.cpuPercent || 0) > 90 && <AlertTriangle size={10} className="text-orange-400 shrink-0" />}
                         </div>
                       </td>
                       <td>
@@ -305,7 +306,7 @@ export default function TelemetryView() {
                             <div
                               className={`h-full rounded-full ${
                                 (r.memoryPercent || 0) > 90
-                                  ? 'bg-red-500'
+                                  ? 'bg-orange-500 animate-pulse'
                                   : (r.memoryPercent || 0) > 70
                                   ? 'bg-amber-500'
                                   : 'bg-indigo-500'
@@ -316,6 +317,7 @@ export default function TelemetryView() {
                           <span className="text-xs text-gray-400 w-10 text-right font-mono">
                             {r.memoryPercent != null ? `${r.memoryPercent}%` : '--'}
                           </span>
+                          {(r.memoryPercent || 0) > 90 && <AlertTriangle size={10} className="text-orange-400 shrink-0" />}
                         </div>
                       </td>
                       <td>
@@ -331,10 +333,11 @@ export default function TelemetryView() {
                         {r.errors != null ? (
                           <span
                             className={`font-mono text-sm ${
-                              r.errors > 0 ? 'text-red-400 font-bold' : 'text-gray-500'
+                              r.errors > 0 ? 'text-orange-400 font-bold' : 'text-gray-500'
                             }`}
                           >
                             {r.errors}
+                            {r.errors > 0 && <AlertTriangle size={10} className="inline ml-1 text-orange-400" />}
                           </span>
                         ) : (
                           <span className="text-gray-600">--</span>

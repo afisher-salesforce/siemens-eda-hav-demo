@@ -816,7 +816,7 @@ export default function AssetDetail() {
                         <span
                           className={`font-mono text-sm ${
                             (t.temperature || 0) > 80
-                              ? 'text-red-400 font-bold'
+                              ? 'text-orange-400 font-bold'
                               : (t.temperature || 0) > 70
                               ? 'text-amber-400'
                               : 'text-gray-300'
@@ -832,7 +832,7 @@ export default function AssetDetail() {
                       <td>
                         <span
                           className={`font-mono text-sm ${
-                            (t.errors || 0) > 0 ? 'text-red-400 font-bold' : 'text-gray-500'
+                            (t.errors || 0) > 0 ? 'text-orange-400 font-bold' : 'text-gray-500'
                           }`}
                         >
                           {t.errors ?? '--'}

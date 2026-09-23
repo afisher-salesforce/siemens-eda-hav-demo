@@ -57,7 +57,7 @@ function MetricCard({ icon: Icon, label, value, change, changeType, color, glowC
           {change !== undefined && change !== null && (
             <div
               className={`flex items-center text-xs font-semibold ${
-                changeType === 'up' ? 'text-emerald-400' : 'text-red-400'
+                changeType === 'up' ? 'text-emerald-400' : 'text-orange-400'
               }`}
             >
               {changeType === 'up' ? (
@@ -176,7 +176,7 @@ export default function DashboardView() {
         <div className="flex items-center gap-6">
           {[
             { label: 'ACTIVE', value: metrics.activeAssets ?? '--', color: '#10b981' },
-            { label: 'ALERTS', value: metrics.criticalAlerts ?? 0, color: metrics.criticalAlerts > 0 ? '#ef4444' : '#64748b' },
+            { label: 'ALERTS', value: metrics.criticalAlerts ?? 0, color: metrics.criticalAlerts > 0 ? '#f97316' : '#64748b' },
             { label: 'UTIL', value: metrics.avgUtilization != null ? `${metrics.avgUtilization}%` : '--', color: '#00b8b8' },
           ].map((item) => (
             <div key={item.label} className="text-center">
@@ -224,7 +224,7 @@ export default function DashboardView() {
           label="Critical Alerts"
           value={metrics.criticalAlerts ?? '--'}
           changeType={metrics.criticalAlerts > 0 ? 'down' : undefined}
-          color="#ef4444"
+          color="#f97316"
         />
         <MetricCard
           icon={DollarSign}
@@ -277,7 +277,7 @@ export default function DashboardView() {
                         key={index}
                         fill={
                           entry.occupancy > 85
-                            ? '#ef4444'
+                            ? '#f97316'
                             : entry.occupancy > 70
                             ? '#f59e0b'
                             : '#009999'
@@ -388,12 +388,12 @@ export default function DashboardView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           to="/orders/compliance"
-          className="section-card group hover:border-red-500/30 transition-colors cursor-pointer"
+          className="section-card group hover:border-orange-500/30 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center">
-                <Shield size={20} className="text-red-400" />
+              <div className="w-10 h-10 rounded-lg bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
+                <Shield size={20} className="text-orange-400" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-gray-200">Trade Compliance</div>
@@ -453,7 +453,7 @@ export default function DashboardView() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="bg-red-500/[0.03]">
+                <tr className="bg-orange-500/[0.03]">
                   <td>
                     <span className="inline-flex items-center gap-1.5 text-xs">
                       <Wrench size={12} className="text-amber-400" />
@@ -466,7 +466,7 @@ export default function DashboardView() {
                   </td>
                   <td className="text-gray-300 text-xs">Ken Snyder</td>
                   <td>
-                    <span className="text-red-400 font-mono text-xs font-semibold">12d</span>
+                    <span className="text-orange-400 font-mono text-xs font-semibold">12d</span>
                   </td>
                   <td>
                     <span className="badge badge-red">Escalated</span>
@@ -475,7 +475,7 @@ export default function DashboardView() {
                 <tr className="bg-amber-500/[0.03]">
                   <td>
                     <span className="inline-flex items-center gap-1.5 text-xs">
-                      <Shield size={12} className="text-red-400" />
+                      <Shield size={12} className="text-orange-400" />
                       <span className="text-gray-300">Order</span>
                     </span>
                   </td>
