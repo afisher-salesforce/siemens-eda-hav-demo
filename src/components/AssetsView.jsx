@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, Server, RefreshCcw } from 'lucide-react';
 import { getAssets, getLoaners } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { useSlackChannels } from '../hooks/useSlackChannels';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 function UtilizationBadge({ value }) {
   if (value == null) return <span className="text-gray-600">--</span>;
@@ -51,6 +53,13 @@ export default function AssetsView() {
     }
     return map;
   }, [loanerData]);
+
+  // Derive Slack channel names for all assets
+  const slackChannelNames = useMemo(
+    () => assets.map((a) => getSlackChannelName('asset', a.name)),
+    [assets]
+  );
+  const { hasChannel: slackChannels } = useSlackChannels(slackChannelNames);
 
   const locations = useMemo(
     () => [...new Set(assets.map((a) => a.location).filter(Boolean))].sort(),
@@ -167,6 +176,7 @@ export default function AssetsView() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th className="w-10 text-center"><span className="sr-only">Slack</span></th>
                   <th>Name</th>
                   <th>Serial #</th>
                   <th>Product</th>
@@ -181,8 +191,19 @@ export default function AssetsView() {
               </thead>
               <tbody>
                 {filtered.length > 0 ? (
-                  filtered.map((asset, i) => (
+                  filtered.map((asset, i) => {
+                    const channelName = getSlackChannelName('asset', asset.name);
+                    const hasSlack = channelName && slackChannels.has(channelName);
+                    return (
                     <tr key={asset.id || i}>
+                      <td className="text-center w-10">
+                        {hasSlack && (
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full bg-siemens-teal"
+                            title="Slack channel active"
+                          />
+                        )}
+                      </td>
                       <td className="font-medium whitespace-nowrap">
                         <Link
                           to={`/assets/${asset.id}`}
@@ -223,10 +244,11 @@ export default function AssetsView() {
                           : '--'}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-gray-600">
+                    <td colSpan={11} className="text-center py-8 text-gray-600">
                       No assets match the current filters
                     </td>
                   </tr>

@@ -662,6 +662,63 @@ app.post('/api/slack/channels/:channelId/messages', async (req, res) => {
   }
 });
 
+// ─── Slack Batch Channel Check ───────────────────────────────────────────
+// POST /api/slack/channels/check — batch-check which channel names exist
+// Caches the full channel list for 60 seconds to avoid N+1 API calls
+let slackChannelCache = { channels: null, expiresAt: 0 };
+
+async function getAllSlackChannels() {
+  const now = Date.now();
+  if (slackChannelCache.channels && slackChannelCache.expiresAt > now) {
+    return slackChannelCache.channels;
+  }
+
+  const allChannels = [];
+  let cursor = '';
+
+  for (let page = 0; page < 20; page++) {
+    const params = { types: 'public_channel,private_channel', limit: 200 };
+    if (cursor) params.cursor = cursor;
+    const data = await slackApi('conversations.list', params);
+    allChannels.push(...(data.channels || []));
+    cursor = data.response_metadata?.next_cursor;
+    if (!cursor) break;
+  }
+
+  slackChannelCache = {
+    channels: allChannels,
+    expiresAt: now + 60 * 1000, // 60 second cache
+  };
+
+  return allChannels;
+}
+
+app.post('/api/slack/channels/check', async (req, res) => {
+  if (!SLACK_BOT_TOKEN) {
+    return res.status(503).json({ error: 'Slack not configured' });
+  }
+
+  try {
+    const { names } = req.body;
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(400).json({ error: 'names array is required' });
+    }
+
+    const channels = await getAllSlackChannels();
+    const channelNameSet = new Set(channels.map((c) => c.name.toLowerCase()));
+
+    const result = {};
+    for (const name of names) {
+      result[name] = channelNameSet.has(name.toLowerCase());
+    }
+
+    res.json({ channels: result });
+  } catch (err) {
+    console.error('[Slack] Batch channel check error:', err.message);
+    res.status(500).json({ error: err.slackError || err.message });
+  }
+});
+
 // ─── Serve Static Files (Production) ─────────────────────────────────────────
 const distPath = join(__dirname, 'dist');
 

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, AlertTriangle, Wrench } from 'lucide-react';
 import { getWorkOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { useSlackChannels } from '../hooks/useSlackChannels';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 function PriorityBadge({ priority }) {
   const styles = {
@@ -39,6 +41,13 @@ export default function WorkOrdersView() {
   const [filterStatus, setFilterStatus] = useState('');
 
   const workOrders = data || [];
+
+  // Derive Slack channel names for all work orders
+  const slackChannelNames = useMemo(
+    () => workOrders.map((w) => getSlackChannelName('workorder', w.workOrderNumber)),
+    [workOrders]
+  );
+  const { hasChannel: slackChannels } = useSlackChannels(slackChannelNames);
 
   const priorities = useMemo(
     () => [...new Set(workOrders.map((w) => w.priority).filter(Boolean))].sort(),
@@ -139,6 +148,7 @@ export default function WorkOrdersView() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th className="w-10 text-center"><span className="sr-only">Slack</span></th>
                   <th>WO #</th>
                   <th>Subject</th>
                   <th>Priority</th>
@@ -151,8 +161,19 @@ export default function WorkOrdersView() {
               </thead>
               <tbody>
                 {filtered.length > 0 ? (
-                  filtered.map((wo, i) => (
+                  filtered.map((wo, i) => {
+                    const channelName = getSlackChannelName('workorder', wo.workOrderNumber);
+                    const hasSlack = channelName && slackChannels.has(channelName);
+                    return (
                     <tr key={wo.id || i}>
+                      <td className="text-center w-10">
+                        {hasSlack && (
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full bg-siemens-teal"
+                            title="Slack channel active"
+                          />
+                        )}
+                      </td>
                       <td className="font-medium whitespace-nowrap">
                         <Link
                           to={`/workorders/${wo.id}`}
@@ -175,10 +196,11 @@ export default function WorkOrdersView() {
                         {formatCurrency(wo.estimatedCost)}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-gray-600">
+                    <td colSpan={9} className="text-center py-12 text-gray-600">
                       No work orders match the current filters
                     </td>
                   </tr>

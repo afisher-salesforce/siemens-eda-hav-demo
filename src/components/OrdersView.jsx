@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { useSlackChannels } from '../hooks/useSlackChannels';
+import { getSlackChannelName } from '../utils/slackChannel';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -31,6 +33,13 @@ export default function OrdersView() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const orders = data || [];
+
+  // Derive Slack channel names for all orders
+  const slackChannelNames = useMemo(
+    () => orders.map((o) => getSlackChannelName('order', o.orderNumber)),
+    [orders]
+  );
+  const { hasChannel: slackChannels } = useSlackChannels(slackChannelNames);
 
   const filtered = useMemo(() => {
     if (!searchTerm) return orders;
@@ -93,6 +102,7 @@ export default function OrdersView() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th className="w-10 text-center"><span className="sr-only">Slack</span></th>
                   <th>Order #</th>
                   <th>Agreement</th>
                   <th>Customer</th>
@@ -106,8 +116,19 @@ export default function OrdersView() {
               </thead>
               <tbody>
                 {filtered.length > 0 ? (
-                  filtered.map((order, i) => (
+                  filtered.map((order, i) => {
+                    const channelName = getSlackChannelName('order', order.orderNumber);
+                    const hasSlack = channelName && slackChannels.has(channelName);
+                    return (
                     <tr key={order.id || i}>
+                      <td className="text-center w-10">
+                        {hasSlack && (
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full bg-siemens-teal"
+                            title="Slack channel active"
+                          />
+                        )}
+                      </td>
                       <td className="font-medium whitespace-nowrap">
                         <Link
                           to={`/orders/${order.id}`}
@@ -137,10 +158,11 @@ export default function OrdersView() {
                         <StatusBadge status={order.status} />
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-gray-600">
+                    <td colSpan={10} className="text-center py-12 text-gray-600">
                       No orders match the current search
                     </td>
                   </tr>
