@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   TrendingUp,
   AlertTriangle,
@@ -6,7 +6,18 @@ import {
   MapPin,
   ArrowUpRight,
   ArrowDownRight,
-  Minus,
+  X,
+  Wrench,
+  Package,
+  CheckCircle2,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Calendar,
+  Shield,
+  Clock,
+  Loader2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -18,9 +29,8 @@ import {
   ResponsiveContainer,
   Cell,
   ReferenceLine,
-  Legend,
 } from 'recharts';
-import { getCapacity, getAssets } from '../api/salesforce';
+import { getCapacityEngine, updateWorkOrderStatus } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
 const darkTooltipStyle = {
@@ -31,7 +41,7 @@ const darkTooltipStyle = {
   color: '#94a3b8',
 };
 
-// ── SVG pattern for subtract bars (accessibility: not color-only) ──
+// ── SVG patterns for subtract and RMA bars ──
 function WaterfallDefs() {
   return (
     <defs>
@@ -39,274 +49,499 @@ function WaterfallDefs() {
         <rect width="6" height="6" fill="#f97316" />
         <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
       </pattern>
+      <pattern id="rma-out-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="#ef4444" />
+        <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
+      </pattern>
     </defs>
   );
 }
 
-// ── Waterfall chart rendering ───────────────────────────────────
-
-// Custom bar shape for waterfall — renders rounded-rect bar.
-// For subtract bars, renders with a diagonal-stripe pattern overlay.
 function WaterfallBar(props) {
   const { x, y, width, height, fill, payload } = props;
   if (!payload || height === 0) return null;
-
   const radius = 3;
   const barHeight = Math.abs(height);
   const barY = height >= 0 ? y : y + height;
   const isSubtract = payload.type === 'subtract';
-
+  const isRmaOut = payload.type === 'rma-out';
   return (
     <g>
       <rect
-        x={x}
-        y={barY}
-        width={width}
-        height={barHeight}
-        rx={radius}
-        ry={radius}
-        fill={isSubtract ? 'url(#subtract-stripe)' : fill}
+        x={x} y={barY} width={width} height={barHeight}
+        rx={radius} ry={radius}
+        fill={isRmaOut ? 'url(#rma-out-stripe)' : isSubtract ? 'url(#subtract-stripe)' : fill}
       />
     </g>
   );
 }
 
-// Custom tooltip for the waterfall chart
-function WaterfallTooltip({ active, payload, label }) {
+function WaterfallTooltip({ active, payload }) {
   if (!active || !payload || !payload.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
-
   return (
     <div style={darkTooltipStyle} className="px-3 py-2">
       <div className="text-xs font-semibold text-gray-200 mb-1">{d.label}</div>
       <div className="text-xs text-gray-400">
-        {d.type === 'total'
+        {d.type === 'total' || d.type === 'base'
           ? `${d.value} racks`
           : `${d.delta >= 0 ? '+' : ''}${d.delta} racks`}
       </div>
       {d.type === 'total' && d.capacity != null && (
-        <div className="text-[10px] text-gray-500 mt-0.5">
-          Capacity: {d.capacity} racks
-        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5">Capacity: {d.capacity} racks</div>
       )}
     </div>
   );
 }
 
-// Build waterfall segments for a single location.
-// TRUE WATERFALL: the "−Expiring" bar hangs downward from the
-// running total after pipeline, so its base = runningAfterPipeline
-// and its value is negative.  The invisible-base trick still works:
-// invisibleBase = min(base, base+delta) and visibleValue = |delta|.
-function buildWaterfallData(location, forecast, expiringCount, pipelineConfidence) {
-  const currentBase = location.usedRacks || 0;
-
-  // Get pipeline from forecast projected demand minus current
-  const latestForecast = forecast
-    .filter((f) => f.location === location.name)
-    .sort((a, b) => (b.quarter || '').localeCompare(a.quarter || ''))[0];
-
-  const projectedDemand = latestForecast?.projectedDemand || currentBase;
-  const rawPipeline = Math.max(0, projectedDemand - currentBase);
-  const weightedPipeline = Math.round(rawPipeline * (pipelineConfidence / 100));
-
-  const expiring = expiringCount;
-  const runningAfterPipeline = currentBase + weightedPipeline;
-  const projected = runningAfterPipeline - expiring;
-  const totalCapacity = location.totalRacks || 0;
-
-  return {
-    segments: [
-      {
-        label: 'Current Base',
-        value: currentBase,
-        base: 0,
-        delta: currentBase,
-        type: 'base',
-        fill: '#009999',
-      },
-      {
-        label: `+Pipeline (${pipelineConfidence}%)`,
-        value: weightedPipeline,
-        base: currentBase,
-        delta: weightedPipeline,
-        type: 'add',
-        fill: '#22c55e',
-      },
-      {
-        label: '−Expiring',
-        // TRUE WATERFALL: bar starts at runningAfterPipeline and
-        // extends downward by `expiring` amount.  The invisible base
-        // is set to the LOWER value (projected) so the visible bar
-        // fills from projected up to runningAfterPipeline, visually
-        // hanging below the running total.
-        value: expiring,
-        base: projected,          // lower end
-        delta: -expiring,
-        type: 'subtract',
-        fill: '#f97316',          // orange (accessible)
-      },
-      {
-        label: 'Projected',
-        value: projected,
-        base: 0,
-        delta: projected,
-        type: 'total',
-        fill: projected > totalCapacity ? '#f59e0b' : '#6366f1',
-        capacity: totalCapacity,
-      },
-    ],
-    summary: {
-      currentBase,
-      weightedPipeline,
-      expiring,
-      projected,
-      totalCapacity,
-      headroom: totalCapacity - projected,
-    },
-  };
+// ── Time horizon helper ──
+function computeHorizonDate(horizon) {
+  const now = new Date();
+  if (typeof horizon === 'number') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + horizon);
+    return d;
+  }
+  // Quarter shortcuts
+  const year = now.getFullYear();
+  if (horizon === 'Q3') return new Date(year, 8, 30); // Sep 30
+  if (horizon === 'Q4') return new Date(year, 11, 31); // Dec 31
+  return new Date(now.getTime() + 90 * 86400000);
 }
 
-// ── Mini Waterfall for per-facility cards ─────────────────────
+function horizonLabel(h) {
+  if (typeof h === 'number') return `${h}d`;
+  return h;
+}
 
-function MiniWaterfall({ segments, totalCapacity, height = 140 }) {
-  // Build stacked data for Recharts
-  const data = segments.map((s) => ({
-    ...s,
-    // For the invisible base bar
-    invisibleBase: s.base,
-    // For the visible bar
-    visibleValue: s.value,
-  }));
+// ── Slider component ──
+function ScenarioSlider({ label, value, onChange, min, max, step, unit, icon: Icon, color = 'text-siemens-accent' }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 w-36 shrink-0">
+        {Icon && <Icon size={12} className={color} />}
+        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">{label}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
+          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+          [&::-webkit-slider-thumb]:bg-siemens-teal [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+          [&::-webkit-slider-thumb]:shadow-[0_0_6px_rgba(0,153,153,0.4)]
+          [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:bg-siemens-teal
+          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+      />
+      <span className="text-xs font-bold text-siemens-accent font-mono w-16 text-right">
+        {unit === 'days' ? `+${value}d` : `${value}%`}
+      </span>
+    </div>
+  );
+}
 
+// ── Mini Waterfall for per-facility cards ──
+function MiniWaterfall({ segments, totalCapacity, height = 130 }) {
+  const data = segments.map((s) => ({ ...s, invisibleBase: s.base, visibleValue: s.value }));
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+      <BarChart data={data} margin={{ top: 8, right: 4, left: -10, bottom: 4 }}>
         <WaterfallDefs />
         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis
-          dataKey="label"
-          tick={{ fontSize: 9, fill: '#64748b' }}
-          axisLine={{ stroke: '#1e293b' }}
-          tickLine={false}
-          interval={0}
-        />
-        <YAxis
-          tick={{ fontSize: 9, fill: '#64748b' }}
-          axisLine={{ stroke: '#1e293b' }}
-          tickLine={false}
-          domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]}
-        />
+        <XAxis dataKey="shortLabel" tick={{ fontSize: 8, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false} interval={0} />
+        <YAxis tick={{ fontSize: 8, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false}
+          domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]} />
         <Tooltip content={<WaterfallTooltip />} />
         {totalCapacity > 0 && (
-          <ReferenceLine
-            y={totalCapacity}
-            stroke="#475569"
-            strokeDasharray="4 4"
-            label={{
-              value: `Capacity: ${totalCapacity}`,
-              position: 'right',
-              style: { fontSize: 9, fill: '#64748b' },
-            }}
-          />
+          <ReferenceLine y={totalCapacity} stroke="#475569" strokeDasharray="4 4" />
         )}
         <ReferenceLine y={0} stroke="#334155" />
-        {/* Invisible base bar */}
         <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
-        {/* Visible value bar */}
-        <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={32} shape={<WaterfallBar />}>
-          {data.map((entry, idx) => (
-            <Cell key={idx} fill={entry.fill} />
-          ))}
+        <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={24} shape={<WaterfallBar />}>
+          {data.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────
+// ── Facility Detail Modal ──
+function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, completingId }) {
+  const [tab, setTab] = useState('racks');
 
+  if (!facility) return null;
+
+  const facilityWOs = workOrders.filter((wo) => wo.facilityCode === facility.code);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-border">
+          <div className="flex items-center gap-3">
+            <MapPin size={16} className="text-siemens-accent" />
+            <div>
+              <h2 className="text-sm font-bold text-white">
+                {facility.name} ({facility.code})
+              </h2>
+              <p className="text-[10px] text-gray-500">
+                {facility.region} &middot; {facility.totalRacks} racks &middot; {facility.bladeCount} blades &middot; {facility.accounts.length} customers
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-gray-800 transition-colors">
+            <X size={16} className="text-gray-400" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-surface-border">
+          <button
+            onClick={() => setTab('racks')}
+            className={`px-4 py-2 text-xs font-medium transition-colors ${
+              tab === 'racks' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            <Package size={12} className="inline mr-1.5" />
+            Racks & Assets ({facility.racks.length})
+          </button>
+          <button
+            onClick={() => setTab('workorders')}
+            className={`px-4 py-2 text-xs font-medium transition-colors ${
+              tab === 'workorders' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            <Wrench size={12} className="inline mr-1.5" />
+            Work Orders & Repairs ({facilityWOs.length})
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-0">
+          {tab === 'racks' ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Rack</th>
+                  <th>Position</th>
+                  <th>Customer</th>
+                  <th>Blades</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {facility.racks.length > 0 ? facility.racks.map((rack) => (
+                  <tr key={rack.id}>
+                    <td className="font-medium text-gray-200">{rack.name}</td>
+                    <td className="text-gray-400 font-mono text-xs">{rack.rackPosition || '--'}</td>
+                    <td className="text-gray-300">{rack.accountName || '--'}</td>
+                    <td className="text-gray-300 text-center font-mono">{rack.bladeCount}</td>
+                    <td>
+                      <span className={`badge ${rack.status === 'Active' || rack.status === 'Installed' ? 'badge-green' : 'badge-gray'}`}>
+                        {rack.status || '--'}
+                      </span>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={5} className="text-center py-8 text-gray-600">No racks at this facility</td></tr>
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>WO #</th>
+                  <th>Asset</th>
+                  <th>Customer</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {facilityWOs.length > 0 ? facilityWOs.map((wo) => (
+                  <tr key={wo.id}>
+                    <td className="font-mono text-xs text-siemens-accent">{wo.workOrderNumber}</td>
+                    <td className="text-gray-200 text-sm">{wo.assetName || '--'}</td>
+                    <td className="text-gray-400">{wo.accountName || '--'}</td>
+                    <td className="text-gray-400 text-xs max-w-[200px] truncate">{wo.subject || '--'}</td>
+                    <td>
+                      <span className={`badge ${wo.status === 'In Progress' ? 'badge-blue' : wo.status === 'New' ? 'badge-yellow' : 'badge-gray'}`}>
+                        {wo.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${wo.priority === 'Critical' ? 'badge-red' : wo.priority === 'High' ? 'badge-orange' : 'badge-gray'}`}>
+                        {wo.priority || '--'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => onCompleteRepair(wo.id)}
+                        disabled={completingId === wo.id}
+                        className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md
+                          bg-emerald-900/40 text-emerald-400 border border-emerald-800/50
+                          hover:bg-emerald-900/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {completingId === wo.id ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                          <CheckCircle2 size={10} />
+                        )}
+                        Complete & Return
+                      </button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={7} className="text-center py-8 text-gray-600">No active work orders at this facility</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Build 6-segment waterfall data ──
+function buildWaterfallSegments(cBase, pipeline, expiring, rmaOut, rmaIn, totalCapacity) {
+  let running = cBase;
+
+  const segments = [];
+
+  // 1. Current Base
+  segments.push({
+    label: 'Current Base', shortLabel: 'Base',
+    value: cBase, base: 0, delta: cBase,
+    type: 'base', fill: '#009999',
+  });
+
+  // 2. +Pipeline
+  segments.push({
+    label: `+Pipeline`, shortLabel: '+Pipe',
+    value: pipeline, base: running, delta: pipeline,
+    type: 'add', fill: '#22c55e',
+  });
+  running += pipeline;
+
+  // 3. −Expiring Contracts
+  segments.push({
+    label: '−Expiring', shortLabel: '−Exp',
+    value: expiring, base: running - expiring, delta: -expiring,
+    type: 'subtract', fill: '#f97316',
+  });
+  running -= expiring;
+
+  // 4. −OEM Repair Out
+  segments.push({
+    label: '−OEM Repair', shortLabel: '−RMA',
+    value: rmaOut, base: running - rmaOut, delta: -rmaOut,
+    type: 'rma-out', fill: '#ef4444',
+  });
+  running -= rmaOut;
+
+  // 5. +RMA Return
+  segments.push({
+    label: '+RMA Return', shortLabel: '+Ret',
+    value: rmaIn, base: running, delta: rmaIn,
+    type: 'add', fill: '#10b981',
+  });
+  running += rmaIn;
+
+  // 6. Projected
+  const projected = running;
+  segments.push({
+    label: 'Projected', shortLabel: 'Proj',
+    value: projected, base: 0, delta: projected,
+    type: 'total',
+    fill: projected > totalCapacity ? '#f59e0b' : '#6366f1',
+    capacity: totalCapacity,
+  });
+
+  return { segments, projected };
+}
+
+// ── Main Component ──
 export default function CapacityForecast() {
-  const { data: capacityData, loading: capLoading, error: capError, refetch } =
-    useSalesforceData(getCapacity);
-  const { data: assets, loading: assetsLoading } = useSalesforceData(getAssets);
+  const { data: engineData, loading, error, refetch } = useSalesforceData(getCapacityEngine);
 
+  // Scenario variables
+  const [timeHorizon, setTimeHorizon] = useState(90);
+  const [accountFilter, setAccountFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
   const [pipelineConfidence, setPipelineConfidence] = useState(75);
+  const [renewalRate, setRenewalRate] = useState(80);
+  const [oemRepairLag, setOemRepairLag] = useState(14);
+  const [decomBuffer, setDecomBuffer] = useState(30);
 
-  const loading = capLoading || assetsLoading;
-  const error = capError;
+  // UI state
+  const [scenarioOpen, setScenarioOpen] = useState(true);
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [completingId, setCompletingId] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  // Count expiring assets per location (contracts ending within 180 days)
-  const expiringByLocation = useMemo(() => {
-    if (!assets) return {};
+  // Bilateral write-back: complete a repair
+  const handleCompleteRepair = useCallback(async (workOrderId) => {
+    setCompletingId(workOrderId);
+    try {
+      await updateWorkOrderStatus(workOrderId, { status: 'Completed' });
+      setToast({ type: 'success', message: 'Repair completed — capacity restored' });
+      setTimeout(() => setToast(null), 4000);
+      refetch();
+    } catch (err) {
+      setToast({ type: 'error', message: `Failed: ${err.message}` });
+      setTimeout(() => setToast(null), 4000);
+    } finally {
+      setCompletingId(null);
+    }
+  }, [refetch]);
+
+  // Derive unique accounts and regions from data
+  const { allAccounts, allRegions } = useMemo(() => {
+    if (!engineData) return { allAccounts: [], allRegions: [] };
+    const accs = new Set();
+    const regs = new Set();
+    (engineData.facilities || []).forEach((f) => {
+      if (f.region) regs.add(f.region);
+      f.accounts.forEach((a) => accs.add(a));
+    });
+    return { allAccounts: [...accs].sort(), allRegions: [...regs].sort() };
+  }, [engineData]);
+
+  // ── Scenario Engine ──
+  const scenarioResults = useMemo(() => {
+    if (!engineData) return null;
+
+    const horizonDate = computeHorizonDate(timeHorizon);
     const now = new Date();
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() + 180);
 
-    const counts = {};
-    assets.forEach((a) => {
-      if (!a.contractEnd || !a.location) return;
-      const end = new Date(a.contractEnd);
-      if (end >= now && end <= cutoff) {
-        counts[a.location] = (counts[a.location] || 0) + 1;
-      }
+    // Filter facilities by region
+    let facilities = engineData.facilities || [];
+    if (regionFilter !== 'all') {
+      facilities = facilities.filter((f) => f.region === regionFilter);
+    }
+
+    // Filter by account (only show facilities that have this account)
+    if (accountFilter !== 'all') {
+      facilities = facilities.filter((f) => f.accounts.includes(accountFilter));
+    }
+
+    const facilityResults = facilities.map((facility) => {
+      // C_base: current active racks
+      const cBase = facility.activeRacks;
+
+      // S_pipeline · P_win: from forecast projected demand
+      const facForecasts = (engineData.forecasts || []).filter((f) => {
+        const locName = f.locationName || '';
+        return locName.includes(facility.code) || locName === facility.name;
+      });
+      const latestForecast = facForecasts.sort((a, b) =>
+        (b.periodStart || '').localeCompare(a.periodStart || '')
+      )[0];
+      const rawPipeline = latestForecast
+        ? Math.max(0, (latestForecast.projectedDemand || 0) - cBase)
+        : 0;
+      const pipelineWeighted = Math.round(rawPipeline * (pipelineConfidence / 100));
+
+      // A_expiring · (1 - P_renew): contracts expiring within horizon + decomBuffer
+      const expiryWindow = new Date(horizonDate);
+      expiryWindow.setDate(expiryWindow.getDate() + decomBuffer);
+
+      // Find agreements for accounts at this facility
+      const facilityAccountIds = new Set(facility.racks.map((r) => r.accountId).filter(Boolean));
+      const expiringAgreements = (engineData.salesAgreements || []).filter((sa) => {
+        if (!sa.endDate) return false;
+        const end = new Date(sa.endDate);
+        return end >= now && end <= expiryWindow && facilityAccountIds.has(sa.accountId);
+      });
+
+      // Estimate racks at risk from expiring contracts
+      // Count racks belonging to expiring accounts
+      const expiringAccountIds = new Set(expiringAgreements.map((sa) => sa.accountId));
+      const racksAtRisk = facility.racks.filter((r) => expiringAccountIds.has(r.accountId)).length;
+      const capacityFreed = Math.round(racksAtRisk * (1 - renewalRate / 100));
+
+      // RMA_out: work orders removing capacity from this facility
+      const facilityWOs = (engineData.activeWorkOrders || []).filter(
+        (wo) => wo.facilityCode === facility.code
+      );
+      const rmaOutCount = facilityWOs.length;
+
+      // RMA_in: spare pool allocation (proportional to facility size, shifted by lag)
+      const totalSpares = (engineData.sparePool || []).length;
+      const totalFacilities = (engineData.facilities || []).length;
+      // Simple proportional allocation shifted by OEM repair lag vs horizon
+      const lagFactor = Math.max(0, 1 - (oemRepairLag / (typeof timeHorizon === 'number' ? timeHorizon : 90)));
+      const rmaInCount = Math.round((totalSpares / Math.max(1, totalFacilities)) * lagFactor);
+
+      // C_projected
+      const projected = cBase + pipelineWeighted - capacityFreed - rmaOutCount + rmaInCount;
+      const totalCapacity = facility.totalRacks;
+      const headroom = totalCapacity - projected;
+
+      // Build waterfall segments
+      const { segments } = buildWaterfallSegments(
+        cBase, pipelineWeighted, capacityFreed, rmaOutCount, rmaInCount, totalCapacity
+      );
+
+      return {
+        facility,
+        cBase,
+        pipelineWeighted,
+        capacityFreed,
+        expiringAgreements,
+        rmaOut: { count: rmaOutCount, workOrders: facilityWOs },
+        rmaIn: { count: rmaInCount },
+        projected,
+        totalCapacity,
+        headroom,
+        status: projected > totalCapacity ? 'over' : headroom <= 2 ? 'near' : 'available',
+        segments,
+      };
     });
-    return counts;
-  }, [assets]);
 
-  // Build waterfall data for each location and aggregate
-  const { locationWaterfalls, aggregateWaterfall, aggregateSummary } = useMemo(() => {
-    if (!capacityData) return { locationWaterfalls: [], aggregateWaterfall: null, aggregateSummary: null };
-
-    const locations = capacityData.locations || [];
-    const forecast = capacityData.forecast || [];
-
-    const waterfalls = locations.map((loc) => {
-      const expiring = expiringByLocation[loc.name] || 0;
-      const { segments, summary } = buildWaterfallData(loc, forecast, expiring, pipelineConfidence);
-      return { location: loc, segments, summary };
-    });
-
-    // Aggregate across all locations
-    const aggBase = waterfalls.reduce((s, w) => s + w.summary.currentBase, 0);
-    const aggPipeline = waterfalls.reduce((s, w) => s + w.summary.weightedPipeline, 0);
-    const aggExpiring = waterfalls.reduce((s, w) => s + w.summary.expiring, 0);
-    const aggProjected = aggBase + aggPipeline - aggExpiring;
-    const aggCapacity = waterfalls.reduce((s, w) => s + w.summary.totalCapacity, 0);
-
-    const aggRunningAfterPipeline = aggBase + aggPipeline;
-    const aggSegments = [
-      { label: 'Current Base', value: aggBase, base: 0, delta: aggBase, type: 'base', fill: '#009999' },
-      { label: `+Pipeline (${pipelineConfidence}%)`, value: aggPipeline, base: aggBase, delta: aggPipeline, type: 'add', fill: '#22c55e' },
-      { label: '−Expiring', value: aggExpiring, base: aggProjected, delta: -aggExpiring, type: 'subtract', fill: '#f97316' },
-      { label: 'Projected', value: aggProjected, base: 0, delta: aggProjected, type: 'total', fill: aggProjected > aggCapacity ? '#f59e0b' : '#6366f1', capacity: aggCapacity },
-    ];
+    // Aggregate
+    const aggBase = facilityResults.reduce((s, r) => s + r.cBase, 0);
+    const aggPipeline = facilityResults.reduce((s, r) => s + r.pipelineWeighted, 0);
+    const aggExpiring = facilityResults.reduce((s, r) => s + r.capacityFreed, 0);
+    const aggRmaOut = facilityResults.reduce((s, r) => s + r.rmaOut.count, 0);
+    const aggRmaIn = facilityResults.reduce((s, r) => s + r.rmaIn.count, 0);
+    const aggCapacity = facilityResults.reduce((s, r) => s + r.totalCapacity, 0);
+    const { segments: aggSegments, projected: aggProjected } = buildWaterfallSegments(
+      aggBase, aggPipeline, aggExpiring, aggRmaOut, aggRmaIn, aggCapacity
+    );
 
     return {
-      locationWaterfalls: waterfalls,
-      aggregateWaterfall: aggSegments,
-      aggregateSummary: {
-        currentBase: aggBase,
-        weightedPipeline: aggPipeline,
+      facilities: facilityResults,
+      aggregate: {
+        cBase: aggBase,
+        pipeline: aggPipeline,
         expiring: aggExpiring,
+        rmaOut: aggRmaOut,
+        rmaIn: aggRmaIn,
         projected: aggProjected,
         totalCapacity: aggCapacity,
         headroom: aggCapacity - aggProjected,
+        segments: aggSegments,
       },
     };
-  }, [capacityData, expiringByLocation, pipelineConfidence]);
+  }, [engineData, timeHorizon, accountFilter, regionFilter, pipelineConfidence, renewalRate, oemRepairLag, decomBuffer]);
 
+  // ── Render ──
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
         <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Forecast Data</h3>
         <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
-        <button
-          onClick={refetch}
-          className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
-        >
+        <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
           Retry
         </button>
       </div>
@@ -317,12 +552,9 @@ export default function CapacityForecast() {
     return (
       <div className="space-y-6">
         <div className="skeleton w-48 h-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="metric-card">
-              <div className="skeleton w-20 h-8 mb-2" />
-              <div className="skeleton w-28 h-4" />
-            </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="metric-card"><div className="skeleton w-16 h-8 mb-2" /><div className="skeleton w-24 h-3" /></div>
           ))}
         </div>
         <div className="skeleton w-full h-80" />
@@ -330,114 +562,195 @@ export default function CapacityForecast() {
     );
   }
 
+  const agg = scenarioResults?.aggregate;
+  const facilityResults = scenarioResults?.facilities || [];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 animate-in slide-in-from-top
+          ${toast.type === 'success' ? 'bg-emerald-900/90 text-emerald-300 border border-emerald-800' : 'bg-red-900/90 text-red-300 border border-red-800'}`}>
+          {toast.type === 'success' ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <TrendingUp size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Capacity Forecast</h1>
+            <h1 className="text-lg font-bold text-white">Capacity Forecasting Engine</h1>
             <p className="text-xs text-gray-500">
-              Waterfall analysis — current base + weighted pipeline − expiring contracts
+              Multi-variable scenario planner &mdash; C<sub>proj</sub> = C<sub>base</sub> + &Sigma;Pipeline &minus; Expiring &minus; RMA<sub>out</sub> + RMA<sub>in</sub>
             </p>
           </div>
         </div>
+        <button onClick={refetch} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 border border-surface-border rounded-md hover:bg-surface-card transition-colors">
+          <RefreshCw size={12} /> Refresh
+        </button>
       </div>
 
-      {/* Pipeline Confidence Slider */}
+      {/* Global Controls Bar */}
       <div className="section-card">
-        <div className="section-card-header">
+        <div className="section-card-body py-3">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Time Horizon */}
+            <div className="flex items-center gap-2">
+              <Calendar size={12} className="text-gray-500" />
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horizon</span>
+              <div className="flex rounded-md border border-surface-border overflow-hidden">
+                {[30, 60, 90, 'Q3', 'Q4'].map((h) => (
+                  <button
+                    key={h}
+                    onClick={() => setTimeHorizon(h)}
+                    className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                      timeHorizon === h
+                        ? 'bg-siemens-teal/20 text-siemens-accent border-r border-surface-border'
+                        : 'text-gray-500 hover:text-gray-300 border-r border-surface-border last:border-r-0'
+                    }`}
+                  >
+                    {horizonLabel(h)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-5 w-px bg-surface-border" />
+
+            {/* Account Filter */}
+            <div className="flex items-center gap-2">
+              <Filter size={12} className="text-gray-500" />
+              <select
+                value={accountFilter}
+                onChange={(e) => setAccountFilter(e.target.value)}
+                className="text-[10px] border border-surface-border rounded-md px-2 py-1 bg-surface-card text-gray-300 focus:outline-none focus:ring-1 focus:ring-siemens-teal/30"
+              >
+                <option value="all">All Accounts</option>
+                {allAccounts.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+
+            {/* Region Filter */}
+            <div className="flex items-center gap-2">
+              <MapPin size={12} className="text-gray-500" />
+              <div className="flex rounded-md border border-surface-border overflow-hidden">
+                {['all', ...allRegions].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRegionFilter(r)}
+                    className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                      regionFilter === r
+                        ? 'bg-siemens-teal/20 text-siemens-accent'
+                        : 'text-gray-500 hover:text-gray-300'
+                    } border-r border-surface-border last:border-r-0`}
+                  >
+                    {r === 'all' ? 'All' : r}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scenario Modeling Drawer */}
+      <div className="section-card">
+        <div
+          className="section-card-header cursor-pointer"
+          onClick={() => setScenarioOpen(!scenarioOpen)}
+        >
           <div className="flex items-center gap-2">
             <Sliders size={14} className="text-siemens-accent" />
             <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
-              What-If: Pipeline Confidence
+              Scenario Modeling
             </h2>
           </div>
-          <span className="text-sm font-bold text-siemens-accent font-mono">{pipelineConfidence}%</span>
-        </div>
-        <div className="section-card-body">
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold shrink-0">0%</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={pipelineConfidence}
-              onChange={(e) => setPipelineConfidence(Number(e.target.value))}
-              className="w-full h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:bg-siemens-teal [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(0,153,153,0.5)]
-                [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-siemens-teal
-                [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-            />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold shrink-0">100%</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-gray-500">
+              {pipelineConfidence}% pipe &middot; {renewalRate}% renew &middot; +{oemRepairLag}d lag &middot; +{decomBuffer}d buffer
+            </span>
+            {scenarioOpen ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
           </div>
-          <p className="text-[10px] text-gray-600 mt-2">
-            Adjust to model different pipeline conversion scenarios. Lower values reflect conservative estimates; higher values assume most pipeline orders close.
-          </p>
         </div>
+        {scenarioOpen && (
+          <div className="section-card-body space-y-3">
+            <ScenarioSlider
+              label="Pipeline Conf." value={pipelineConfidence} onChange={setPipelineConfidence}
+              min={0} max={100} step={5} unit="%" icon={TrendingUp} />
+            <ScenarioSlider
+              label="Renewal Rate" value={renewalRate} onChange={setRenewalRate}
+              min={0} max={100} step={5} unit="%" icon={Shield} />
+            <ScenarioSlider
+              label="OEM Repair Lag" value={oemRepairLag} onChange={setOemRepairLag}
+              min={0} max={60} step={1} unit="days" icon={Clock} />
+            <ScenarioSlider
+              label="Decom Buffer" value={decomBuffer} onChange={setDecomBuffer}
+              min={0} max={90} step={5} unit="days" icon={Calendar} />
+            <p className="text-[10px] text-gray-600 pt-1">
+              Adjust levers to model different scenarios. Changes apply instantly across all charts.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Summary Cards */}
-      {aggregateSummary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Aggregate Metrics Cards */}
+      {agg && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="metric-card relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                Current Base
-              </span>
-              <div className="text-2xl font-bold text-white mt-1 flex items-center gap-2">
-                {aggregateSummary.currentBase}
-                <span className="text-xs text-gray-500 font-normal">racks</span>
-              </div>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Base</span>
+              <div className="text-xl font-bold text-white mt-0.5">{agg.cBase}</div>
+              <div className="text-[9px] text-gray-600">deployed racks</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-emerald-500" />
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                +Pipeline ({pipelineConfidence}%)
-              </span>
-              <div className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-2">
-                +{aggregateSummary.weightedPipeline}
-                <ArrowUpRight size={16} />
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">+Pipeline</span>
+              <div className="text-xl font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                +{agg.pipeline} <ArrowUpRight size={14} />
               </div>
+              <div className="text-[9px] text-gray-600">{pipelineConfidence}% confidence</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-orange-500" />
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-orange-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                −Expiring
-              </span>
-              <div className="text-2xl font-bold text-orange-400 mt-1 flex items-center gap-2">
-                −{aggregateSummary.expiring}
-                <ArrowDownRight size={16} />
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">−Expiring</span>
+              <div className="text-xl font-bold text-orange-400 mt-0.5 flex items-center gap-1">
+                −{agg.expiring} <ArrowDownRight size={14} />
               </div>
+              <div className="text-[9px] text-gray-600">{renewalRate}% renew</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
-            <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl ${
-              aggregateSummary.headroom < 0 ? 'bg-amber-500' : 'bg-indigo-500'
-            }`} />
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-red-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                Projected / Capacity
-              </span>
-              <div className={`text-2xl font-bold mt-1 flex items-center gap-2 ${
-                aggregateSummary.headroom < 0 ? 'text-amber-400' : 'text-indigo-400'
-              }`}>
-                {aggregateSummary.projected}
-                <span className="text-xs text-gray-500 font-normal">/ {aggregateSummary.totalCapacity}</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">−OEM Repair</span>
+              <div className="text-xl font-bold text-red-400 mt-0.5">−{agg.rmaOut}</div>
+              <div className="text-[9px] text-gray-600">at manufacturer</div>
+            </div>
+          </div>
+          <div className="metric-card relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
+            <div className="relative">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">+RMA Return</span>
+              <div className="text-xl font-bold text-emerald-400 mt-0.5">+{agg.rmaIn}</div>
+              <div className="text-[9px] text-gray-600">spare pool</div>
+            </div>
+          </div>
+          <div className="metric-card relative overflow-hidden">
+            <div className={`absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl ${agg.headroom < 0 ? 'bg-amber-500' : 'bg-indigo-500'}`} />
+            <div className="relative">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Projected</span>
+              <div className={`text-xl font-bold mt-0.5 ${agg.headroom < 0 ? 'text-amber-400' : 'text-indigo-400'}`}>
+                {agg.projected}
               </div>
-              <div className={`text-xs font-medium mt-0.5 ${
-                aggregateSummary.headroom < 0 ? 'text-orange-400' : 'text-emerald-400'
-              }`}>
-                {aggregateSummary.headroom >= 0 ? '+' : ''}{aggregateSummary.headroom} headroom
+              <div className={`text-[9px] font-medium ${agg.headroom < 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                {agg.headroom >= 0 ? '+' : ''}{agg.headroom} headroom
               </div>
             </div>
           </div>
@@ -445,80 +758,57 @@ export default function CapacityForecast() {
       )}
 
       {/* Aggregate Waterfall Chart */}
-      {aggregateWaterfall && (
+      {agg && (
         <div className="section-card">
           <div className="section-card-header">
             <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
-              Aggregate Rack Forecast — All Facilities
+              Aggregate Rack Forecast &mdash; {facilityResults.length} Facilities
             </h2>
             <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-              {locationWaterfalls.length} locations
+              {horizonLabel(timeHorizon)} horizon
             </span>
           </div>
           <div className="section-card-body">
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
-                data={aggregateWaterfall.map((s) => ({
-                  ...s,
-                  invisibleBase: s.base,
-                  visibleValue: s.value,
-                }))}
+                data={agg.segments.map((s) => ({ ...s, invisibleBase: s.base, visibleValue: s.value }))}
                 margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
               >
                 <WaterfallDefs />
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={{ stroke: '#1e293b' }}
-                  tickLine={false}
-                />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                  axisLine={{ stroke: '#1e293b' }}
-                  tickLine={false}
-                  domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, aggregateSummary.totalCapacity) * 1.1]}
+                  tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false}
+                  domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, agg.totalCapacity) * 1.1]}
                   label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#64748b' } }}
                 />
                 <Tooltip content={<WaterfallTooltip />} />
-                {aggregateSummary.totalCapacity > 0 && (
-                  <ReferenceLine
-                    y={aggregateSummary.totalCapacity}
-                    stroke="#475569"
-                    strokeDasharray="6 4"
-                    label={{
-                      value: `Total Capacity: ${aggregateSummary.totalCapacity}`,
-                      position: 'top',
-                      style: { fontSize: 11, fill: '#64748b' },
-                    }}
-                  />
+                {agg.totalCapacity > 0 && (
+                  <ReferenceLine y={agg.totalCapacity} stroke="#475569" strokeDasharray="6 4"
+                    label={{ value: `Total Capacity: ${agg.totalCapacity}`, position: 'top', style: { fontSize: 11, fill: '#64748b' } }} />
                 )}
                 <ReferenceLine y={0} stroke="#334155" />
                 <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
-                <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={60} shape={<WaterfallBar />}>
-                  {aggregateWaterfall.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.fill} />
-                  ))}
+                <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={56} shape={<WaterfallBar />}>
+                  {agg.segments.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-3 text-[10px] text-gray-400">
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#009999]" /> Base</div>
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#22c55e]" /> +Pipeline</div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-[#009999]" /> Current Base
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 1.5px, rgba(0,0,0,0.25) 1.5px, rgba(0,0,0,0.25) 2.5px)' }} /> −Expiring
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-[#22c55e]" /> + Pipeline
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#ef4444]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 1.5px, rgba(0,0,0,0.25) 1.5px, rgba(0,0,0,0.25) 2.5px)' }} /> −OEM Repair
               </div>
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#10b981]" /> +RMA Return</div>
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#6366f1]" /> Projected</div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-[#f97316]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 3px)' }} /> − Expiring
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-[#6366f1]" /> Projected
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 border-t-2 border-dashed border-gray-500 inline-block" style={{ width: 12 }} /> Capacity
+                <span className="w-3 h-0.5 border-t-2 border-dashed border-gray-500 inline-block" /> Capacity
               </div>
             </div>
           </div>
@@ -526,57 +816,70 @@ export default function CapacityForecast() {
       )}
 
       {/* Per-Facility Grid */}
-      {locationWaterfalls.length > 0 && (
+      {facilityResults.length > 0 && (
         <div>
           <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.1em] mb-4">
             Per-Facility Forecast
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {locationWaterfalls.map(({ location, segments, summary }) => {
-              const atRisk = summary.headroom < 0;
-              const nearCapacity = summary.headroom >= 0 && summary.headroom <= 5;
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {facilityResults.map((result) => {
+              const { facility, segments, headroom, status, cBase, pipelineWeighted, capacityFreed, rmaOut, rmaIn, projected, totalCapacity } = result;
               return (
-                <div key={location.id || location.name} className="section-card">
+                <div
+                  key={facility.id}
+                  className="section-card cursor-pointer hover:border-siemens-accent/30 transition-colors"
+                  onClick={() => setSelectedFacility(result)}
+                >
                   <div className="section-card-header">
                     <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-siemens-accent" />
-                      <h3 className="text-xs font-semibold text-gray-200">
-                        {(location.name || '--').replace('Siemens ', '')}
-                      </h3>
+                      <MapPin size={12} className="text-siemens-accent" />
+                      <h3 className="text-xs font-semibold text-gray-200">{facility.code}</h3>
+                      <span className="text-[9px] text-gray-600">{facility.region}</span>
                     </div>
-                    {atRisk ? (
-                      <span className="badge badge-red">Over Capacity</span>
-                    ) : nearCapacity ? (
-                      <span className="badge badge-yellow">Near Capacity</span>
+                    {status === 'over' ? (
+                      <span className="badge badge-red">Over</span>
+                    ) : status === 'near' ? (
+                      <span className="badge badge-yellow">Near</span>
                     ) : (
-                      <span className="badge badge-green">Headroom +{summary.headroom}</span>
+                      <span className="badge badge-green">+{headroom}</span>
                     )}
                   </div>
-                  <div className="section-card-body">
-                    <MiniWaterfall
-                      segments={segments}
-                      totalCapacity={summary.totalCapacity}
-                    />
-                    {/* Quick stats */}
-                    <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-surface-border">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-white">{summary.currentBase}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Base</div>
+                  <div className="section-card-body pt-0">
+                    <MiniWaterfall segments={segments} totalCapacity={totalCapacity} height={120} />
+                    <div className="grid grid-cols-6 gap-1 mt-2 pt-2 border-t border-surface-border text-center">
+                      <div>
+                        <div className="text-sm font-bold text-white">{cBase}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">Base</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-emerald-400">+{summary.weightedPipeline}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Pipeline</div>
+                      <div>
+                        <div className="text-sm font-bold text-emerald-400">+{pipelineWeighted}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">Pipe</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-orange-400">−{summary.expiring}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Expiring</div>
+                      <div>
+                        <div className="text-sm font-bold text-orange-400">−{capacityFreed}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">Exp</div>
                       </div>
-                      <div className="text-center">
-                        <div className={`text-lg font-bold ${atRisk ? 'text-amber-400' : 'text-indigo-400'}`}>
-                          {summary.projected}
-                        </div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Projected</div>
+                      <div>
+                        <div className="text-sm font-bold text-red-400">−{rmaOut.count}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">RMA</div>
                       </div>
+                      <div>
+                        <div className="text-sm font-bold text-emerald-400">+{rmaIn.count}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">Ret</div>
+                      </div>
+                      <div>
+                        <div className={`text-sm font-bold ${status === 'over' ? 'text-amber-400' : 'text-indigo-400'}`}>{projected}</div>
+                        <div className="text-[8px] text-gray-600 uppercase">Proj</div>
+                      </div>
+                    </div>
+                    {/* Accounts */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {facility.accounts.slice(0, 4).map((a) => (
+                        <span key={a} className="text-[8px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">{a}</span>
+                      ))}
+                      {facility.accounts.length > 4 && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">+{facility.accounts.length - 4}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -584,6 +887,17 @@ export default function CapacityForecast() {
             })}
           </div>
         </div>
+      )}
+
+      {/* Facility Detail Modal */}
+      {selectedFacility && (
+        <FacilityModal
+          facility={selectedFacility.facility}
+          workOrders={engineData?.activeWorkOrders || []}
+          onClose={() => setSelectedFacility(null)}
+          onCompleteRepair={handleCompleteRepair}
+          completingId={completingId}
+        />
       )}
     </div>
   );

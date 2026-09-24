@@ -265,6 +265,196 @@ function transformCapacity(raw) {
 }
 
 /**
+ * Capacity Engine: Returns consolidated fleet + contract + repair data
+ * for the multi-variable scenario planning engine.
+ *
+ * Apex returns: { facilities, racks, blades, salesAgreements, activeWorkOrders, sparePool, forecasts }
+ *
+ * Transform builds a hierarchical structure:
+ *   facilities[].{id, name, code, region, totalRacks, racks[], bladeCount, accounts[]}
+ *   salesAgreements[].{id, name, accountName, startDate, endDate, status, daysUntilExpiry}
+ *   activeWorkOrders[].{id, workOrderNumber, ..., facilityCode}
+ *   sparePool[].{id, name, serialNumber, status}
+ *   forecasts[].{location, quarter, totalRacks, occupiedRacks, projectedDemand}
+ */
+
+const FACILITY_REGIONS = {
+  SJ1: 'AMER', AUS1: 'AMER',
+  HSC1: 'APAC', SEL1: 'APAC', BLR1: 'APAC',
+  MUC1: 'EMEA',
+};
+
+function extractFacilityCode(name) {
+  if (!name) return '';
+  // Match pattern like "FAC-SJ1" or "Siemens SJ1" or just "SJ1"
+  const match = name.match(/(?:FAC-)?([A-Z]{2,4}\d+)/i);
+  return match ? match[1].toUpperCase() : name;
+}
+
+function transformCapacityEngine(raw) {
+  if (!raw) return null;
+
+  const rawFacilities = raw.facilities || [];
+  const rawRacks = raw.racks || [];
+  const rawBlades = raw.blades || [];
+  const rawAgreements = raw.salesAgreements || [];
+  const rawWorkOrders = raw.activeWorkOrders || [];
+  const rawSpares = raw.sparePool || [];
+  const rawForecasts = raw.forecasts || [];
+
+  // Build facility → rack → blade hierarchy
+  const facilities = rawFacilities.map((f) => {
+    const code = extractFacilityCode(f.Name);
+    const region = FACILITY_REGIONS[code] || 'OTHER';
+
+    // Racks belonging to this facility
+    const facilityRacks = rawRacks
+      .filter((r) => r.ParentAssetId === f.Id)
+      .map((r) => {
+        const rackBlades = rawBlades.filter((b) => b.ParentAssetId === r.Id);
+        return {
+          id: r.Id,
+          name: r.Name,
+          serialNumber: r.SerialNumber,
+          status: r.Status,
+          rackPosition: r.RackPosition,
+          accountName: r.AccountName,
+          accountId: r.AccountId,
+          powerDraw: r.PowerDrawKW,
+          utilization: r.UtilizationPct,
+          bladeCount: rackBlades.length,
+          blades: rackBlades.map((b) => ({
+            id: b.Id,
+            name: b.Name,
+            serialNumber: b.SerialNumber,
+            status: b.Status,
+            accountName: b.AccountName,
+            productName: b.ProductName,
+          })),
+        };
+      });
+
+    // Unique accounts at this facility
+    const accountSet = new Set();
+    facilityRacks.forEach((r) => {
+      if (r.accountName) accountSet.add(r.accountName);
+    });
+
+    return {
+      id: f.Id,
+      name: f.Name,
+      code,
+      region,
+      status: f.Status,
+      totalRacks: facilityRacks.length,
+      activeRacks: facilityRacks.filter((r) => r.status === 'Active' || r.status === 'Installed').length,
+      racks: facilityRacks,
+      bladeCount: facilityRacks.reduce((sum, r) => sum + r.bladeCount, 0),
+      accounts: [...accountSet].sort(),
+    };
+  });
+
+  // Sales agreements with expiry calculation
+  const now = new Date();
+  const salesAgreements = rawAgreements.map((sa) => {
+    const endDate = sa.EndDate ? new Date(sa.EndDate) : null;
+    const daysUntilExpiry = endDate ? Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) : null;
+    return {
+      id: sa.Id,
+      name: sa.Name,
+      accountId: sa.AccountId,
+      accountName: sa.AccountName,
+      startDate: sa.StartDate,
+      endDate: sa.EndDate,
+      status: sa.Status,
+      daysUntilExpiry,
+    };
+  });
+
+  // Work orders with facility resolution
+  const activeWorkOrders = rawWorkOrders.map((wo) => {
+    // Resolve facility from asset parent chain (Blade → Rack → Facility)
+    let facilityCode = '';
+    let facilityName = wo.FacilityName || '';
+    if (facilityName) {
+      facilityCode = extractFacilityCode(facilityName);
+    } else if (wo.RackName) {
+      // Try to find facility from rack's parent
+      const rack = rawRacks.find((r) => r.Name === wo.RackName);
+      if (rack) {
+        const fac = rawFacilities.find((f) => f.Id === rack.ParentAssetId);
+        if (fac) {
+          facilityName = fac.Name;
+          facilityCode = extractFacilityCode(fac.Name);
+        }
+      }
+    } else if (wo.AssetName) {
+      // Derive from asset naming convention (e.g. VS-SJ1-005 → SJ1)
+      const match = wo.AssetName.match(/-([A-Z]{2,4}\d+)-/i);
+      if (match) facilityCode = match[1].toUpperCase();
+    }
+
+    return {
+      id: wo.Id,
+      workOrderNumber: wo.WorkOrderNumber,
+      subject: wo.Subject,
+      status: wo.Status,
+      priority: wo.Priority,
+      accountName: wo.AccountName,
+      accountId: wo.AccountId,
+      assetId: wo.AssetId,
+      assetName: wo.AssetName,
+      assetSerialNumber: wo.AssetSerialNumber,
+      rackName: wo.RackName,
+      facilityName,
+      facilityCode,
+      rmaNumber: wo.RMANumber,
+      vendor: wo.Vendor,
+      estimatedRepairCost: wo.EstimatedRepairCost,
+      createdDate: wo.CreatedDate,
+    };
+  });
+
+  // Spare pool
+  const sparePool = rawSpares.map((sp) => ({
+    id: sp.Id,
+    name: sp.Name,
+    serialNumber: sp.SerialNumber,
+    status: sp.Status,
+  }));
+
+  // Forecasts
+  const forecasts = rawForecasts.map((f) => {
+    let quarter = '--';
+    if (f.PeriodStart) {
+      const d = new Date(f.PeriodStart);
+      const q = Math.ceil((d.getMonth() + 1) / 3);
+      quarter = `Q${q} ${d.getFullYear()}`;
+    }
+    return {
+      id: f.Id,
+      locationId: f.LocationId,
+      locationName: f.LocationName || '--',
+      periodStart: f.PeriodStart,
+      periodEnd: f.PeriodEnd,
+      quarter,
+      totalRacks: f.TotalRacks || 0,
+      occupiedRacks: f.OccupiedRacks || 0,
+      projectedDemand: f.ProjectedDemand || 0,
+      source: f.Source,
+    };
+  });
+
+  return {
+    facilities,
+    salesAgreements,
+    activeWorkOrders,
+    sparePool,
+    forecasts,
+  };
+}
+
+/**
  * Telemetry: Apex returns PascalCase array → React expects camelCase
  *
  * Apex: Id, AssetId, AssetName, Timestamp, CPUUtilization, MemoryUtilization,
@@ -492,6 +682,16 @@ export async function getCapacity(locationId) {
   const path = locationId ? `/capacity?locationId=${locationId}` : '/capacity';
   const raw = await request(path);
   return transformCapacity(raw);
+}
+
+/**
+ * Get capacity engine data: consolidated fleet hierarchy, contracts,
+ * work orders, spare pool, and forecasts for scenario planning.
+ * @returns {Object} { facilities, salesAgreements, activeWorkOrders, sparePool, forecasts }
+ */
+export async function getCapacityEngine() {
+  const raw = await request('/capacity-engine');
+  return transformCapacityEngine(raw);
 }
 
 /**
@@ -810,6 +1010,7 @@ export default {
   getDashboardSummary,
   getAssets,
   getCapacity,
+  getCapacityEngine,
   getTelemetry,
   getFinancials,
   getWorkOrders,
