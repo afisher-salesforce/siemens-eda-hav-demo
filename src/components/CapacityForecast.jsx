@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   TrendingUp,
   AlertTriangle,
@@ -369,6 +370,14 @@ function ProjectionFormula() {
           </div>
         </div>
       </div>
+
+      {/* Cross-reference to vignette */}
+      <p className="text-xs text-th-muted italic">
+        For the full business context behind this model, see the{' '}
+        <Link to="/vignettes/capacity" className="text-siemens-accent hover:underline font-medium not-italic">
+          Capacity Vignette
+        </Link>.
+      </p>
     </div>
   );
 }
