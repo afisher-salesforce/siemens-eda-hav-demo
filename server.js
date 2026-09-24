@@ -47,6 +47,22 @@ function buildAgentSessionBody(reqBody, instanceUrl) {
   };
 }
 
+// Normalize the message-send body for the Agent API. The frontend sends
+// { message: "text" }, but /sessions/{id}/messages requires a structured
+// message: { message: { sequenceId, type: 'Text', text } }. Accept either the
+// raw string form or an already-structured body and coerce to the API shape.
+let agentMsgSequence = 0;
+function buildAgentMessageBody(reqBody) {
+  const m = reqBody?.message;
+  // Already structured (has a text field) — pass through, ensure sequenceId.
+  if (m && typeof m === 'object' && typeof m.text === 'string') {
+    return { message: { sequenceId: m.sequenceId ?? ++agentMsgSequence, type: m.type || 'Text', text: m.text } };
+  }
+  // String form from the frontend.
+  const text = typeof m === 'string' ? m : typeof reqBody?.text === 'string' ? reqBody.text : '';
+  return { message: { sequenceId: ++agentMsgSequence, type: 'Text', text } };
+}
+
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
   accessToken: null,
@@ -164,6 +180,36 @@ app.get('/api/debug/agent-test', async (_req, res) => {
     const text = await sfResponse.text();
     console.log(`[Debug] Agent API response: status=${sfResponse.status} body=${text.slice(0, 500)}`);
 
+    // Full round-trip: if the session was created, send a real message using
+    // the structured body the API requires and report the agent's reply. This
+    // proves the message-send path end to end, not just session creation.
+    let messageTest = null;
+    try {
+      const created = JSON.parse(text);
+      const sid = created.sessionId || created.id;
+      if (sid) {
+        const msgUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sid}/messages`;
+        const msgRes = await fetch(msgUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify(buildAgentMessageBody({ message: 'What can you help me with?' })),
+        });
+        const msgText = await msgRes.text();
+        messageTest = { status: msgRes.status, contentType: msgRes.headers.get('content-type'), body: msgText.slice(0, 800) };
+        // Best-effort session cleanup.
+        fetch(`${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sid}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).catch(() => {});
+      }
+    } catch (e) {
+      messageTest = { error: `${e.name}: ${e.message}` };
+    }
+
     // Session-body variants: the current body sends bypassUser:true, which
     // requires the agent to have an assigned user; without one the API returns
     // "Invalid user ID provided on start session". Try alternatives to find the
@@ -247,6 +293,7 @@ app.get('/api/debug/agent-test', async (_req, res) => {
       status: sfResponse.status,
       headers: Object.fromEntries(sfResponse.headers.entries()),
       body: text.slice(0, 1000),
+      messageTest,
       variantResults,
       egress,
     });
@@ -393,7 +440,7 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json, text/event-stream',
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(buildAgentMessageBody(req.body)),
     });
 
     const contentType = sfResponse.headers.get('content-type') || '';
@@ -523,7 +570,7 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json, text/event-stream',
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(buildAgentMessageBody(req.body)),
     });
 
     const contentType = sfResponse.headers.get('content-type') || '';
