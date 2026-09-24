@@ -12,15 +12,14 @@ const PORT = process.env.PORT || 3001;
 // ─── Salesforce OAuth Configuration ──────────────────────────────────────────
 const SF_CLIENT_ID = process.env.SF_CLIENT_ID;
 const SF_CLIENT_SECRET = process.env.SF_CLIENT_SECRET;
-const SF_INSTANCE_URL = process.env.SF_INSTANCE_URL;
+const SF_INSTANCE_URL = (process.env.SF_INSTANCE_URL || '').replace(/\/+$/, '');
 // Client credentials flow requires My Domain URL, not login.salesforce.com
 const SF_LOGIN_URL = process.env.SF_LOGIN_URL || SF_INSTANCE_URL;
 
 // ─── Agentforce Agent Configuration ─────────────────────────────────────────
 const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
 const SF_TRADE_AGENT_ID = process.env.SF_TRADE_AGENT_ID || '0XxWt000000wkaLKAQ'; // Trade Compliance Sentinel
-const AGENT_API_BASE = '/einstein/ai-agent/v1';
-const AGENT_API_HOST = 'https://api.salesforce.com';
+const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
 
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
@@ -171,18 +170,9 @@ app.get('/api/agent/config', (_req, res) => {
 app.post('/api/agent/sessions', async (req, res) => {
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
 
     console.log(`[Agent API] Creating session for agent ${SF_AGENT_ID}`);
-
-    // Merge instanceConfig.endpoint into the request body
-    const body = {
-      ...(req.body || {}),
-      instanceConfig: {
-        endpoint: SF_INSTANCE_URL,
-        ...(req.body?.instanceConfig || {}),
-      },
-    };
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -191,10 +181,22 @@ app.post('/api/agent/sessions', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(req.body || {}),
     });
 
-    const data = await sfResponse.json();
+    const text = await sfResponse.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('[Agent API] Non-JSON response:', sfResponse.status, text.slice(0, 500));
+      return res.status(sfResponse.status || 502).json({
+        error: 'Invalid response from Agent API',
+        status: sfResponse.status,
+        body: text.slice(0, 200),
+      });
+    }
+
     if (!sfResponse.ok) {
       console.error('[Agent API] Session creation failed:', sfResponse.status, data);
       return res.status(sfResponse.status).json(data);
@@ -217,7 +219,7 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Agent API] Sending message to session ${sessionId}`);
 
@@ -265,7 +267,7 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -298,18 +300,9 @@ app.get('/api/trade-agent/config', (_req, res) => {
 app.post('/api/trade-agent/sessions', async (req, res) => {
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
 
     console.log(`[Trade Agent API] Creating session for agent ${SF_TRADE_AGENT_ID}`);
-
-    // Merge instanceConfig.endpoint into the request body
-    const body = {
-      ...(req.body || {}),
-      instanceConfig: {
-        endpoint: SF_INSTANCE_URL,
-        ...(req.body?.instanceConfig || {}),
-      },
-    };
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -318,10 +311,22 @@ app.post('/api/trade-agent/sessions', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(req.body || {}),
     });
 
-    const data = await sfResponse.json();
+    const text = await sfResponse.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('[Trade Agent API] Non-JSON response:', sfResponse.status, text.slice(0, 500));
+      return res.status(sfResponse.status || 502).json({
+        error: 'Invalid response from Agent API',
+        status: sfResponse.status,
+        body: text.slice(0, 200),
+      });
+    }
+
     if (!sfResponse.ok) {
       console.error('[Trade Agent API] Session creation failed:', sfResponse.status, data);
       return res.status(sfResponse.status).json(data);
@@ -344,7 +349,7 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Trade Agent API] Sending message to session ${sessionId}`);
 
@@ -392,7 +397,7 @@ app.delete('/api/trade-agent/sessions/:sessionId', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -778,7 +783,7 @@ app.listen(PORT, () => {
   console.log(`  Port:          ${PORT}`);
   console.log(`  SF Instance:   ${SF_INSTANCE_URL || '(not configured)'}`);
   console.log(`  SF Login URL:  ${SF_LOGIN_URL}`);
-  console.log(`  Agent API:     ${AGENT_API_HOST}${AGENT_API_BASE}`);
+  console.log(`  Agent API:     ${SF_INSTANCE_URL}${AGENT_API_BASE}`);
   console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}`);
   console.log(`  HAV Agent:     ${SF_AGENT_ID}`);
   console.log(`  Trade Agent:   ${SF_TRADE_AGENT_ID}`);
