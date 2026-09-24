@@ -19,7 +19,8 @@ const SF_LOGIN_URL = process.env.SF_LOGIN_URL || SF_INSTANCE_URL;
 // ─── Agentforce Agent Configuration ─────────────────────────────────────────
 const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
 const SF_TRADE_AGENT_ID = process.env.SF_TRADE_AGENT_ID || '0XxWt000000wkaLKAQ'; // Trade Compliance Sentinel
-const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
+const AGENT_API_BASE = '/einstein/ai-agent/v1';
+const AGENT_API_HOST = 'https://api.salesforce.com';
 
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
@@ -170,9 +171,18 @@ app.get('/api/agent/config', (_req, res) => {
 app.post('/api/agent/sessions', async (req, res) => {
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
 
     console.log(`[Agent API] Creating session for agent ${SF_AGENT_ID}`);
+
+    // Merge instanceConfig.endpoint into the request body
+    const body = {
+      ...(req.body || {}),
+      instanceConfig: {
+        endpoint: SF_INSTANCE_URL,
+        ...(req.body?.instanceConfig || {}),
+      },
+    };
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -181,7 +191,7 @@ app.post('/api/agent/sessions', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(req.body || {}),
+      body: JSON.stringify(body),
     });
 
     const data = await sfResponse.json();
@@ -207,7 +217,7 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Agent API] Sending message to session ${sessionId}`);
 
@@ -216,7 +226,7 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json, text/event-stream',
       },
       body: JSON.stringify(req.body),
     });
@@ -255,7 +265,7 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -288,9 +298,18 @@ app.get('/api/trade-agent/config', (_req, res) => {
 app.post('/api/trade-agent/sessions', async (req, res) => {
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
 
     console.log(`[Trade Agent API] Creating session for agent ${SF_TRADE_AGENT_ID}`);
+
+    // Merge instanceConfig.endpoint into the request body
+    const body = {
+      ...(req.body || {}),
+      instanceConfig: {
+        endpoint: SF_INSTANCE_URL,
+        ...(req.body?.instanceConfig || {}),
+      },
+    };
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -299,7 +318,7 @@ app.post('/api/trade-agent/sessions', async (req, res) => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(req.body || {}),
+      body: JSON.stringify(body),
     });
 
     const data = await sfResponse.json();
@@ -325,7 +344,7 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Trade Agent API] Sending message to session ${sessionId}`);
 
@@ -334,7 +353,7 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json, text/event-stream',
       },
       body: JSON.stringify(req.body),
     });
@@ -373,7 +392,7 @@ app.delete('/api/trade-agent/sessions/:sessionId', async (req, res) => {
 
   try {
     const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -759,6 +778,7 @@ app.listen(PORT, () => {
   console.log(`  Port:          ${PORT}`);
   console.log(`  SF Instance:   ${SF_INSTANCE_URL || '(not configured)'}`);
   console.log(`  SF Login URL:  ${SF_LOGIN_URL}`);
+  console.log(`  Agent API:     ${AGENT_API_HOST}${AGENT_API_BASE}`);
   console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}`);
   console.log(`  HAV Agent:     ${SF_AGENT_ID}`);
   console.log(`  Trade Agent:   ${SF_TRADE_AGENT_ID}`);

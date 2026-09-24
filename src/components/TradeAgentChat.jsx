@@ -234,12 +234,12 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-5 border-b border-surface-border shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-              <Shield size={16} className="text-amber-400" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--trade-accent-subtle)', border: '1px solid var(--trade-accent-border)' }}>
+              <Shield size={16} style={{ color: 'var(--trade-accent)' }} />
             </div>
             <div>
               <div className="text-sm font-semibold text-th-secondary">Trade Compliance</div>
-              <div className="text-[10px] text-amber-400 uppercase tracking-[0.12em] font-medium">
+              <div className="text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: 'var(--trade-accent)' }}>
                 Sentinel Agent
               </div>
             </div>
@@ -269,8 +269,8 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
           {messages.length === 0 && !initializing ? (
             /* Welcome state */
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5">
-                <Shield size={28} className="text-amber-400" />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: 'var(--trade-accent-subtle)', border: '1px solid var(--trade-accent-border)' }}>
+                <Shield size={28} style={{ color: 'var(--trade-accent)' }} />
               </div>
               <h3 className="text-lg font-semibold text-th-secondary mb-2">
                 Trade Compliance Sentinel
@@ -286,7 +286,10 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
                   <button
                     key={label}
                     onClick={() => handleSuggestion(prompt)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full border border-amber-500/20 text-amber-300/80 bg-amber-500/5 cursor-pointer hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full cursor-pointer transition-colors"
+                    style={{ color: 'var(--trade-pill-text)', backgroundColor: 'var(--trade-pill-bg)', border: '1px solid var(--trade-pill-border)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--trade-accent-subtle)'; e.currentTarget.style.borderColor = 'var(--trade-accent-border)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--trade-pill-bg)'; e.currentTarget.style.borderColor = 'var(--trade-pill-border)'; }}
                   >
                     <Zap size={10} />
                     {label}
@@ -302,11 +305,12 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
                   <div
                     className={`max-w-[85%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-amber-600 text-white rounded-br-sm'
+                        ? 'text-white rounded-br-sm'
                         : msg.role === 'error'
                         ? 'bg-red-900/30 border border-red-500/30 text-red-300 rounded-bl-sm'
                         : 'bg-surface-card border border-surface-border text-th-secondary rounded-bl-sm'
                     }`}
+                    style={msg.role === 'user' ? { backgroundColor: 'var(--trade-user-bubble)' } : undefined}
                   >
                     {msg.role === 'agent' && !msg.content && (
                       <div className="flex items-center gap-2 text-th-muted">
@@ -344,7 +348,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
 
           {initializing && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 size={20} className="animate-spin text-amber-400 mr-2" />
+              <Loader2 size={20} className="animate-spin mr-2" style={{ color: 'var(--trade-accent)' }} />
               <span className="text-sm text-th-muted">Starting compliance session...</span>
             </div>
           )}
@@ -376,12 +380,18 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
               onChange={(e) => setInput(e.target.value)}
               disabled={loading || initializing}
               placeholder="Ask the Trade Compliance Sentinel..."
-              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-th-secondary placeholder:text-th-faint focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-th-secondary placeholder:text-th-faint focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ '--tw-ring-color': 'var(--trade-focus-ring)' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--trade-focus-border)'; e.currentTarget.style.boxShadow = '0 0 0 1px var(--trade-focus-ring)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
             />
             <button
               type="submit"
               disabled={!input.trim() || loading || initializing}
-              className="p-2.5 rounded-lg bg-amber-600 border border-amber-600 text-white hover:bg-amber-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-lg text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: 'var(--trade-send-btn)', border: '1px solid var(--trade-send-btn)' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = 'var(--trade-send-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--trade-send-btn)'; }}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>

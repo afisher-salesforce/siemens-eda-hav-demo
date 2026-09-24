@@ -31,6 +31,19 @@
     --overlay-hover: rgba(0, 0, 0, 0.03);
     --slider-track: #cbd5e1;
     --nav-tooltip-bg: #ffffff;
+    /* Trade Compliance Sentinel theme */
+    --trade-accent: #7c3aed;
+    --trade-accent-muted: #6d28d9;
+    --trade-accent-subtle: rgba(124, 58, 237, 0.12);
+    --trade-accent-border: rgba(124, 58, 237, 0.25);
+    --trade-pill-text: #6d28d9;
+    --trade-pill-bg: rgba(124, 58, 237, 0.08);
+    --trade-pill-border: rgba(124, 58, 237, 0.20);
+    --trade-user-bubble: #7c3aed;
+    --trade-send-btn: #7c3aed;
+    --trade-send-hover: #6d28d9;
+    --trade-focus-border: rgba(124, 58, 237, 0.50);
+    --trade-focus-ring: rgba(124, 58, 237, 0.25);
   }
 
   /* Dark mode overrides */
@@ -60,6 +73,19 @@
     --overlay-hover: rgba(255, 255, 255, 0.03);
     --slider-track: #374151;
     --nav-tooltip-bg: #1e293b;
+    /* Trade Compliance Sentinel theme (dark) */
+    --trade-accent: #a78bfa;
+    --trade-accent-muted: #8b5cf6;
+    --trade-accent-subtle: rgba(167, 139, 250, 0.12);
+    --trade-accent-border: rgba(167, 139, 250, 0.25);
+    --trade-pill-text: #c4b5fd;
+    --trade-pill-bg: rgba(139, 92, 246, 0.08);
+    --trade-pill-border: rgba(139, 92, 246, 0.22);
+    --trade-user-bubble: #7c3aed;
+    --trade-send-btn: #8b5cf6;
+    --trade-send-hover: #7c3aed;
+    --trade-focus-border: rgba(139, 92, 246, 0.50);
+    --trade-focus-ring: rgba(139, 92, 246, 0.25);
   }
 
   html {
