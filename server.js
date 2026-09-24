@@ -95,6 +95,45 @@ app.get('/api/sf-org-url', (_req, res) => {
   res.json({ url: SF_INSTANCE_URL || null });
 });
 
+// Force token refresh and Agent API diagnostic
+app.get('/api/debug/agent-test', async (_req, res) => {
+  try {
+    // Force fresh token
+    tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
+    const { accessToken, instanceUrl } = await getAccessToken();
+
+    // Test Agent API endpoint
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
+    console.log(`[Debug] Testing Agent API at: ${sfUrl}`);
+
+    const sfResponse = await fetch(sfUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Sfdc-Session': accessToken,
+      },
+      body: JSON.stringify({}),
+    });
+
+    const text = await sfResponse.text();
+    console.log(`[Debug] Agent API response: status=${sfResponse.status} body=${text.slice(0, 500)}`);
+
+    res.json({
+      instanceUrl,
+      agentId: SF_AGENT_ID,
+      tradeAgentId: SF_TRADE_AGENT_ID,
+      sfUrl,
+      status: sfResponse.status,
+      headers: Object.fromEntries(sfResponse.headers.entries()),
+      body: text.slice(0, 1000),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Salesforce API Proxy ────────────────────────────────────────────────────
 // All /api/hav/* requests are forwarded to SF_INSTANCE_URL/services/apexrest/hav/*
 app.all('/api/hav/*', async (req, res) => {
