@@ -24,18 +24,20 @@ const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
   accessToken: null,
+  instanceUrl: null,
   expiresAt: 0,
 };
 
 /**
  * Authenticate to Salesforce using Client Credentials OAuth flow.
  * Caches the token and refreshes 5 minutes before expiry.
+ * Returns { accessToken, instanceUrl } — use instanceUrl for all API calls.
  */
 async function getAccessToken() {
   const now = Date.now();
   // Return cached token if still valid (with 5-minute buffer)
   if (tokenCache.accessToken && tokenCache.expiresAt > now + 5 * 60 * 1000) {
-    return tokenCache.accessToken;
+    return { accessToken: tokenCache.accessToken, instanceUrl: tokenCache.instanceUrl || SF_INSTANCE_URL };
   }
 
   console.log('[SF Auth] Requesting new access token via client_credentials flow...');
@@ -60,14 +62,16 @@ async function getAccessToken() {
     }
 
     const data = await response.json();
+    const instanceUrl = (data.instance_url || SF_INSTANCE_URL).replace(/\/+$/, '');
     tokenCache = {
       accessToken: data.access_token,
+      instanceUrl,
       // Default to 2-hour expiry if not provided
       expiresAt: now + (data.issued_at ? parseInt(data.issued_at) + 7200000 - now : 7200000),
     };
 
-    console.log('[SF Auth] Access token obtained successfully.');
-    return tokenCache.accessToken;
+    console.log(`[SF Auth] Access token obtained. instance_url=${instanceUrl}`);
+    return { accessToken: tokenCache.accessToken, instanceUrl };
   } catch (err) {
     console.error('[SF Auth] Authentication error:', err.message);
     throw err;
@@ -102,11 +106,10 @@ app.all('/api/hav/*', async (req, res) => {
   }
 
   try {
-    const accessToken = await getAccessToken();
+    const { accessToken, instanceUrl } = await getAccessToken();
     // Build the Salesforce URL: /api/hav/dashboard → /services/apexrest/hav/dashboard
     const sfPath = req.originalUrl.replace(/^\/api/, '/services/apexrest');
-    const baseUrl = SF_INSTANCE_URL.replace(/\/+$/, ''); // strip trailing slash
-    const sfUrl = `${baseUrl}${sfPath}`;
+    const sfUrl = `${instanceUrl}${sfPath}`;
 
     console.log(`[SF Proxy] ${req.method} ${sfUrl}`);
 
@@ -151,7 +154,7 @@ app.all('/api/hav/*', async (req, res) => {
 
     // If auth failed, clear cache and return 401
     if (err.message.includes('auth')) {
-      tokenCache = { accessToken: null, expiresAt: 0 };
+      tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
       return res.status(401).json({ error: 'Authentication failed', message: err.message });
     }
 
@@ -169,10 +172,10 @@ app.get('/api/agent/config', (_req, res) => {
 // POST /api/agent/sessions — create a new Agent API session
 app.post('/api/agent/sessions', async (req, res) => {
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
 
-    console.log(`[Agent API] Creating session for agent ${SF_AGENT_ID}`);
+    console.log(`[Agent API] Creating session for agent ${SF_AGENT_ID} at ${sfUrl}`);
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -207,7 +210,7 @@ app.post('/api/agent/sessions', async (req, res) => {
   } catch (err) {
     console.error('[Agent API] Session error:', err.message);
     if (err.message.includes('auth')) {
-      tokenCache = { accessToken: null, expiresAt: 0 };
+      tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
     }
     res.status(502).json({ error: 'Agent API error', message: err.message });
   }
@@ -218,8 +221,8 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Agent API] Sending message to session ${sessionId}`);
 
@@ -255,7 +258,7 @@ app.post('/api/agent/sessions/:sessionId/messages', async (req, res) => {
   } catch (err) {
     console.error('[Agent API] Message error:', err.message);
     if (err.message.includes('auth')) {
-      tokenCache = { accessToken: null, expiresAt: 0 };
+      tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
     }
     res.status(502).json({ error: 'Agent API error', message: err.message });
   }
@@ -266,8 +269,8 @@ app.delete('/api/agent/sessions/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -299,10 +302,10 @@ app.get('/api/trade-agent/config', (_req, res) => {
 // POST /api/trade-agent/sessions — create a new session with the Trade Compliance agent
 app.post('/api/trade-agent/sessions', async (req, res) => {
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/agents/${SF_TRADE_AGENT_ID}/sessions`;
 
-    console.log(`[Trade Agent API] Creating session for agent ${SF_TRADE_AGENT_ID}`);
+    console.log(`[Trade Agent API] Creating session for agent ${SF_TRADE_AGENT_ID} at ${sfUrl}`);
 
     const sfResponse = await fetch(sfUrl, {
       method: 'POST',
@@ -337,7 +340,7 @@ app.post('/api/trade-agent/sessions', async (req, res) => {
   } catch (err) {
     console.error('[Trade Agent API] Session error:', err.message);
     if (err.message.includes('auth')) {
-      tokenCache = { accessToken: null, expiresAt: 0 };
+      tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
     }
     res.status(502).json({ error: 'Trade Agent API error', message: err.message });
   }
@@ -348,8 +351,8 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/sessions/${sessionId}/messages`;
 
     console.log(`[Trade Agent API] Sending message to session ${sessionId}`);
 
@@ -385,7 +388,7 @@ app.post('/api/trade-agent/sessions/:sessionId/messages', async (req, res) => {
   } catch (err) {
     console.error('[Trade Agent API] Message error:', err.message);
     if (err.message.includes('auth')) {
-      tokenCache = { accessToken: null, expiresAt: 0 };
+      tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
     }
     res.status(502).json({ error: 'Trade Agent API error', message: err.message });
   }
@@ -396,8 +399,8 @@ app.delete('/api/trade-agent/sessions/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const accessToken = await getAccessToken();
-    const sfUrl = `${SF_INSTANCE_URL}${AGENT_API_BASE}/sessions/${sessionId}`;
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const sfUrl = `${instanceUrl}${AGENT_API_BASE}/sessions/${sessionId}`;
 
     const sfResponse = await fetch(sfUrl, {
       method: 'DELETE',
@@ -783,7 +786,7 @@ app.listen(PORT, () => {
   console.log(`  Port:          ${PORT}`);
   console.log(`  SF Instance:   ${SF_INSTANCE_URL || '(not configured)'}`);
   console.log(`  SF Login URL:  ${SF_LOGIN_URL}`);
-  console.log(`  Agent API:     ${SF_INSTANCE_URL}${AGENT_API_BASE}`);
+  console.log(`  Agent API:     <instance_url>${AGENT_API_BASE} (instance_url resolved at auth time)`);
   console.log(`  SF Configured: ${!!(SF_CLIENT_ID && SF_CLIENT_SECRET && SF_INSTANCE_URL)}`);
   console.log(`  HAV Agent:     ${SF_AGENT_ID}`);
   console.log(`  Trade Agent:   ${SF_TRADE_AGENT_ID}`);
