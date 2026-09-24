@@ -29,6 +29,12 @@ const AGENT_API_HOST = process.env.SF_AGENT_API_HOST || 'https://api.salesforce.
 // Build the Agent API session-create body. The frontend sends {}, so the server
 // injects the fields the Agent API requires — notably instanceConfig.endpoint,
 // which is where the My Domain (instance) URL actually belongs.
+//
+// NOTE: do NOT send bypassUser:true. That tells the API to use the agent's
+// assigned user instead of the caller; this agent has no assigned user, so the
+// API rejects the session with "Invalid user ID provided on start session".
+// Omitting it (equivalently bypassUser:false) makes the session run as the
+// client-credentials Run-As user from the token — verified to return 200.
 function buildAgentSessionBody(reqBody, instanceUrl) {
   return {
     externalSessionKey:
@@ -36,7 +42,7 @@ function buildAgentSessionBody(reqBody, instanceUrl) {
       `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     instanceConfig: { endpoint: instanceUrl },
     streamingCapabilities: { chunkTypes: ['Text'] },
-    bypassUser: true,
+    bypassUser: false,
     ...(reqBody || {}),
   };
 }
