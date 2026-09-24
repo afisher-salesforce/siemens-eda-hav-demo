@@ -122,6 +122,25 @@ app.get('/api/debug/agent-test', async (_req, res) => {
     tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
     const { accessToken, instanceUrl } = await getAccessToken();
 
+    // Decode the token's scopes. The Agent API gateway on api.salesforce.com
+    // only routes /einstein/ai-agent/v1/* for tokens carrying chatbot_api +
+    // sfap_api; without them it returns a bare header-less 404. A JWT-format
+    // token has a base64url payload with an "scp" claim we can read.
+    let tokenScopes = null;
+    let tokenClaims = null;
+    try {
+      const parts = accessToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        tokenClaims = { aud: payload.aud, iss: payload.iss, sub: payload.sub, scp: payload.scp };
+        tokenScopes = payload.scp || null;
+      } else {
+        tokenScopes = '(opaque token — not a JWT, cannot decode scopes)';
+      }
+    } catch (e) {
+      tokenScopes = `(scope decode failed: ${e.message})`;
+    }
+
     // Test Agent API endpoint — on api.salesforce.com, NOT the instance URL.
     const sfUrl = `${AGENT_API_HOST}${AGENT_API_BASE}/agents/${SF_AGENT_ID}/sessions`;
     console.log(`[Debug] Testing Agent API at: ${sfUrl}`);
@@ -177,6 +196,8 @@ app.get('/api/debug/agent-test', async (_req, res) => {
     res.json({
       instanceUrl,
       agentApiHost: AGENT_API_HOST,
+      tokenScopes,
+      tokenClaims,
       agentId: SF_AGENT_ID,
       tradeAgentId: SF_TRADE_AGENT_ID,
       sfUrl,
