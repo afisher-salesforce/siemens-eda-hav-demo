@@ -73,8 +73,8 @@ export default function VignetteIndex() {
       {/* Header */}
       <div className="section-card">
         <div className="px-8 py-8">
-          <h1 className="text-xl font-bold text-white mb-2">Solution Vignettes</h1>
-          <p className="text-sm text-gray-400 leading-relaxed max-w-2xl">
+          <h1 className="text-xl font-bold text-th-primary mb-2">Solution Vignettes</h1>
+          <p className="text-sm text-th-muted leading-relaxed max-w-2xl">
             Six stories illustrating how Siemens EDA's Hardware-Assisted Verification business
             transforms from spreadsheet-driven coordination to connected, intelligent operations
             — all on a platform already within the Siemens Enterprise License Agreement.
@@ -107,15 +107,15 @@ export default function VignetteIndex() {
                   >
                     <v.icon size={20} style={{ color: v.color }} />
                   </div>
-                  <div className="flex items-center gap-1 text-gray-600 group-hover:text-siemens-accent transition-colors">
+                  <div className="flex items-center gap-1 text-th-faint group-hover:text-siemens-accent transition-colors">
                     <span className="text-[10px] uppercase tracking-wider">Story {v.number}</span>
                     <ArrowUpRight size={12} />
                   </div>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-200 mb-2 group-hover:text-white transition-colors">
+                <h3 className="text-sm font-semibold text-th-secondary mb-2 group-hover:text-th-primary transition-colors">
                   {v.title}
                 </h3>
-                <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
+                <p className="text-xs text-th-muted leading-relaxed line-clamp-3">
                   {v.description}
                 </p>
               </div>

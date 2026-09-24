@@ -124,7 +124,7 @@ function StageIndicator({ stage, stageIndex, completedStages }) {
             ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
             : status === 'current'
             ? 'bg-siemens-teal/20 border-siemens-teal text-siemens-accent animate-pulse'
-            : 'bg-gray-800 border-gray-700 text-gray-600'
+            : 'bg-[var(--skeleton-bg)] border-surface-border text-th-faint'
         }`}
       >
         {status === 'completed' ? (
@@ -141,7 +141,7 @@ function StageIndicator({ stage, stageIndex, completedStages }) {
             ? 'text-emerald-400'
             : status === 'current'
             ? 'text-siemens-accent'
-            : 'text-gray-600'
+            : 'text-th-faint'
         }`}
       >
         {stage.label}
@@ -168,14 +168,14 @@ function TravelerCard({ order, isExpanded, onToggle }) {
         className="w-full flex items-start justify-between mb-4 text-left group"
       >
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-gray-500 group-hover:text-gray-300 transition-colors">
+          <div className="flex items-center gap-1 text-th-muted group-hover:text-th-secondary transition-colors">
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-200 group-hover:text-white transition-colors">
+            <h3 className="text-sm font-semibold text-th-secondary group-hover:text-th-primary transition-colors">
               {order.agreementName || order.orderNumber || '--'}
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-th-muted mt-0.5">
               {order.customer} &middot; {product}
             </p>
           </div>
@@ -188,7 +188,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
       {/* Workflow Pipeline */}
       <div className="flex items-start justify-between relative px-2">
         {/* Connecting line */}
-        <div className="absolute top-5 left-7 right-7 h-0.5 bg-gray-800" />
+        <div className="absolute top-5 left-7 right-7 h-0.5 bg-[var(--skeleton-bg)]" />
         <div
           className="absolute top-5 left-7 h-0.5 bg-emerald-500/60 transition-all"
           style={{ width: `${Math.min(progressWidth, 100)}%` }}
@@ -201,22 +201,22 @@ function TravelerCard({ order, isExpanded, onToggle }) {
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-surface-border">
         <div>
-          <span className="text-[9px] text-gray-500 uppercase tracking-wider font-medium block">
+          <span className="text-[9px] text-th-muted uppercase tracking-wider font-medium block">
             Order #
           </span>
-          <span className="text-xs text-gray-300 font-medium">{order.orderNumber || '--'}</span>
+          <span className="text-xs text-th-secondary font-medium">{order.orderNumber || '--'}</span>
         </div>
         <div>
-          <span className="text-[9px] text-gray-500 uppercase tracking-wider font-medium block">
+          <span className="text-[9px] text-th-muted uppercase tracking-wider font-medium block">
             Product
           </span>
-          <span className="text-xs text-gray-300 font-medium">{product}</span>
+          <span className="text-xs text-th-secondary font-medium">{product}</span>
         </div>
         <div>
-          <span className="text-[9px] text-gray-500 uppercase tracking-wider font-medium block">
+          <span className="text-[9px] text-th-muted uppercase tracking-wider font-medium block">
             Total Value
           </span>
-          <span className="text-xs text-white font-semibold">
+          <span className="text-xs text-th-primary font-semibold">
             {order.totalValue != null
               ? `$${(order.totalValue / 1000000).toFixed(2)}M`
               : '--'}
@@ -229,7 +229,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
         <>
           <div className="mt-4 pt-4 border-t border-surface-border space-y-2">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+              <h4 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
                 Stage Detail
               </h4>
               <SalesforceLink recordId={order.id} />
@@ -257,7 +257,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : status === 'current'
                         ? 'bg-siemens-teal/20 text-siemens-accent'
-                        : 'bg-gray-800 text-gray-600'
+                        : 'bg-[var(--skeleton-bg)] text-th-faint'
                     }`}
                   >
                     {status === 'completed' ? <CheckCircle2 size={14} /> : <Icon size={14} />}
@@ -266,7 +266,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-semibold ${
                         status === 'completed' ? 'text-emerald-400' :
-                        status === 'current' ? 'text-siemens-accent' : 'text-gray-600'
+                        status === 'current' ? 'text-siemens-accent' : 'text-th-faint'
                       }`}>
                         {stage.label}
                       </span>
@@ -276,7 +276,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
                     </div>
                     {status !== 'pending' && (
                       <div className="mt-1 space-y-1">
-                        <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                        <div className="flex items-center gap-3 text-[10px] text-th-muted">
                           <span className="flex items-center gap-1">
                             <User size={10} />
                             {STAGE_OWNERS[i]}
@@ -290,7 +290,7 @@ function TravelerCard({ order, isExpanded, onToggle }) {
                           )}
                         </div>
                         {note && (
-                          <div className="flex items-start gap-1 text-[10px] text-gray-500">
+                          <div className="flex items-start gap-1 text-[10px] text-th-muted">
                             <MessageSquare size={10} className="mt-0.5 shrink-0" />
                             <span>{note}</span>
                           </div>
@@ -343,8 +343,8 @@ export default function TravelerView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Travelers</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Travelers</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -375,8 +375,8 @@ export default function TravelerView() {
         <div className="flex items-center gap-3">
           <FileText size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Order Travelers</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Order Travelers</h1>
+            <p className="text-xs text-th-muted">
               Automated workflow tracking — replaces SharePoint traveler sheets
             </p>
           </div>
@@ -386,23 +386,23 @@ export default function TravelerView() {
       {/* Summary Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="metric-card">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Total</div>
-          <div className="text-xl font-bold text-white">{stats.total}</div>
+          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Total</div>
+          <div className="text-xl font-bold text-th-primary">{stats.total}</div>
         </div>
         <div className="metric-card">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Screening</div>
+          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Screening</div>
           <div className="text-xl font-bold text-amber-400">{stats.screening}</div>
         </div>
         <div className="metric-card">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Processing</div>
+          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Processing</div>
           <div className="text-xl font-bold text-siemens-accent">{stats.processing}</div>
         </div>
         <div className="metric-card">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">In Transit</div>
+          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">In Transit</div>
           <div className="text-xl font-bold text-blue-400">{stats.inTransit}</div>
         </div>
         <div className="metric-card">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Completed</div>
+          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Completed</div>
           <div className="text-xl font-bold text-emerald-400">{stats.completed}</div>
         </div>
       </div>
@@ -412,16 +412,16 @@ export default function TravelerView() {
         {[
           { color: 'bg-emerald-500', label: 'Completed' },
           { color: 'bg-siemens-teal', label: 'In Progress' },
-          { color: 'bg-gray-700', label: 'Pending' },
+          { color: 'bg-surface-border', label: 'Pending' },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium">
               {item.label}
             </span>
           </div>
         ))}
-        <div className="text-[10px] text-gray-600 ml-auto">
+        <div className="text-[10px] text-th-faint ml-auto">
           Click a traveler to view stage detail
         </div>
       </div>
@@ -442,7 +442,7 @@ export default function TravelerView() {
         </div>
       ) : (
         <div className="section-card">
-          <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+          <div className="flex items-center justify-center py-16 text-sm text-th-faint">
             No active order travelers
           </div>
         </div>

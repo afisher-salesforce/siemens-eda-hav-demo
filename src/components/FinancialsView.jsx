@@ -21,18 +21,19 @@ import { getFinancials } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
+import { tooltipStyle } from '../utils/chartStyles';
 
 const COLORS = ['#009999', '#006666', '#00b8b8', '#003333', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'];
 
 function DataSourceBadge({ source, timestamp }) {
   return (
     <div className="flex items-center gap-2 mt-2">
-      <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
-        <Database size={8} className="text-gray-500" />
+      <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
+        <Database size={8} className="text-th-muted" />
         {source}
       </span>
       {timestamp && (
-        <span className="inline-flex items-center gap-1 text-[9px] text-gray-600">
+        <span className="inline-flex items-center gap-1 text-[9px] text-th-faint">
           <Clock size={8} />
           {timestamp}
         </span>
@@ -40,14 +41,6 @@ function DataSourceBadge({ source, timestamp }) {
     </div>
   );
 }
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
 
 function formatCurrency(value) {
   if (value == null) return '--';
@@ -64,8 +57,8 @@ export default function FinancialsView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Financial Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Financial Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -119,15 +112,15 @@ export default function FinancialsView() {
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign size={16} className="text-siemens-accent" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-[0.1em] font-semibold">
+              <span className="text-[10px] text-th-muted uppercase tracking-[0.1em] font-semibold">
                 Total Revenue Estimate
               </span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-th-primary">
               {formatCurrency(revenue.total)}
             </div>
             {revenue.period && (
-              <div className="text-xs text-gray-500 mt-1">{revenue.period}</div>
+              <div className="text-xs text-th-muted mt-1">{revenue.period}</div>
             )}
             <DataSourceBadge source="CRM Forecast" timestamp={new Date().toLocaleDateString()} />
           </div>
@@ -138,14 +131,14 @@ export default function FinancialsView() {
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={16} className="text-emerald-400" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-[0.1em] font-semibold">
+              <span className="text-[10px] text-th-muted uppercase tracking-[0.1em] font-semibold">
                 Monthly Recurring
               </span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-th-primary">
               {formatCurrency(revenue.monthlyRecurring)}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Per month</div>
+            <div className="text-xs text-th-muted mt-1">Per month</div>
             <DataSourceBadge source="CRM Forecast" timestamp={new Date().toLocaleDateString()} />
           </div>
         </div>
@@ -155,14 +148,14 @@ export default function FinancialsView() {
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={16} className="text-amber-400" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-[0.1em] font-semibold">
+              <span className="text-[10px] text-th-muted uppercase tracking-[0.1em] font-semibold">
                 Open Repair Costs
               </span>
             </div>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-th-primary">
               {formatCurrency(repairCosts.total)}
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-th-muted mt-1">
               {repairCosts.openCount ?? '--'} open work orders
             </div>
             <DataSourceBadge source="Field Service" timestamp={new Date().toLocaleDateString()} />
@@ -175,28 +168,28 @@ export default function FinancialsView() {
         {/* Revenue by Product */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Revenue by Product</h2>
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Revenue by Product</h2>
           </div>
           <div className="section-card-body">
             {productBreakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={productBreakdown} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                   <XAxis
                     dataKey="product"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                     axisLine={{ stroke: '#1e293b' }}
                     tickLine={{ stroke: '#1e293b' }}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                     axisLine={{ stroke: '#1e293b' }}
                     tickLine={{ stroke: '#1e293b' }}
                     tickFormatter={formatCurrency}
                   />
                   <Tooltip
                     formatter={(value) => [formatCurrency(value), 'Revenue']}
-                    contentStyle={darkTooltipStyle}
+                    contentStyle={tooltipStyle}
                   />
                   <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={50}>
                     {productBreakdown.map((_, index) => (
@@ -206,7 +199,7 @@ export default function FinancialsView() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">
                 No product breakdown available
               </div>
             )}
@@ -216,7 +209,7 @@ export default function FinancialsView() {
         {/* Assets by Lease Type */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Assets by Lease Type</h2>
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Assets by Lease Type</h2>
           </div>
           <div className="section-card-body">
             {leaseBreakdown.length > 0 ? (
@@ -242,12 +235,12 @@ export default function FinancialsView() {
                   </Pie>
                   <Tooltip
                     formatter={(value, name) => [value, name]}
-                    contentStyle={darkTooltipStyle}
+                    contentStyle={tooltipStyle}
                   />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">
                 No lease data available
               </div>
             )}
@@ -259,7 +252,7 @@ export default function FinancialsView() {
       {repairCosts.items && repairCosts.items.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Open Repair Cost Details</h2>
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Open Repair Cost Details</h2>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -277,11 +270,11 @@ export default function FinancialsView() {
                 <tbody>
                   {repairCosts.items.map((item, i) => (
                     <tr key={i}>
-                      <td className="font-medium text-gray-200">{item.workOrderNumber || '--'}</td>
-                      <td className="text-gray-400">{item.asset || '--'}</td>
-                      <td className="text-gray-400">{item.customer || '--'}</td>
-                      <td className="text-gray-400 max-w-xs truncate">{item.description || '--'}</td>
-                      <td className="font-medium text-white">
+                      <td className="font-medium text-th-secondary">{item.workOrderNumber || '--'}</td>
+                      <td className="text-th-muted">{item.asset || '--'}</td>
+                      <td className="text-th-muted">{item.customer || '--'}</td>
+                      <td className="text-th-muted max-w-xs truncate">{item.description || '--'}</td>
+                      <td className="font-medium text-th-primary">
                         {formatCurrency(item.estimatedCost)}
                       </td>
                       <td>
@@ -301,11 +294,11 @@ export default function FinancialsView() {
         <div className="section-card-header">
           <div className="flex items-center gap-2">
             <BarChart3 size={14} className="text-siemens-accent" />
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Revenue Intelligence
             </h2>
           </div>
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-siemens-teal animate-pulse" />
             Tableau Next
           </span>
@@ -344,7 +337,7 @@ export default function FinancialsView() {
 
             if (productBreakdown.length === 0) {
               return (
-                <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+                <div className="flex items-center justify-center h-64 text-sm text-th-faint">
                   No revenue data available
                 </div>
               );
@@ -354,7 +347,7 @@ export default function FinancialsView() {
               <div className="space-y-6">
                 {/* Revenue Trend — Actuals vs Plan */}
                 <div>
-                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                  <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3 px-1">
                     Monthly Revenue — Actuals vs. Plan (Trailing 12 Months)
                   </h3>
                   <ResponsiveContainer width="100%" height={280}>
@@ -365,23 +358,23 @@ export default function FinancialsView() {
                           <stop offset="95%" stopColor="#009999" stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                       <XAxis
                         dataKey="month"
-                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                         axisLine={{ stroke: '#1e293b' }}
                         tickLine={{ stroke: '#1e293b' }}
                       />
                       <YAxis
-                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                         axisLine={{ stroke: '#1e293b' }}
                         tickLine={{ stroke: '#1e293b' }}
                         tickFormatter={formatCurrency}
                       />
                       <Tooltip
                         formatter={(value, name) => [formatCurrency(value), name === 'total' ? 'Actuals' : name === 'plan' ? 'Plan' : name]}
-                        contentStyle={darkTooltipStyle}
-                        labelStyle={{ color: '#94a3b8', fontSize: 12 }}
+                        contentStyle={tooltipStyle}
+                        labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
                       />
                       <Area
                         type="monotone"
@@ -407,33 +400,33 @@ export default function FinancialsView() {
 
                 {/* Revenue by Product — Stacked Area */}
                 <div>
-                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                  <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3 px-1">
                     Revenue by Product Line (Trailing 12 Months)
                   </h3>
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={monthlyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                       <XAxis
                         dataKey="month"
-                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                         axisLine={{ stroke: '#1e293b' }}
                         tickLine={{ stroke: '#1e293b' }}
                       />
                       <YAxis
-                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                         axisLine={{ stroke: '#1e293b' }}
                         tickLine={{ stroke: '#1e293b' }}
                         tickFormatter={formatCurrency}
                       />
                       <Tooltip
                         formatter={(value, name) => [formatCurrency(value), name]}
-                        contentStyle={darkTooltipStyle}
-                        labelStyle={{ color: '#94a3b8', fontSize: 12 }}
+                        contentStyle={tooltipStyle}
+                        labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
                       />
                       <Legend
                         iconType="circle"
                         iconSize={8}
-                        wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
+                        wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)' }}
                       />
                       {productBreakdown.map((p, idx) => (
                         <Area

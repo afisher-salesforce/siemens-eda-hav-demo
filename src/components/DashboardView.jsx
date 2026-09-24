@@ -35,6 +35,7 @@ import {
 } from 'recharts';
 import { getDashboardSummary } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { tooltipStyle } from '../utils/chartStyles';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 
@@ -69,8 +70,8 @@ function MetricCard({ icon: Icon, label, value, change, changeType, color, glowC
             </div>
           )}
         </div>
-        <div className="text-2xl font-bold text-white">{value}</div>
-        <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-[0.08em] font-medium">
+        <div className="text-2xl font-bold text-th-primary">{value}</div>
+        <div className="text-[10px] text-th-muted mt-1 uppercase tracking-[0.08em] font-medium">
           {label}
         </div>
       </div>
@@ -116,8 +117,8 @@ function ErrorState({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <AlertTriangle size={48} className="text-amber-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Dashboard</h3>
-      <p className="text-sm text-gray-500 max-w-md mb-4">{message}</p>
+      <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Dashboard</h3>
+      <p className="text-sm text-th-muted max-w-md mb-4">{message}</p>
       <button
         onClick={onRetry}
         className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -139,13 +140,6 @@ function StatusBadge({ status }) {
   return <span className={`badge ${styles[status] || 'badge-gray'}`}>{status}</span>;
 }
 
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
 
 export default function DashboardView() {
   const { data, loading, error, refetch } = useSalesforceData(getDashboardSummary);
@@ -180,7 +174,7 @@ export default function DashboardView() {
             { label: 'UTIL', value: metrics.avgUtilization != null ? `${metrics.avgUtilization}%` : '--', color: '#00b8b8' },
           ].map((item) => (
             <div key={item.label} className="text-center">
-              <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.12em] mb-0.5">
+              <div className="text-[10px] font-semibold text-th-muted uppercase tracking-[0.12em] mb-0.5">
                 {item.label}
               </div>
               <div className="text-lg font-bold" style={{ color: item.color }}>
@@ -245,7 +239,7 @@ export default function DashboardView() {
         {/* Location Capacity Bar Chart */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Rack Occupancy by Location
             </h2>
           </div>
@@ -253,23 +247,23 @@ export default function DashboardView() {
             {capacityData.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={capacityData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                    axisLine={{ stroke: '#1e293b' }}
-                    tickLine={{ stroke: '#1e293b' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
+                    axisLine={{ stroke: 'var(--surface-border)' }}
+                    tickLine={{ stroke: 'var(--surface-border)' }}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                    axisLine={{ stroke: '#1e293b' }}
-                    tickLine={{ stroke: '#1e293b' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
+                    axisLine={{ stroke: 'var(--surface-border)' }}
+                    tickLine={{ stroke: 'var(--surface-border)' }}
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip
                     formatter={(value) => [`${value}%`, 'Occupancy']}
-                    contentStyle={darkTooltipStyle}
+                    contentStyle={tooltipStyle}
                   />
                   <Bar dataKey="occupancy" radius={[4, 4, 0, 0]} maxBarSize={40}>
                     {capacityData.map((entry, index) => (
@@ -288,7 +282,7 @@ export default function DashboardView() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">
                 No capacity data available
               </div>
             )}
@@ -298,7 +292,7 @@ export default function DashboardView() {
         {/* Recent Telemetry Alerts — styled like signal feed */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Telemetry Signals
             </h2>
             {alerts.length > 0 && (
@@ -323,16 +317,16 @@ export default function DashboardView() {
                   <tbody>
                     {alerts.slice(0, 8).map((alert, i) => (
                       <tr key={i}>
-                        <td className="font-medium text-gray-200 whitespace-nowrap">
+                        <td className="font-medium text-th-secondary whitespace-nowrap">
                           {alert.assetName || '--'}
                         </td>
                         <td>
                           <StatusBadge status={alert.status} />
                         </td>
-                        <td className="text-gray-400 max-w-xs truncate text-xs">
+                        <td className="text-th-muted max-w-xs truncate text-xs">
                           {alert.message || '--'}
                         </td>
-                        <td className="text-gray-600 text-xs whitespace-nowrap font-mono">
+                        <td className="text-th-faint text-xs whitespace-nowrap font-mono">
                           {alert.timestamp
                             ? new Date(alert.timestamp).toLocaleTimeString()
                             : '--'}
@@ -343,7 +337,7 @@ export default function DashboardView() {
                 </table>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-48 text-sm text-gray-600">
+              <div className="flex items-center justify-center h-48 text-sm text-th-faint">
                 No active signals
               </div>
             )}
@@ -363,10 +357,10 @@ export default function DashboardView() {
                 <RefreshCcw size={20} className="text-amber-400" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-200">
+                <div className="text-sm font-semibold text-th-secondary">
                   Loaner-to-Sale Conversion
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-th-muted mt-0.5">
                   {metrics.activeLoaners} active loaner{metrics.activeLoaners !== 1 ? 's' : ''} in field
                   {metrics.loanersExpiringSoon > 0 && (
                     <span className="text-amber-400 ml-2">
@@ -376,7 +370,7 @@ export default function DashboardView() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 group-hover:text-siemens-accent transition-colors">
+            <div className="flex items-center gap-2 text-th-muted group-hover:text-siemens-accent transition-colors">
               <span className="text-xs">View Pipeline</span>
               <ArrowUpRight size={14} />
             </div>
@@ -396,13 +390,13 @@ export default function DashboardView() {
                 <Shield size={20} className="text-orange-400" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-200">Trade Compliance</div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-sm font-semibold text-th-secondary">Trade Compliance</div>
+                <div className="text-xs text-th-muted mt-0.5">
                   Embargo screening, restricted parties, ECCN classifications
                 </div>
               </div>
             </div>
-            <ArrowUpRight size={14} className="text-gray-500 group-hover:text-siemens-accent transition-colors" />
+            <ArrowUpRight size={14} className="text-th-muted group-hover:text-siemens-accent transition-colors" />
           </div>
         </Link>
         <Link
@@ -415,13 +409,13 @@ export default function DashboardView() {
                 <Factory size={20} className="text-blue-400" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-200">Manufacturer Portal</div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-sm font-semibold text-th-secondary">Manufacturer Portal</div>
+                <div className="text-xs text-th-muted mt-0.5">
                   Vendor performance, cost breakdown, work order tracking
                 </div>
               </div>
             </div>
-            <ArrowUpRight size={14} className="text-gray-500 group-hover:text-siemens-accent transition-colors" />
+            <ArrowUpRight size={14} className="text-th-muted group-hover:text-siemens-accent transition-colors" />
           </div>
         </Link>
       </div>
@@ -457,14 +451,14 @@ export default function DashboardView() {
                   <td>
                     <span className="inline-flex items-center gap-1.5 text-xs">
                       <Wrench size={12} className="text-amber-400" />
-                      <span className="text-gray-300">Work Order</span>
+                      <span className="text-th-secondary">Work Order</span>
                     </span>
                   </td>
-                  <td className="font-medium text-gray-200 font-mono">WO-2024-0847</td>
-                  <td className="text-gray-400 text-xs max-w-xs">
+                  <td className="font-medium text-th-secondary font-mono">WO-2024-0847</td>
+                  <td className="text-th-muted text-xs max-w-xs">
                     Serial number mismatch — field asset SN VLX-7842 does not match CRM record SN VLX-7824. Board swap pending verification.
                   </td>
-                  <td className="text-gray-300 text-xs">Ken Snyder</td>
+                  <td className="text-th-secondary text-xs">Ken Snyder</td>
                   <td>
                     <span className="text-orange-400 font-mono text-xs font-semibold">12d</span>
                   </td>
@@ -476,14 +470,14 @@ export default function DashboardView() {
                   <td>
                     <span className="inline-flex items-center gap-1.5 text-xs">
                       <Shield size={12} className="text-orange-400" />
-                      <span className="text-gray-300">Order</span>
+                      <span className="text-th-secondary">Order</span>
                     </span>
                   </td>
-                  <td className="font-medium text-gray-200 font-mono">ORD-2024-1203</td>
-                  <td className="text-gray-400 text-xs max-w-xs">
+                  <td className="font-medium text-th-secondary font-mono">ORD-2024-1203</td>
+                  <td className="text-th-muted text-xs max-w-xs">
                     Compliance hold — end-user entity flagged for additional EAR screening. Awaiting export control review before shipment release.
                   </td>
-                  <td className="text-gray-300 text-xs">Russell Forsyth</td>
+                  <td className="text-th-secondary text-xs">Russell Forsyth</td>
                   <td>
                     <span className="text-amber-400 font-mono text-xs font-semibold">3d</span>
                   </td>
@@ -500,7 +494,7 @@ export default function DashboardView() {
       {/* Contract Renewals — styled like the accounts/opportunities list */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Upcoming Contract Renewals
           </h2>
           <div className="flex items-center gap-2">
@@ -536,19 +530,19 @@ export default function DashboardView() {
                     return (
                       <React.Fragment key={i}>
                         <tr
-                          className="cursor-pointer hover:bg-white/[0.03] transition-colors"
+                          className="cursor-pointer hover:bg-[var(--overlay-hover)] transition-colors"
                           onClick={() => setExpandedRenewal(isExpanded ? null : i)}
                         >
                           <td className="w-8 text-center">
                             {isExpanded ? (
                               <ChevronDown size={14} className="text-siemens-accent inline" />
                             ) : (
-                              <ChevronRight size={14} className="text-gray-500 inline" />
+                              <ChevronRight size={14} className="text-th-muted inline" />
                             )}
                           </td>
-                          <td className="font-medium text-gray-200">{r.customer || '--'}</td>
-                          <td className="text-gray-400">{r.assetName || '--'}</td>
-                          <td className="text-gray-400">
+                          <td className="font-medium text-th-secondary">{r.customer || '--'}</td>
+                          <td className="text-th-muted">{r.assetName || '--'}</td>
+                          <td className="text-th-muted">
                             {r.contractEnd
                               ? new Date(r.contractEnd).toLocaleDateString()
                               : '--'}
@@ -556,7 +550,7 @@ export default function DashboardView() {
                           <td>
                             <span className="badge badge-teal">{r.leaseType || '--'}</span>
                           </td>
-                          <td className="text-white font-semibold">
+                          <td className="text-th-primary font-semibold">
                             {r.monthlyValue != null
                               ? `$${r.monthlyValue.toLocaleString()}`
                               : '--'}
@@ -581,41 +575,41 @@ export default function DashboardView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={7} className="bg-[#0a0f1a] border-b border-surface-border p-0">
+                            <td colSpan={7} className="bg-surface-bg border-b border-surface-border p-0">
                               <div className="px-6 py-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                   <div className="flex items-start gap-2">
                                     <Cpu size={14} className="text-siemens-accent mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Product</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.product || '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Product</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.product || '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
-                                    <Hash size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <Hash size={14} className="text-th-muted mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Serial Number</div>
-                                      <div className="text-sm text-gray-200 mt-0.5 font-mono">{r.serialNumber || '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Serial Number</div>
+                                      <div className="text-sm text-th-secondary mt-0.5 font-mono">{r.serialNumber || '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <MapPin size={14} className="text-blue-400 mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Location</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.location || '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Location</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.location || '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
-                                    <Server size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <Server size={14} className="text-th-muted mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Rack Position</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.rackPosition || '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Rack Position</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.rackPosition || '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <Activity size={14} className="text-emerald-400 mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Status</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Status</div>
                                       <div className="text-sm mt-0.5">
                                         <span className={`badge ${r.status === 'Installed' ? 'badge-green' : r.status === 'Shipped' ? 'badge-blue' : 'badge-gray'}`}>
                                           {r.status || '--'}
@@ -626,22 +620,22 @@ export default function DashboardView() {
                                   <div className="flex items-start gap-2">
                                     <Gauge size={14} className="text-amber-400 mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Utilization</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.utilization != null ? `${r.utilization}%` : '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Utilization</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.utilization != null ? `${r.utilization}%` : '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
                                     <Plug size={14} className="text-yellow-400 mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Power Draw</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.powerDraw != null ? `${r.powerDraw} kW` : '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Power Draw</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.powerDraw != null ? `${r.powerDraw} kW` : '--'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-start gap-2">
-                                    <Calendar size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                    <Calendar size={14} className="text-th-muted mt-0.5 shrink-0" />
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Install Date</div>
-                                      <div className="text-sm text-gray-200 mt-0.5">{r.installDate ? new Date(r.installDate).toLocaleDateString() : '--'}</div>
+                                      <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Install Date</div>
+                                      <div className="text-sm text-th-secondary mt-0.5">{r.installDate ? new Date(r.installDate).toLocaleDateString() : '--'}</div>
                                     </div>
                                   </div>
                                 </div>
@@ -650,13 +644,13 @@ export default function DashboardView() {
                                   <div className="mt-4 pt-3 border-t border-surface-border flex items-center gap-6">
                                     <div className="flex items-center gap-2">
                                       <DollarSign size={14} className="text-emerald-400" />
-                                      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Annual Contract Value</span>
+                                      <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Annual Contract Value</span>
                                       <span className="text-sm text-emerald-400 font-bold ml-1">${(r.monthlyValue * 12).toLocaleString()}</span>
                                     </div>
                                     {r.id && (
                                       <Link
                                         to={`/assets/${r.id}`}
-                                        className="ml-auto flex items-center gap-1.5 text-xs text-siemens-accent hover:text-white transition-colors"
+                                        className="ml-auto flex items-center gap-1.5 text-xs text-siemens-accent hover:text-th-primary transition-colors"
                                         onClick={(e) => e.stopPropagation()}
                                       >
                                         View Asset Detail
@@ -669,7 +663,7 @@ export default function DashboardView() {
                                   <div className="mt-4 pt-3 border-t border-surface-border flex justify-end">
                                     <Link
                                       to={`/assets/${r.id}`}
-                                      className="flex items-center gap-1.5 text-xs text-siemens-accent hover:text-white transition-colors"
+                                      className="flex items-center gap-1.5 text-xs text-siemens-accent hover:text-th-primary transition-colors"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       View Asset Detail
@@ -688,7 +682,7 @@ export default function DashboardView() {
               </table>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-32 text-sm text-gray-600">
+            <div className="flex items-center justify-center h-32 text-sm text-th-faint">
               No upcoming renewals
             </div>
           )}

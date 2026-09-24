@@ -82,8 +82,8 @@ export default function WorkOrdersView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Work Orders</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Work Orders</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -100,21 +100,21 @@ export default function WorkOrdersView() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search work orders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter size={14} className="text-gray-500" />
+          <Filter size={14} className="text-th-muted" />
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Priorities</option>
             {priorities.map((p) => (
@@ -124,7 +124,7 @@ export default function WorkOrdersView() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Statuses</option>
             {statuses.map((s) => (
@@ -132,7 +132,7 @@ export default function WorkOrdersView() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-1 ml-auto text-xs text-gray-500">
+        <div className="flex items-center gap-1 ml-auto text-xs text-th-muted">
           <Wrench size={12} />
           <span>{loading ? 'Loading...' : `${filtered.length} work orders`}</span>
         </div>
@@ -185,17 +185,17 @@ export default function WorkOrdersView() {
                           {wo.workOrderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{wo.subject || '--'}</td>
                       <td>
                         <PriorityBadge priority={wo.priority} />
                       </td>
                       <td>
                         <StatusBadge status={wo.status} />
                       </td>
-                      <td className="text-gray-400 whitespace-nowrap">{wo.assetName || '--'}</td>
-                      <td className="text-gray-400">{wo.customer || '--'}</td>
-                      <td className="font-mono text-xs text-gray-500">{wo.rmaNumber || '--'}</td>
-                      <td className="font-medium text-white">
+                      <td className="text-th-muted whitespace-nowrap">{wo.assetName || '--'}</td>
+                      <td className="text-th-muted">{wo.customer || '--'}</td>
+                      <td className="font-mono text-xs text-th-muted">{wo.rmaNumber || '--'}</td>
+                      <td className="font-medium text-th-primary">
                         {formatCurrency(wo.estimatedCost)}
                       </td>
                     </tr>
@@ -203,7 +203,7 @@ export default function WorkOrdersView() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-gray-600">
+                    <td colSpan={9} className="text-center py-12 text-th-faint">
                       No work orders match the current filters
                     </td>
                   </tr>

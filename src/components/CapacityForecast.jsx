@@ -18,6 +18,7 @@ import {
   Shield,
   Clock,
   Loader2,
+  BookOpen,
 } from 'lucide-react';
 import {
   BarChart,
@@ -32,14 +33,7 @@ import {
 } from 'recharts';
 import { getCapacityEngine, updateWorkOrderStatus } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
+import { tooltipStyle } from '../utils/chartStyles';
 
 // ── SVG patterns for subtract and RMA bars ──
 function WaterfallDefs() {
@@ -81,15 +75,15 @@ function WaterfallTooltip({ active, payload }) {
   const d = payload[0]?.payload;
   if (!d) return null;
   return (
-    <div style={darkTooltipStyle} className="px-3 py-2">
-      <div className="text-xs font-semibold text-gray-200 mb-1">{d.label}</div>
-      <div className="text-xs text-gray-400">
+    <div style={tooltipStyle} className="px-3 py-2">
+      <div className="text-xs font-semibold text-th-secondary mb-1">{d.label}</div>
+      <div className="text-xs text-th-muted">
         {d.type === 'total' || d.type === 'base'
           ? `${d.value} racks`
           : `${d.delta >= 0 ? '+' : ''}${d.delta} racks`}
       </div>
       {d.type === 'total' && d.capacity != null && (
-        <div className="text-[10px] text-gray-500 mt-0.5">Capacity: {d.capacity} racks</div>
+        <div className="text-[10px] text-th-muted mt-0.5">Capacity: {d.capacity} racks</div>
       )}
     </div>
   );
@@ -121,12 +115,12 @@ function ScenarioSlider({ label, value, onChange, min, max, step, unit, icon: Ic
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-1.5 w-36 shrink-0">
         {Icon && <Icon size={12} className={color} />}
-        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">{label}</span>
+        <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">{label}</span>
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
+        className="flex-1 h-1.5 bg-[var(--slider-track)] rounded-full appearance-none cursor-pointer
           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
           [&::-webkit-slider-thumb]:bg-siemens-teal [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
           [&::-webkit-slider-thumb]:shadow-[0_0_6px_rgba(0,153,153,0.4)]
@@ -147,15 +141,15 @@ function MiniWaterfall({ segments, totalCapacity, height = 130 }) {
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 4, left: -10, bottom: 4 }}>
         <WaterfallDefs />
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis dataKey="shortLabel" tick={{ fontSize: 8, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false} interval={0} />
-        <YAxis tick={{ fontSize: 8, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false}
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
+        <XAxis dataKey="shortLabel" tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} interval={0} />
+        <YAxis tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
           domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]} />
         <Tooltip content={<WaterfallTooltip />} />
         {totalCapacity > 0 && (
           <ReferenceLine y={totalCapacity} stroke="#475569" strokeDasharray="4 4" />
         )}
-        <ReferenceLine y={0} stroke="#334155" />
+        <ReferenceLine y={0} stroke="var(--surface-border-light)" />
         <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
         <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={24} shape={<WaterfallBar />}>
           {data.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
@@ -185,16 +179,16 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
           <div className="flex items-center gap-3">
             <MapPin size={16} className="text-siemens-accent" />
             <div>
-              <h2 className="text-sm font-bold text-white">
+              <h2 className="text-sm font-bold text-th-primary">
                 {facility.name} ({facility.code})
               </h2>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[10px] text-th-muted">
                 {facility.region} &middot; {facility.totalRacks} racks &middot; {facility.bladeCount} blades &middot; {facility.accounts.length} customers
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-gray-800 transition-colors">
-            <X size={16} className="text-gray-400" />
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-[var(--skeleton-bg)] transition-colors">
+            <X size={16} className="text-th-muted" />
           </button>
         </div>
 
@@ -203,7 +197,7 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
           <button
             onClick={() => setTab('racks')}
             className={`px-4 py-2 text-xs font-medium transition-colors ${
-              tab === 'racks' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-gray-500 hover:text-gray-300'
+              tab === 'racks' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-th-muted hover:text-th-secondary'
             }`}
           >
             <Package size={12} className="inline mr-1.5" />
@@ -212,7 +206,7 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
           <button
             onClick={() => setTab('workorders')}
             className={`px-4 py-2 text-xs font-medium transition-colors ${
-              tab === 'workorders' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-gray-500 hover:text-gray-300'
+              tab === 'workorders' ? 'text-siemens-accent border-b-2 border-siemens-accent' : 'text-th-muted hover:text-th-secondary'
             }`}
           >
             <Wrench size={12} className="inline mr-1.5" />
@@ -236,10 +230,10 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
               <tbody>
                 {facility.racks.length > 0 ? facility.racks.map((rack) => (
                   <tr key={rack.id}>
-                    <td className="font-medium text-gray-200">{rack.name}</td>
-                    <td className="text-gray-400 font-mono text-xs">{rack.rackPosition || '--'}</td>
-                    <td className="text-gray-300">{rack.accountName || '--'}</td>
-                    <td className="text-gray-300 text-center font-mono">{rack.bladeCount}</td>
+                    <td className="font-medium text-th-secondary">{rack.name}</td>
+                    <td className="text-th-muted font-mono text-xs">{rack.rackPosition || '--'}</td>
+                    <td className="text-th-secondary">{rack.accountName || '--'}</td>
+                    <td className="text-th-secondary text-center font-mono">{rack.bladeCount}</td>
                     <td>
                       <span className={`badge ${rack.status === 'Active' || rack.status === 'Installed' ? 'badge-green' : 'badge-gray'}`}>
                         {rack.status || '--'}
@@ -247,7 +241,7 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="text-center py-8 text-gray-600">No racks at this facility</td></tr>
+                  <tr><td colSpan={5} className="text-center py-8 text-th-faint">No racks at this facility</td></tr>
                 )}
               </tbody>
             </table>
@@ -268,9 +262,9 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
                 {facilityWOs.length > 0 ? facilityWOs.map((wo) => (
                   <tr key={wo.id}>
                     <td className="font-mono text-xs text-siemens-accent">{wo.workOrderNumber}</td>
-                    <td className="text-gray-200 text-sm">{wo.assetName || '--'}</td>
-                    <td className="text-gray-400">{wo.accountName || '--'}</td>
-                    <td className="text-gray-400 text-xs max-w-[200px] truncate">{wo.subject || '--'}</td>
+                    <td className="text-th-secondary text-sm">{wo.assetName || '--'}</td>
+                    <td className="text-th-muted">{wo.accountName || '--'}</td>
+                    <td className="text-th-muted text-xs max-w-[200px] truncate">{wo.subject || '--'}</td>
                     <td>
                       <span className={`badge ${wo.status === 'In Progress' ? 'badge-blue' : wo.status === 'New' ? 'badge-yellow' : 'badge-gray'}`}>
                         {wo.status}
@@ -299,11 +293,80 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={7} className="text-center py-8 text-gray-600">No active work orders at this facility</td></tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-th-faint">No active work orders at this facility</td></tr>
                 )}
               </tbody>
             </table>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Projection Formula Rationale ──
+function ProjectionFormula() {
+  return (
+    <div className="space-y-5">
+      {/* Equation */}
+      <div className="bg-surface-bg border border-surface-border rounded-lg px-6 py-5 overflow-x-auto">
+        <p className="text-xs text-th-muted mb-3">The core projection equation for any given time bucket <span className="italic">t</span> should be calculated as:</p>
+        <div className="text-center py-3">
+          <span className="text-lg text-th-primary font-serif italic tracking-wide">
+            C<sub className="text-[10px] not-italic">projected</sub>(t) = C<sub className="text-[10px] not-italic">base</sub>
+            {' + '}&#931;(S<sub className="text-[10px] not-italic">pipeline</sub> &middot; P<sub className="text-[10px] not-italic">win</sub>)
+            {' − '}&#931;(A<sub className="text-[10px] not-italic">expiring</sub> &middot; (1 − P<sub className="text-[10px] not-italic">renew</sub>))
+            {' − '}&#931;RMA<sub className="text-[10px] not-italic">out</sub>(t)
+            {' + '}&#931;RMA<sub className="text-[10px] not-italic">in</sub>(t)
+          </span>
+        </div>
+      </div>
+
+      {/* Variable definitions */}
+      <div className="space-y-2.5 text-xs text-th-muted leading-relaxed pl-1">
+        <p className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3">Where:</p>
+        <div className="flex gap-3 items-start">
+          <span className="font-serif italic text-th-secondary shrink-0 w-36">C<sub className="text-[9px] not-italic">base</sub></span>
+          <span>= Current active deployed capacity.</span>
+        </div>
+        <div className="flex gap-3 items-start">
+          <span className="font-serif italic text-th-secondary shrink-0 w-36">S<sub className="text-[9px] not-italic">pipeline</sub> &middot; P<sub className="text-[9px] not-italic">win</sub></span>
+          <span>= New sales weighted pipeline capacity additions.</span>
+        </div>
+        <div className="flex gap-3 items-start">
+          <span className="font-serif italic text-th-secondary shrink-0 w-36">A<sub className="text-[9px] not-italic">expiring</sub> &middot; (1 − P<sub className="text-[9px] not-italic">renew</sub>)</span>
+          <span>= Non-renewed expiring asset capacity freed up.</span>
+        </div>
+        <div className="flex gap-3 items-start">
+          <span className="font-serif italic text-th-secondary shrink-0 w-36">RMA<sub className="text-[9px] not-italic">out</sub>(t)</span>
+          <span>= Capacity temporarily lost due to hardware sent to manufacturer for repair.</span>
+        </div>
+        <div className="flex gap-3 items-start">
+          <span className="font-serif italic text-th-secondary shrink-0 w-36">RMA<sub className="text-[9px] not-italic">in</sub>(t)</span>
+          <span>= Capacity restored as repaired hardware returns from the OEM.</span>
+        </div>
+      </div>
+
+      {/* Mapping to sliders */}
+      <div className="bg-surface-bg border border-surface-border rounded-lg p-4">
+        <p className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-2.5">Slider Mapping</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-th-muted">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span><strong className="text-th-secondary">Pipeline Confidence</strong> controls P<sub className="font-serif italic text-th-muted text-[9px]">win</sub></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+            <span><strong className="text-th-secondary">Renewal Rate</strong> controls P<sub className="font-serif italic text-th-muted text-[9px]">renew</sub></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+            <span><strong className="text-th-secondary">OEM Repair Lag</strong> scales RMA<sub className="font-serif italic text-th-muted text-[9px]">in</sub>(t) recovery</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+            <span><strong className="text-th-secondary">Decom Buffer</strong> extends expiry detection window</span>
+          </div>
         </div>
       </div>
     </div>
@@ -383,6 +446,7 @@ export default function CapacityForecast() {
 
   // UI state
   const [scenarioOpen, setScenarioOpen] = useState(true);
+  const [formulaOpen, setFormulaOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [completingId, setCompletingId] = useState(null);
   const [toast, setToast] = useState(null);
@@ -539,8 +603,8 @@ export default function CapacityForecast() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Forecast Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Forecast Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
           Retry
         </button>
@@ -581,13 +645,13 @@ export default function CapacityForecast() {
         <div className="flex items-center gap-3">
           <TrendingUp size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Capacity Forecasting Engine</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Capacity Forecasting Engine</h1>
+            <p className="text-xs text-th-muted">
               Multi-variable scenario planner &mdash; C<sub>proj</sub> = C<sub>base</sub> + &Sigma;Pipeline &minus; Expiring &minus; RMA<sub>out</sub> + RMA<sub>in</sub>
             </p>
           </div>
         </div>
-        <button onClick={refetch} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 border border-surface-border rounded-md hover:bg-surface-card transition-colors">
+        <button onClick={refetch} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-card transition-colors">
           <RefreshCw size={12} /> Refresh
         </button>
       </div>
@@ -598,8 +662,8 @@ export default function CapacityForecast() {
           <div className="flex flex-wrap items-center gap-4">
             {/* Time Horizon */}
             <div className="flex items-center gap-2">
-              <Calendar size={12} className="text-gray-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horizon</span>
+              <Calendar size={12} className="text-th-muted" />
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Horizon</span>
               <div className="flex rounded-md border border-surface-border overflow-hidden">
                 {[30, 60, 90, 'Q3', 'Q4'].map((h) => (
                   <button
@@ -608,7 +672,7 @@ export default function CapacityForecast() {
                     className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
                       timeHorizon === h
                         ? 'bg-siemens-teal/20 text-siemens-accent border-r border-surface-border'
-                        : 'text-gray-500 hover:text-gray-300 border-r border-surface-border last:border-r-0'
+                        : 'text-th-muted hover:text-th-secondary border-r border-surface-border last:border-r-0'
                     }`}
                   >
                     {horizonLabel(h)}
@@ -621,11 +685,11 @@ export default function CapacityForecast() {
 
             {/* Account Filter */}
             <div className="flex items-center gap-2">
-              <Filter size={12} className="text-gray-500" />
+              <Filter size={12} className="text-th-muted" />
               <select
                 value={accountFilter}
                 onChange={(e) => setAccountFilter(e.target.value)}
-                className="text-[10px] border border-surface-border rounded-md px-2 py-1 bg-surface-card text-gray-300 focus:outline-none focus:ring-1 focus:ring-siemens-teal/30"
+                className="text-[10px] border border-surface-border rounded-md px-2 py-1 bg-surface-card text-th-secondary focus:outline-none focus:ring-1 focus:ring-siemens-teal/30"
               >
                 <option value="all">All Accounts</option>
                 {allAccounts.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -634,7 +698,7 @@ export default function CapacityForecast() {
 
             {/* Region Filter */}
             <div className="flex items-center gap-2">
-              <MapPin size={12} className="text-gray-500" />
+              <MapPin size={12} className="text-th-muted" />
               <div className="flex rounded-md border border-surface-border overflow-hidden">
                 {['all', ...allRegions].map((r) => (
                   <button
@@ -643,7 +707,7 @@ export default function CapacityForecast() {
                     className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
                       regionFilter === r
                         ? 'bg-siemens-teal/20 text-siemens-accent'
-                        : 'text-gray-500 hover:text-gray-300'
+                        : 'text-th-muted hover:text-th-secondary'
                     } border-r border-surface-border last:border-r-0`}
                   >
                     {r === 'all' ? 'All' : r}
@@ -663,15 +727,15 @@ export default function CapacityForecast() {
         >
           <div className="flex items-center gap-2">
             <Sliders size={14} className="text-siemens-accent" />
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Scenario Modeling
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-th-muted">
               {pipelineConfidence}% pipe &middot; {renewalRate}% renew &middot; +{oemRepairLag}d lag &middot; +{decomBuffer}d buffer
             </span>
-            {scenarioOpen ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
+            {scenarioOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
           </div>
         </div>
         {scenarioOpen && (
@@ -688,9 +752,35 @@ export default function CapacityForecast() {
             <ScenarioSlider
               label="Decom Buffer" value={decomBuffer} onChange={setDecomBuffer}
               min={0} max={90} step={5} unit="days" icon={Calendar} />
-            <p className="text-[10px] text-gray-600 pt-1">
+            <p className="text-[10px] text-th-faint pt-1">
               Adjust levers to model different scenarios. Changes apply instantly across all charts.
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Projection Formula Rationale */}
+      <div className="section-card">
+        <div
+          className="section-card-header cursor-pointer"
+          onClick={() => setFormulaOpen(!formulaOpen)}
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen size={14} className="text-siemens-accent" />
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+              Projection Formula
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-th-muted">
+              C<sub className="font-serif italic text-th-muted text-[8px]">proj</sub> = C<sub className="font-serif italic text-th-muted text-[8px]">base</sub> + Pipeline − Expiring − RMA<sub className="font-serif italic text-th-muted text-[8px]">out</sub> + RMA<sub className="font-serif italic text-th-muted text-[8px]">in</sub>
+            </span>
+            {formulaOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
+          </div>
+        </div>
+        {formulaOpen && (
+          <div className="section-card-body">
+            <ProjectionFormula />
           </div>
         )}
       </div>
@@ -701,51 +791,51 @@ export default function CapacityForecast() {
           <div className="metric-card relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Base</span>
-              <div className="text-xl font-bold text-white mt-0.5">{agg.cBase}</div>
-              <div className="text-[9px] text-gray-600">deployed racks</div>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Base</span>
+              <div className="text-xl font-bold text-th-primary mt-0.5">{agg.cBase}</div>
+              <div className="text-[9px] text-th-faint">deployed racks</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">+Pipeline</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">+Pipeline</span>
               <div className="text-xl font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
                 +{agg.pipeline} <ArrowUpRight size={14} />
               </div>
-              <div className="text-[9px] text-gray-600">{pipelineConfidence}% confidence</div>
+              <div className="text-[9px] text-th-faint">{pipelineConfidence}% confidence</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-orange-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">−Expiring</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">−Expiring</span>
               <div className="text-xl font-bold text-orange-400 mt-0.5 flex items-center gap-1">
                 −{agg.expiring} <ArrowDownRight size={14} />
               </div>
-              <div className="text-[9px] text-gray-600">{renewalRate}% renew</div>
+              <div className="text-[9px] text-th-faint">{renewalRate}% renew</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-red-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">−OEM Repair</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">−OEM Repair</span>
               <div className="text-xl font-bold text-red-400 mt-0.5">−{agg.rmaOut}</div>
-              <div className="text-[9px] text-gray-600">at manufacturer</div>
+              <div className="text-[9px] text-th-faint">at manufacturer</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">+RMA Return</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">+RMA Return</span>
               <div className="text-xl font-bold text-emerald-400 mt-0.5">+{agg.rmaIn}</div>
-              <div className="text-[9px] text-gray-600">spare pool</div>
+              <div className="text-[9px] text-th-faint">spare pool</div>
             </div>
           </div>
           <div className="metric-card relative overflow-hidden">
             <div className={`absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl ${agg.headroom < 0 ? 'bg-amber-500' : 'bg-indigo-500'}`} />
             <div className="relative">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Projected</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Projected</span>
               <div className={`text-xl font-bold mt-0.5 ${agg.headroom < 0 ? 'text-amber-400' : 'text-indigo-400'}`}>
                 {agg.projected}
               </div>
@@ -761,10 +851,10 @@ export default function CapacityForecast() {
       {agg && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Aggregate Rack Forecast &mdash; {facilityResults.length} Facilities
             </h2>
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider">
               {horizonLabel(timeHorizon)} horizon
             </span>
           </div>
@@ -775,19 +865,19 @@ export default function CapacityForecast() {
                 margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
               >
                 <WaterfallDefs />
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#1e293b' }} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickLine={false}
+                  tick={{ fontSize: 11, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
                   domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, agg.totalCapacity) * 1.1]}
-                  label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#64748b' } }}
+                  label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'var(--text-faint)' } }}
                 />
                 <Tooltip content={<WaterfallTooltip />} />
                 {agg.totalCapacity > 0 && (
                   <ReferenceLine y={agg.totalCapacity} stroke="#475569" strokeDasharray="6 4"
-                    label={{ value: `Total Capacity: ${agg.totalCapacity}`, position: 'top', style: { fontSize: 11, fill: '#64748b' } }} />
+                    label={{ value: `Total Capacity: ${agg.totalCapacity}`, position: 'top', style: { fontSize: 11, fill: 'var(--text-faint)' } }} />
                 )}
-                <ReferenceLine y={0} stroke="#334155" />
+                <ReferenceLine y={0} stroke="var(--surface-border-light)" />
                 <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
                 <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={56} shape={<WaterfallBar />}>
                   {agg.segments.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
@@ -796,7 +886,7 @@ export default function CapacityForecast() {
             </ResponsiveContainer>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-[10px] text-gray-400">
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-[10px] text-th-muted">
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#009999]" /> Base</div>
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#22c55e]" /> +Pipeline</div>
               <div className="flex items-center gap-1.5">
@@ -808,7 +898,7 @@ export default function CapacityForecast() {
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#10b981]" /> +RMA Return</div>
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#6366f1]" /> Projected</div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 border-t-2 border-dashed border-gray-500 inline-block" /> Capacity
+                <span className="w-3 h-0.5 border-t-2 border-dashed border-th-muted inline-block" /> Capacity
               </div>
             </div>
           </div>
@@ -818,7 +908,7 @@ export default function CapacityForecast() {
       {/* Per-Facility Grid */}
       {facilityResults.length > 0 && (
         <div>
-          <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.1em] mb-4">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] mb-4">
             Per-Facility Forecast
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -833,8 +923,8 @@ export default function CapacityForecast() {
                   <div className="section-card-header">
                     <div className="flex items-center gap-2">
                       <MapPin size={12} className="text-siemens-accent" />
-                      <h3 className="text-xs font-semibold text-gray-200">{facility.code}</h3>
-                      <span className="text-[9px] text-gray-600">{facility.region}</span>
+                      <h3 className="text-xs font-semibold text-th-secondary">{facility.code}</h3>
+                      <span className="text-[9px] text-th-faint">{facility.region}</span>
                     </div>
                     {status === 'over' ? (
                       <span className="badge badge-red">Over</span>
@@ -848,37 +938,37 @@ export default function CapacityForecast() {
                     <MiniWaterfall segments={segments} totalCapacity={totalCapacity} height={120} />
                     <div className="grid grid-cols-6 gap-1 mt-2 pt-2 border-t border-surface-border text-center">
                       <div>
-                        <div className="text-sm font-bold text-white">{cBase}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">Base</div>
+                        <div className="text-sm font-bold text-th-primary">{cBase}</div>
+                        <div className="text-[8px] text-th-faint uppercase">Base</div>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-emerald-400">+{pipelineWeighted}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">Pipe</div>
+                        <div className="text-[8px] text-th-faint uppercase">Pipe</div>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-orange-400">−{capacityFreed}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">Exp</div>
+                        <div className="text-[8px] text-th-faint uppercase">Exp</div>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-red-400">−{rmaOut.count}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">RMA</div>
+                        <div className="text-[8px] text-th-faint uppercase">RMA</div>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-emerald-400">+{rmaIn.count}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">Ret</div>
+                        <div className="text-[8px] text-th-faint uppercase">Ret</div>
                       </div>
                       <div>
                         <div className={`text-sm font-bold ${status === 'over' ? 'text-amber-400' : 'text-indigo-400'}`}>{projected}</div>
-                        <div className="text-[8px] text-gray-600 uppercase">Proj</div>
+                        <div className="text-[8px] text-th-faint uppercase">Proj</div>
                       </div>
                     </div>
                     {/* Accounts */}
                     <div className="flex flex-wrap gap-1 mt-2">
                       {facility.accounts.slice(0, 4).map((a) => (
-                        <span key={a} className="text-[8px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">{a}</span>
+                        <span key={a} className="text-[8px] px-1.5 py-0.5 rounded-full bg-[var(--skeleton-bg)] text-th-muted">{a}</span>
                       ))}
                       {facility.accounts.length > 4 && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">+{facility.accounts.length - 4}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[var(--skeleton-bg)] text-th-muted">+{facility.accounts.length - 4}</span>
                       )}
                     </div>
                   </div>

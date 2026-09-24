@@ -2,8 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Font & Base ──────────────────────────────────────────────────────── */
+/* ─── Theme Variables ─────────────────────────────────────────────────── */
 @layer base {
+  /* Light mode defaults */
+  :root {
+    --surface-bg: #f8fafc;
+    --surface-card: #ffffff;
+    --surface-card-hover: #f1f5f9;
+    --surface-border: #e2e8f0;
+    --surface-border-light: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --text-inverse: #ffffff;
+    --siemens-accent: #007a7a;
+    --tooltip-bg: #ffffff;
+    --tooltip-border: #e2e8f0;
+    --tooltip-text: #334155;
+    --table-header-bg: #f1f5f9;
+    --skeleton-bg: #e2e8f0;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-hover: #94a3b8;
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-card-hover: 0 4px 12px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --hero-metric-color: #007a7a;
+    --hero-metric-glow: rgba(0, 122, 122, 0.15);
+    --overlay-hover: rgba(0, 0, 0, 0.03);
+    --slider-track: #cbd5e1;
+    --nav-tooltip-bg: #ffffff;
+  }
+
+  /* Dark mode overrides */
+  .dark {
+    --surface-bg: #0a0f1a;
+    --surface-card: #111827;
+    --surface-card-hover: #1a2234;
+    --surface-border: #1e293b;
+    --surface-border-light: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --text-inverse: #111827;
+    --siemens-accent: #00b8b8;
+    --tooltip-bg: #111827;
+    --tooltip-border: #1e293b;
+    --tooltip-text: #94a3b8;
+    --table-header-bg: #0d1321;
+    --skeleton-bg: #1f2937;
+    --scrollbar-thumb: #374151;
+    --scrollbar-hover: #4b5563;
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+    --shadow-card-hover: 0 4px 12px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --hero-metric-color: #00cccc;
+    --hero-metric-glow: rgba(0, 204, 204, 0.2);
+    --overlay-hover: rgba(255, 255, 255, 0.03);
+    --slider-track: #374151;
+    --nav-tooltip-bg: #1e293b;
+  }
+
   html {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
       'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -12,66 +70,83 @@
   }
 
   body {
-    @apply bg-surface-bg text-gray-300;
+    background-color: var(--surface-bg);
+    color: var(--text-secondary);
   }
 }
 
-/* ─── Dark Command Center Component Styles ─────────────────────────────── */
+/* ─── Component Styles (theme-aware) ──────────────────────────────────── */
 @layer components {
-  /* Metric Card — dark glass with subtle border glow */
+  /* Metric Card — glass with subtle border glow */
   .metric-card {
     @apply bg-surface-card rounded-lg border border-surface-border p-5
            shadow-card transition-all duration-200
            hover:border-surface-border-light hover:shadow-card-hover;
   }
 
-  /* Status Badges — dark-mode adapted */
+  /* Status Badges — semi-transparent (works in both modes) */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
 
   .badge-green {
-    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+    @apply bg-emerald-500/15 text-emerald-600 border border-emerald-500/20;
+  }
+  .dark .badge-green {
+    @apply text-emerald-400;
   }
 
   .badge-yellow {
-    @apply bg-amber-500/15 text-amber-400 border border-amber-500/20;
+    @apply bg-amber-500/15 text-amber-600 border border-amber-500/20;
+  }
+  .dark .badge-yellow {
+    @apply text-amber-400;
   }
 
   .badge-red {
-    @apply bg-red-500/15 text-red-400 border border-red-500/20;
+    @apply bg-red-500/15 text-red-600 border border-red-500/20;
+  }
+  .dark .badge-red {
+    @apply text-red-400;
   }
 
   .badge-gray {
-    @apply bg-gray-500/10 text-gray-400 border border-gray-500/20;
+    @apply bg-gray-500/15 border border-gray-500/20;
+    color: var(--text-muted);
   }
+
   .badge-blue {
-    @apply bg-blue-500/15 text-blue-400 border border-blue-500/20;
+    @apply bg-blue-500/15 text-blue-600 border border-blue-500/20;
+  }
+  .dark .badge-blue {
+    @apply text-blue-400;
   }
 
   .badge-orange {
-    @apply bg-orange-500/15 text-orange-400 border border-orange-500/20;
+    @apply bg-orange-500/15 text-orange-600 border border-orange-500/20;
   }
-
-  .badge-gray {
-    @apply bg-gray-500/15 text-gray-400 border border-gray-500/20;
+  .dark .badge-orange {
+    @apply text-orange-400;
   }
 
   .badge-teal {
-    @apply bg-siemens-teal/15 text-siemens-accent border border-siemens-teal/25;
+    @apply bg-siemens-teal/15 border border-siemens-teal/25;
+    color: var(--siemens-accent);
   }
 
-  /* Data Table — dark theme */
+  /* Data Table */
   .data-table {
     @apply w-full text-sm text-left;
   }
 
   .data-table thead {
-    @apply bg-[#0d1321] border-b border-surface-border;
+    background-color: var(--table-header-bg);
+    @apply border-b border-surface-border;
   }
 
   .data-table th {
-    @apply px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.1em];
+    @apply px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.1em];
+    color: var(--text-muted);
   }
 
   .data-table td {
@@ -82,12 +157,13 @@
     @apply hover:bg-surface-card-hover transition-colors duration-100;
   }
 
-  /* Loading Skeleton — dark */
+  /* Loading Skeleton */
   .skeleton {
-    @apply animate-pulse bg-gray-800 rounded;
+    @apply animate-pulse rounded;
+    background-color: var(--skeleton-bg);
   }
 
-  /* Section Card — dark glass */
+  /* Section Card — glass container */
   .section-card {
     @apply bg-surface-card rounded-lg border border-surface-border shadow-card overflow-hidden;
   }
@@ -100,7 +176,7 @@
     @apply p-5;
   }
 
-  /* Filter Tabs — dark */
+  /* Filter Tabs */
   .filter-tab {
     @apply px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 cursor-pointer;
   }
@@ -110,43 +186,54 @@
   }
 
   .filter-tab-inactive {
-    @apply text-gray-400 hover:bg-white/5 hover:text-gray-200;
+    color: var(--text-faint);
+  }
+  .filter-tab-inactive:hover {
+    background-color: var(--overlay-hover);
+    color: var(--text-secondary);
   }
 
-  /* Region label — like the REGION badge in Claudeforce */
+  /* Region badge */
   .region-badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-[10px]
            font-bold uppercase tracking-[0.12em]
-           bg-siemens-teal/20 text-siemens-accent border border-siemens-teal/30;
+           bg-siemens-teal/20 border border-siemens-teal/30;
+    color: var(--siemens-accent);
   }
 
-  /* Signal card — alert/insight card like CLAUDE SIGNAL */
+  /* Signal card */
   .signal-card {
-    @apply bg-[#0d1321] rounded-lg border border-surface-border p-4
+    @apply rounded-lg border border-surface-border p-4
            border-l-2 border-l-siemens-teal;
+    background-color: var(--table-header-bg);
   }
 
-  /* Pill button — action buttons like DETAILS, SLACK THE TEAM */
+  /* Pill button */
   .pill-btn {
     @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-           bg-surface-card-hover text-gray-300 border border-surface-border
-           hover:border-siemens-teal/40 hover:text-siemens-accent
+           bg-surface-card-hover border border-surface-border
            transition-all duration-150 cursor-pointer;
+    color: var(--text-secondary);
+  }
+  .pill-btn:hover {
+    @apply border-siemens-teal/40;
+    color: var(--siemens-accent);
   }
 
   .pill-btn-active {
-    @apply bg-siemens-teal/20 text-siemens-accent border-siemens-teal/40;
+    @apply bg-siemens-teal/20 border-siemens-teal/40;
+    color: var(--siemens-accent);
   }
 
-  /* Big hero metric — like $78.1M in the Claudeforce UI */
+  /* Big hero metric */
   .hero-metric {
     @apply text-4xl font-bold tracking-tight;
-    color: #00cccc;
-    text-shadow: 0 0 30px rgba(0, 204, 204, 0.2);
+    color: var(--hero-metric-color);
+    text-shadow: 0 0 30px var(--hero-metric-glow);
   }
 }
 
-/* ─── Scrollbar Styling (dark) ─────────────────────────────────────────── */
+/* ─── Scrollbar Styling ───────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -157,27 +244,30 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-700 rounded-full;
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
+  background-color: var(--scrollbar-hover);
 }
 
-/* ─── Progress Bar (dark) ──────────────────────────────────────────────── */
+/* ─── Progress Bar ────────────────────────────────────────────────────── */
 .progress-bar {
-  @apply h-2 rounded-full bg-gray-800 overflow-hidden;
+  @apply h-2 rounded-full overflow-hidden;
+  background-color: var(--skeleton-bg);
 }
 
 .progress-bar-fill {
   @apply h-full rounded-full transition-all duration-500 ease-out;
 }
 
-/* ─── Form Controls (dark) ─────────────────────────────────────────────── */
+/* ─── Form Controls ───────────────────────────────────────────────────── */
 select,
 input[type="text"],
 input[type="search"] {
-  @apply bg-surface-card text-gray-300 border-surface-border;
+  @apply bg-surface-card border-surface-border;
+  color: var(--text-secondary);
 }
 
 select:focus,
@@ -186,5 +276,6 @@ input:focus {
 }
 
 select option {
-  @apply bg-surface-card text-gray-300;
+  @apply bg-surface-card;
+  color: var(--text-secondary);
 }

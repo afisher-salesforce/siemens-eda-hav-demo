@@ -84,8 +84,8 @@ export default function SpareInventory() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Inventory</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Inventory</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -127,8 +127,8 @@ export default function SpareInventory() {
         <div className="flex items-center gap-3">
           <Package size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Spare Parts Inventory</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Spare Parts Inventory</h1>
+            <p className="text-xs text-th-muted">
               Spare parts stock across {locations.length} colocation facilities
             </p>
           </div>
@@ -138,51 +138,51 @@ export default function SpareInventory() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Total Parts in Stock
           </span>
-          <div className="text-2xl font-bold text-white mt-1">{totalParts.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">{SPARE_TYPES.length} part types</div>
+          <div className="text-2xl font-bold text-th-primary mt-1">{totalParts.toLocaleString()}</div>
+          <div className="text-xs text-th-muted">{SPARE_TYPES.length} part types</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Below Minimum
           </span>
           <div className="text-2xl font-bold text-amber-400 mt-1 flex items-center gap-2">
             {belowMinCount}
             {belowMinCount > 0 && <AlertTriangle size={16} />}
           </div>
-          <div className="text-xs text-gray-500">items need reorder</div>
+          <div className="text-xs text-th-muted">items need reorder</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Inventory Value
           </span>
-          <div className="text-2xl font-bold text-white mt-1">
+          <div className="text-2xl font-bold text-th-primary mt-1">
             ${(totalInventoryValue / 1000000).toFixed(1)}M
           </div>
-          <div className="text-xs text-gray-500">total replacement cost</div>
+          <div className="text-xs text-th-muted">total replacement cost</div>
         </div>
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search spare parts..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
         <div className="flex items-center gap-2">
-          <ArrowUpDown size={14} className="text-gray-500" />
+          <ArrowUpDown size={14} className="text-th-muted" />
           <select
             value={sortField}
             onChange={(e) => setSortField(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="name">Sort by Name</option>
             <option value="location">Sort by Location</option>
@@ -190,7 +190,7 @@ export default function SpareInventory() {
             <option value="available">Sort by Available (Low)</option>
           </select>
         </div>
-        <span className="text-xs text-gray-500 ml-auto">
+        <span className="text-xs text-th-muted ml-auto">
           {filtered.length} items
         </span>
       </div>
@@ -216,17 +216,17 @@ export default function SpareInventory() {
                 {filtered.length > 0 ? (
                   filtered.map((item, i) => (
                     <tr key={i}>
-                      <td className="font-medium text-gray-200 whitespace-nowrap">
+                      <td className="font-medium text-th-secondary whitespace-nowrap">
                         {item.name}
                       </td>
-                      <td className="text-gray-500 font-mono text-xs">{item.sku}</td>
-                      <td className="text-gray-400 whitespace-nowrap">
+                      <td className="text-th-muted font-mono text-xs">{item.sku}</td>
+                      <td className="text-th-muted whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <MapPin size={10} />
                           {item.location}
                         </span>
                       </td>
-                      <td className="text-gray-300 font-mono text-center">{item.stock}</td>
+                      <td className="text-th-secondary font-mono text-center">{item.stock}</td>
                       <td className="text-amber-400 font-mono text-center">{item.reserved}</td>
                       <td
                         className={`font-mono text-center font-semibold ${
@@ -236,7 +236,7 @@ export default function SpareInventory() {
                         {item.available}
                         {item.belowMin && <AlertTriangle size={10} className="inline ml-1 text-orange-400" />}
                       </td>
-                      <td className="text-gray-500 font-mono text-center">{item.minStock}</td>
+                      <td className="text-th-muted font-mono text-center">{item.minStock}</td>
                       <td>
                         {item.belowMin ? (
                           <span className="badge badge-red">Low Stock</span>
@@ -248,7 +248,7 @@ export default function SpareInventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-gray-600">
+                    <td colSpan={8} className="text-center py-12 text-th-faint">
                       No spare parts match the current search
                     </td>
                   </tr>

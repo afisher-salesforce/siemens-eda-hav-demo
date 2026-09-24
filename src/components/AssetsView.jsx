@@ -9,7 +9,7 @@ import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 
 function UtilizationBadge({ value }) {
-  if (value == null) return <span className="text-gray-600">--</span>;
+  if (value == null) return <span className="text-th-faint">--</span>;
   const num = typeof value === 'string' ? parseFloat(value) : value;
   let badgeClass = 'badge-red';
   if (num >= 70) badgeClass = 'badge-green';
@@ -104,8 +104,8 @@ export default function AssetsView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Assets</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Assets</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -122,22 +122,22 @@ export default function AssetsView() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search assets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter size={14} className="text-gray-500" />
+          <Filter size={14} className="text-th-muted" />
           <select
             value={filterLocation}
             onChange={(e) => setFilterLocation(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Locations</option>
             {locations.map((loc) => (
@@ -147,7 +147,7 @@ export default function AssetsView() {
           <select
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Customers</option>
             {customers.map((c) => (
@@ -157,7 +157,7 @@ export default function AssetsView() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Statuses</option>
             {statuses.map((s) => (
@@ -167,7 +167,7 @@ export default function AssetsView() {
           <select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Tiers</option>
             {tiers.map((t) => (
@@ -176,7 +176,7 @@ export default function AssetsView() {
           </select>
         </div>
 
-        <span className="text-xs text-gray-500 ml-auto flex items-center gap-1">
+        <span className="text-xs text-th-muted ml-auto flex items-center gap-1">
           <Server size={12} />
           {loading ? 'Loading...' : `${filtered.length} assets`}
         </span>
@@ -240,25 +240,25 @@ export default function AssetsView() {
                             asset.assetTier === 'Blade' ? 'bg-emerald-500/15 text-emerald-400' :
                             asset.assetTier === 'Module' ? 'bg-amber-500/15 text-amber-400' :
                             asset.assetTier === 'Card' ? 'bg-pink-500/15 text-pink-400' :
-                            'bg-gray-500/15 text-gray-400'
+                            'bg-gray-500/15 text-th-muted'
                           }`}>
                             {asset.assetTier}
                           </span>
                         )}
                       </td>
-                      <td className="text-gray-500 font-mono text-xs">
+                      <td className="text-th-muted font-mono text-xs">
                         {asset.serialNumber || '--'}
                       </td>
-                      <td className="text-gray-400">{asset.product || '--'}</td>
-                      <td className="text-gray-400">{asset.customer || '--'}</td>
-                      <td className="text-gray-400 whitespace-nowrap">{asset.location || '--'}</td>
+                      <td className="text-th-muted">{asset.product || '--'}</td>
+                      <td className="text-th-muted">{asset.customer || '--'}</td>
+                      <td className="text-th-muted whitespace-nowrap">{asset.location || '--'}</td>
                       <td>
                         <StatusBadge status={asset.status} />
                       </td>
                       <td>
                         <UtilizationBadge value={asset.utilization} />
                       </td>
-                      <td className="text-gray-400">
+                      <td className="text-th-muted">
                         {asset.powerDraw != null ? asset.powerDraw.toFixed(1) : '--'}
                       </td>
                       <td>
@@ -272,7 +272,7 @@ export default function AssetsView() {
                           )}
                         </div>
                       </td>
-                      <td className="text-gray-500 whitespace-nowrap">
+                      <td className="text-th-muted whitespace-nowrap">
                         {asset.contractEnd
                           ? new Date(asset.contractEnd).toLocaleDateString()
                           : '--'}
@@ -282,7 +282,7 @@ export default function AssetsView() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={11} className="text-center py-8 text-gray-600">
+                    <td colSpan={11} className="text-center py-8 text-th-faint">
                       No assets match the current filters
                     </td>
                   </tr>

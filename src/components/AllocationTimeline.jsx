@@ -88,7 +88,7 @@ function MonthHeaders() {
   return (
     <div className="flex justify-between px-1 mb-1">
       {months.map((m, i) => (
-        <span key={i} className="text-[8px] text-gray-600 uppercase tracking-wider font-medium w-[8.33%] text-center">
+        <span key={i} className="text-[8px] text-th-faint uppercase tracking-wider font-medium w-[8.33%] text-center">
           {m}
         </span>
       ))}
@@ -170,8 +170,8 @@ export default function AllocationTimeline() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Allocations</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Allocations</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -212,8 +212,8 @@ export default function AllocationTimeline() {
         <div className="flex items-center gap-3">
           <Calendar size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Allocation Timeline</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Allocation Timeline</h1>
+            <p className="text-xs text-th-muted">
               Customer allocations across colocation facilities — 12-month view
             </p>
           </div>
@@ -223,39 +223,39 @@ export default function AllocationTimeline() {
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Active Allocations
           </span>
-          <div className="text-2xl font-bold text-white mt-1">{uniqueCustomers}</div>
-          <div className="text-xs text-gray-500">customers across {locations.length} sites</div>
+          <div className="text-2xl font-bold text-th-primary mt-1">{uniqueCustomers}</div>
+          <div className="text-xs text-th-muted">customers across {locations.length} sites</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Expiring in 90 Days
           </span>
           <div className={`text-2xl font-bold mt-1 ${expiringIn90 > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
             {expiringIn90}
           </div>
-          <div className="text-xs text-gray-500">contracts ending soon</div>
+          <div className="text-xs text-th-muted">contracts ending soon</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Total Assets Allocated
           </span>
-          <div className="text-2xl font-bold text-white mt-1">
+          <div className="text-2xl font-bold text-th-primary mt-1">
             {assets ? assets.length : 0}
           </div>
-          <div className="text-xs text-gray-500">across all facilities</div>
+          <div className="text-xs text-th-muted">across all facilities</div>
         </div>
       </div>
 
       {/* Location Filter */}
       <div className="flex items-center gap-3">
-        <Filter size={14} className="text-gray-500" />
+        <Filter size={14} className="text-th-muted" />
         <select
           value={filterLocation}
           onChange={(e) => setFilterLocation(e.target.value)}
-          className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+          className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
         >
           <option value="">All Locations</option>
           {locations.map((l) => (
@@ -271,19 +271,19 @@ export default function AllocationTimeline() {
           <div key={loc.location} className="section-card">
             <button
               onClick={() => setExpandedLocation(isExpanded ? null : loc.location)}
-              className="w-full section-card-header cursor-pointer hover:bg-white/[0.02] transition-colors"
+              className="w-full section-card-header cursor-pointer hover:bg-[var(--overlay-hover)] transition-colors"
             >
               <div className="flex items-center gap-2">
                 {isExpanded ? (
-                  <ChevronDown size={14} className="text-gray-500" />
+                  <ChevronDown size={14} className="text-th-muted" />
                 ) : (
-                  <ChevronRight size={14} className="text-gray-500" />
+                  <ChevronRight size={14} className="text-th-muted" />
                 )}
                 <MapPin size={14} className="text-siemens-accent" />
-                <span className="text-sm font-semibold text-gray-200">{loc.location}</span>
+                <span className="text-sm font-semibold text-th-secondary">{loc.location}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                <span className="text-[10px] text-th-muted flex items-center gap-1">
                   <Users size={10} />
                   {loc.customers.length} customers
                 </span>
@@ -298,11 +298,11 @@ export default function AllocationTimeline() {
                   {loc.customers.map((cust, i) => (
                     <div key={cust.customer} className="flex items-center gap-3">
                       <div className="w-32 shrink-0">
-                        <span className="text-xs text-gray-400 truncate block">{cust.customer}</span>
-                        <span className="text-[9px] text-gray-600">{cust.assets.length} assets</span>
+                        <span className="text-xs text-th-muted truncate block">{cust.customer}</span>
+                        <span className="text-[9px] text-th-faint">{cust.assets.length} assets</span>
                       </div>
                       <div className="flex-1 relative">
-                        <div className="absolute inset-0 bg-gray-900/30 rounded" />
+                        <div className="absolute inset-0 bg-surface-bg/30 rounded" />
                         <TimelineBar
                           start={cust.earliestStart}
                           end={cust.latestEnd}
@@ -318,7 +318,7 @@ export default function AllocationTimeline() {
                                 ? 'text-red-400'
                                 : daysUntil(cust.latestEnd) <= 90
                                 ? 'text-amber-400'
-                                : 'text-gray-500'
+                                : 'text-th-muted'
                             }`}
                           >
                             {daysUntil(cust.latestEnd)}d left
@@ -331,8 +331,8 @@ export default function AllocationTimeline() {
 
                 {/* Today marker label */}
                 <div className="flex items-center gap-1 mt-3 pt-2 border-t border-surface-border">
-                  <Clock size={10} className="text-gray-500" />
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">
+                  <Clock size={10} className="text-th-muted" />
+                  <span className="text-[9px] text-th-muted uppercase tracking-wider font-medium">
                     Today: {new Date().toLocaleDateString()}
                   </span>
                 </div>
@@ -344,7 +344,7 @@ export default function AllocationTimeline() {
 
       {filtered.length === 0 && (
         <div className="section-card">
-          <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+          <div className="flex items-center justify-center py-16 text-sm text-th-faint">
             No allocation data available
           </div>
         </div>

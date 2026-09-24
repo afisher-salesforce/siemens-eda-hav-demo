@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { getCapacity, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { tooltipStyle } from '../utils/chartStyles';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 
@@ -47,7 +48,7 @@ function LocationCard({ location }) {
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <MapPin size={16} className="text-siemens-accent" />
-          <h3 className="text-sm font-semibold text-gray-200">{location.name || '--'}</h3>
+          <h3 className="text-sm font-semibold text-th-secondary">{location.name || '--'}</h3>
         </div>
         {Number(occupancy) > 85 && (
           <span className="badge badge-red">Near Capacity</span>
@@ -57,8 +58,8 @@ function LocationCard({ location }) {
       {/* Rack Occupancy */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Rack Occupancy</span>
-          <span className="text-xs font-semibold text-gray-300">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium">Rack Occupancy</span>
+          <span className="text-xs font-semibold text-th-secondary">
             {location.usedRacks ?? '--'} / {location.totalRacks ?? '--'} ({occupancy}%)
           </span>
         </div>
@@ -68,10 +69,10 @@ function LocationCard({ location }) {
       {/* Power Capacity */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium flex items-center gap-1">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium flex items-center gap-1">
             <Zap size={10} /> Power
           </span>
-          <span className="text-xs font-semibold text-gray-300">
+          <span className="text-xs font-semibold text-th-secondary">
             {location.usedPowerKw?.toFixed(0) ?? '--'} / {location.totalPowerKw?.toFixed(0) ?? '--'} kW ({powerPct}%)
           </span>
         </div>
@@ -84,7 +85,7 @@ function LocationCard({ location }) {
 
       {/* PUE */}
       <div className="flex items-center justify-between pt-2 border-t border-surface-border">
-        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium flex items-center gap-1">
+        <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium flex items-center gap-1">
           <Thermometer size={10} /> PUE
         </span>
         <span
@@ -121,8 +122,8 @@ export default function CapacityView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Capacity Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Capacity Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -158,7 +159,7 @@ export default function CapacityView() {
       <DemoContextPanel {...CONTEXT.capacity} />
       {/* Location Cards */}
       <div>
-        <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.1em] mb-4">
+        <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] mb-4">
           Colocation Facilities
         </h2>
         {locations.length > 0 ? (
@@ -169,7 +170,7 @@ export default function CapacityView() {
           </div>
         ) : (
           <div className="section-card">
-            <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+            <div className="flex items-center justify-center py-16 text-sm text-th-faint">
               No location data available
             </div>
           </div>
@@ -179,8 +180,8 @@ export default function CapacityView() {
       {/* Forecast Table */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Capacity Forecast</h2>
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider">Q3/Q4 Projections</span>
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Capacity Forecast</h2>
+          <span className="text-[10px] text-th-muted uppercase tracking-wider">Q3/Q4 Projections</span>
         </div>
         <div className="section-card-body p-0">
           {forecast.length > 0 ? (
@@ -213,11 +214,11 @@ export default function CapacityView() {
                     const pipelineDemand = Math.max(1, Math.round(((locationHash % 7) + 1) * (activeOrderCount > 0 ? 1 : 0.8)));
                     return (
                       <tr key={i}>
-                        <td className="font-medium text-gray-200">{f.location || '--'}</td>
-                        <td className="text-gray-400">{f.quarter || '--'}</td>
-                        <td className="text-gray-400">{f.currentRacks ?? '--'}</td>
-                        <td className="text-gray-300">{totalCapacity || '--'}</td>
-                        <td className="text-gray-200 font-medium">{f.projectedDemand ?? '--'}</td>
+                        <td className="font-medium text-th-secondary">{f.location || '--'}</td>
+                        <td className="text-th-muted">{f.quarter || '--'}</td>
+                        <td className="text-th-muted">{f.currentRacks ?? '--'}</td>
+                        <td className="text-th-secondary">{totalCapacity || '--'}</td>
+                        <td className="text-th-secondary font-medium">{f.projectedDemand ?? '--'}</td>
                         <td>
                           <span className="text-indigo-400 font-medium font-mono">
                             +{pipelineDemand}
@@ -253,7 +254,7 @@ export default function CapacityView() {
               </table>
             </div>
           ) : (
-            <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+            <div className="flex items-center justify-center py-16 text-sm text-th-faint">
               No forecast data available
             </div>
           )}
@@ -265,11 +266,11 @@ export default function CapacityView() {
         <div className="section-card-header">
           <div className="flex items-center gap-2">
             <BarChart3 size={14} className="text-siemens-accent" />
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Capacity Analytics
             </h2>
           </div>
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-siemens-teal animate-pulse" />
             Live
           </span>
@@ -280,7 +281,7 @@ export default function CapacityView() {
               {/* Occupied vs Total Racks by Location */}
               {locations.length > 0 && (
                 <div>
-                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                  <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3 px-1">
                     Occupied vs. Total Racks by Data Center
                   </h3>
                   <ResponsiveContainer width="100%" height={Math.max(200, locations.length * 50 + 40)}>
@@ -294,35 +295,29 @@ export default function CapacityView() {
                       layout="vertical"
                       margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" horizontal={false} />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 11, fill: '#64748b' }}
-                        axisLine={{ stroke: '#1e293b' }}
-                        tickLine={{ stroke: '#1e293b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
+                        axisLine={{ stroke: 'var(--surface-border)' }}
+                        tickLine={{ stroke: 'var(--surface-border)' }}
                       />
                       <YAxis
                         type="category"
                         dataKey="name"
                         width={120}
-                        tick={{ fontSize: 11, fill: '#94a3b8' }}
-                        axisLine={{ stroke: '#1e293b' }}
+                        tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                        axisLine={{ stroke: 'var(--surface-border)' }}
                         tickLine={false}
                       />
                       <Tooltip
-                        contentStyle={{
-                          borderRadius: '8px',
-                          border: '1px solid #1e293b',
-                          backgroundColor: '#111827',
-                          fontSize: '12px',
-                          color: '#94a3b8',
-                        }}
+                        contentStyle={tooltipStyle}
                         formatter={(value, name) => [value, name === 'occupied' ? 'Occupied' : 'Available']}
                       />
                       <Legend
                         iconType="circle"
                         iconSize={8}
-                        wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
+                        wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)' }}
                       />
                       <Bar dataKey="occupied" name="Occupied" stackId="racks" radius={[0, 0, 0, 0]} maxBarSize={24}>
                         {locations.map((loc, idx) => {
@@ -335,7 +330,7 @@ export default function CapacityView() {
                           );
                         })}
                       </Bar>
-                      <Bar dataKey="available" name="Available" stackId="racks" fill="#1e293b" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                      <Bar dataKey="available" name="Available" stackId="racks" fill="var(--surface-border)" radius={[0, 4, 4, 0]} maxBarSize={24} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -344,7 +339,7 @@ export default function CapacityView() {
               {/* Forecast: Projected Demand vs Total Capacity */}
               {forecast.length > 0 && (
                 <div>
-                  <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3 px-1">
+                  <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3 px-1">
                     Projected Demand vs. Total Capacity
                   </h3>
                   <ResponsiveContainer width="100%" height={280}>
@@ -359,36 +354,30 @@ export default function CapacityView() {
                       })}
                       margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                       <XAxis
                         dataKey="label"
-                        tick={{ fontSize: 10, fill: '#64748b' }}
-                        axisLine={{ stroke: '#1e293b' }}
-                        tickLine={{ stroke: '#1e293b' }}
+                        tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
+                        axisLine={{ stroke: 'var(--surface-border)' }}
+                        tickLine={{ stroke: 'var(--surface-border)' }}
                         interval={0}
                         angle={-20}
                         textAnchor="end"
                         height={60}
                       />
                       <YAxis
-                        tick={{ fontSize: 11, fill: '#64748b' }}
-                        axisLine={{ stroke: '#1e293b' }}
-                        tickLine={{ stroke: '#1e293b' }}
-                        label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#64748b' } }}
+                        tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
+                        axisLine={{ stroke: 'var(--surface-border)' }}
+                        tickLine={{ stroke: 'var(--surface-border)' }}
+                        label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'var(--text-faint)' } }}
                       />
                       <Tooltip
-                        contentStyle={{
-                          borderRadius: '8px',
-                          border: '1px solid #1e293b',
-                          backgroundColor: '#111827',
-                          fontSize: '12px',
-                          color: '#94a3b8',
-                        }}
+                        contentStyle={tooltipStyle}
                       />
                       <Legend
                         iconType="circle"
                         iconSize={8}
-                        wrapperStyle={{ fontSize: 11, color: '#94a3b8' }}
+                        wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)' }}
                       />
                       <Bar dataKey="demand" name="Projected Demand" radius={[4, 4, 0, 0]} maxBarSize={30}>
                         {forecast.map((f, idx) => {
@@ -402,14 +391,14 @@ export default function CapacityView() {
                           );
                         })}
                       </Bar>
-                      <Bar dataKey="capacity" name="Total Capacity" fill="#1e293b" radius={[4, 4, 0, 0]} maxBarSize={30} stroke="#334155" strokeWidth={1} />
+                      <Bar dataKey="capacity" name="Total Capacity" fill="var(--surface-border)" radius={[4, 4, 0, 0]} maxBarSize={30} stroke="var(--surface-border-light)" strokeWidth={1} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+            <div className="flex items-center justify-center h-64 text-sm text-th-faint">
               No capacity data available
             </div>
           )}

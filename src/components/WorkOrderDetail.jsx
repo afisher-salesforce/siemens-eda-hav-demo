@@ -57,11 +57,11 @@ function StatusBadge({ status }) {
 function DetailRow({ label, value, icon: Icon }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-surface-border last:border-0">
-      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium flex items-center gap-1.5">
+      <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium flex items-center gap-1.5">
         {Icon && <Icon size={12} />}
         {label}
       </span>
-      <span className="text-sm text-gray-200 font-medium">{value || '--'}</span>
+      <span className="text-sm text-th-secondary font-medium">{value || '--'}</span>
     </div>
   );
 }
@@ -177,8 +177,8 @@ export default function WorkOrderDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Work Order Not Found</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Work Order Not Found</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">
           The work order &ldquo;{workOrderId}&rdquo; could not be found.
         </p>
         <button
@@ -197,23 +197,23 @@ export default function WorkOrderDetail() {
       <div className="flex items-center gap-2 text-sm">
         <button
           onClick={() => navigate('/workorders')}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-siemens-accent transition-colors"
+          className="flex items-center gap-1.5 text-th-muted hover:text-siemens-accent transition-colors"
         >
           <ArrowLeft size={16} />
           Work Orders
         </button>
-        <ChevronRight size={14} className="text-gray-600" />
-        <span className="text-gray-200 font-medium">{workOrder.workOrderNumber}</span>
+        <ChevronRight size={14} className="text-th-faint" />
+        <span className="text-th-secondary font-medium">{workOrder.workOrderNumber}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-xl font-bold text-th-primary flex items-center gap-3">
             <Wrench size={22} className="text-siemens-accent" />
             {workOrder.workOrderNumber}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{workOrder.subject || 'No subject'}</p>
+          <p className="text-sm text-th-muted mt-1">{workOrder.subject || 'No subject'}</p>
           <SalesforceLink recordId={workOrder.id} />
         </div>
         <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function WorkOrderDetail() {
       {/* Status Transition Actions */}
       {STATUS_TRANSITIONS[workOrder.status] && (
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Move to:
           </span>
           {STATUS_TRANSITIONS[workOrder.status].map((nextStatus) => (
@@ -265,7 +265,7 @@ export default function WorkOrderDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Properties Panel */}
         <div className="metric-card space-y-0">
-          <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
+          <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3">
             Work Order Properties
           </h3>
           <DetailRow label="WO Number" value={workOrder.workOrderNumber} icon={Hash} />
@@ -313,7 +313,7 @@ export default function WorkOrderDetail() {
           {linkedAsset && (
             <div className="section-card">
               <div className="section-card-header">
-                <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+                <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
                   Linked Asset
                 </h2>
               </div>
@@ -325,10 +325,10 @@ export default function WorkOrderDetail() {
                   <div className="flex items-center gap-3">
                     <Server size={18} className="text-siemens-accent" />
                     <div>
-                      <div className="text-sm font-semibold text-gray-200 group-hover:text-siemens-accent transition-colors">
+                      <div className="text-sm font-semibold text-th-secondary group-hover:text-siemens-accent transition-colors">
                         {linkedAsset.name}
                       </div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-[10px] text-th-muted">
                         {linkedAsset.product} &middot; {linkedAsset.location}
                       </div>
                     </div>
@@ -347,7 +347,7 @@ export default function WorkOrderDetail() {
                     >
                       {linkedAsset.status}
                     </span>
-                    <ChevronRight size={14} className="text-gray-500 group-hover:text-siemens-accent transition-colors" />
+                    <ChevronRight size={14} className="text-th-muted group-hover:text-siemens-accent transition-colors" />
                   </div>
                 </Link>
               </div>
@@ -358,10 +358,10 @@ export default function WorkOrderDetail() {
           {assetTelemetry.length > 0 && (
             <div className="section-card">
               <div className="section-card-header">
-                <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+                <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
                   Asset Telemetry (Latest)
                 </h2>
-                <span className="text-[10px] text-gray-500">{assetTelemetry.length} readings</span>
+                <span className="text-[10px] text-th-muted">{assetTelemetry.length} readings</span>
               </div>
               <div className="section-card-body p-0">
                 <div className="overflow-x-auto">
@@ -379,15 +379,15 @@ export default function WorkOrderDetail() {
                     <tbody>
                       {assetTelemetry.map((t, i) => (
                         <tr key={i}>
-                          <td className="text-gray-500 text-xs font-mono whitespace-nowrap">
+                          <td className="text-th-muted text-xs font-mono whitespace-nowrap">
                             {t.timestamp
                               ? new Date(t.timestamp).toLocaleString()
                               : '--'}
                           </td>
-                          <td className="text-gray-300 font-mono text-sm">
+                          <td className="text-th-secondary font-mono text-sm">
                             {t.cpuPercent != null ? `${t.cpuPercent}%` : '--'}
                           </td>
-                          <td className="text-gray-300 font-mono text-sm">
+                          <td className="text-th-secondary font-mono text-sm">
                             {t.memoryPercent != null ? `${t.memoryPercent}%` : '--'}
                           </td>
                           <td>
@@ -397,7 +397,7 @@ export default function WorkOrderDetail() {
                                   ? 'text-red-400 font-bold'
                                   : (t.temperature || 0) > 70
                                   ? 'text-amber-400'
-                                  : 'text-gray-300'
+                                  : 'text-th-secondary'
                               }`}
                             >
                               {t.temperature != null
@@ -413,7 +413,7 @@ export default function WorkOrderDetail() {
                               className={`font-mono text-sm ${
                                 (t.errors || 0) > 0
                                   ? 'text-red-400 font-bold'
-                                  : 'text-gray-500'
+                                  : 'text-th-muted'
                               }`}
                             >
                               {t.errors ?? '--'}
@@ -441,10 +441,10 @@ export default function WorkOrderDetail() {
       {relatedWorkOrders.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Other Work Orders for {workOrder.assetName}
             </h2>
-            <span className="text-[10px] text-gray-500">{relatedWorkOrders.length} work orders</span>
+            <span className="text-[10px] text-th-muted">{relatedWorkOrders.length} work orders</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -469,10 +469,10 @@ export default function WorkOrderDetail() {
                           {wo.workOrderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{wo.subject || '--'}</td>
                       <td><PriorityBadge priority={wo.priority} /></td>
                       <td><StatusBadge status={wo.status} /></td>
-                      <td className="font-medium text-white">{formatCurrency(wo.estimatedCost)}</td>
+                      <td className="font-medium text-th-primary">{formatCurrency(wo.estimatedCost)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -486,10 +486,10 @@ export default function WorkOrderDetail() {
       {customerWorkOrders.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Other Work Orders for {workOrder.customer}
             </h2>
-            <span className="text-[10px] text-gray-500">{customerWorkOrders.length} work orders</span>
+            <span className="text-[10px] text-th-muted">{customerWorkOrders.length} work orders</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -514,8 +514,8 @@ export default function WorkOrderDetail() {
                           {wo.workOrderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-400 whitespace-nowrap">{wo.assetName || '--'}</td>
-                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td className="text-th-muted whitespace-nowrap">{wo.assetName || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{wo.subject || '--'}</td>
                       <td><PriorityBadge priority={wo.priority} /></td>
                       <td><StatusBadge status={wo.status} /></td>
                     </tr>

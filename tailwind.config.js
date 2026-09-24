@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
@@ -11,15 +12,22 @@ export default {
           teal: '#009999',
           dark: '#006666',
           darkest: '#003333',
-          accent: '#00b8b8',
+          accent: 'var(--siemens-accent)',
           light: '#e0f5f5',
         },
         surface: {
-          bg: '#0a0f1a',
-          card: '#111827',
-          'card-hover': '#1a2234',
-          border: '#1e293b',
-          'border-light': '#334155',
+          bg: 'var(--surface-bg)',
+          card: 'var(--surface-card)',
+          'card-hover': 'var(--surface-card-hover)',
+          border: 'var(--surface-border)',
+          'border-light': 'var(--surface-border-light)',
+        },
+        th: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+          faint: 'var(--text-faint)',
+          inverse: 'var(--text-inverse)',
         },
         glow: {
           teal: 'rgba(0, 153, 153, 0.15)',
@@ -33,8 +41,8 @@ export default {
         sans: ["'Inter'", "'Siemens Sans'", 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3)',
-        'card-hover': '0 4px 12px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3)',
+        card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
         'glow-teal': '0 0 20px rgba(0, 153, 153, 0.15)',
         'glow-teal-lg': '0 0 30px rgba(0, 153, 153, 0.2)',
       },

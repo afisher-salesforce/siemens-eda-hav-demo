@@ -28,14 +28,7 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
+import { tooltipStyle } from '../utils/chartStyles';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -54,11 +47,11 @@ function StatusBadge({ status }) {
 function DetailRow({ label, value, icon: Icon }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-surface-border last:border-0">
-      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium flex items-center gap-1.5">
+      <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium flex items-center gap-1.5">
         {Icon && <Icon size={12} />}
         {label}
       </span>
-      <span className="text-sm text-gray-200 font-medium">{value || '--'}</span>
+      <span className="text-sm text-th-secondary font-medium">{value || '--'}</span>
     </div>
   );
 }
@@ -166,8 +159,8 @@ export default function OrderDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Order Not Found</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Order Not Found</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">
           The order &ldquo;{orderId}&rdquo; could not be found.
         </p>
         <button
@@ -186,23 +179,23 @@ export default function OrderDetail() {
       <div className="flex items-center gap-2 text-sm">
         <button
           onClick={() => navigate('/orders')}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-siemens-accent transition-colors"
+          className="flex items-center gap-1.5 text-th-muted hover:text-siemens-accent transition-colors"
         >
           <ArrowLeft size={16} />
           Orders
         </button>
-        <ChevronRight size={14} className="text-gray-600" />
-        <span className="text-gray-200 font-medium">{order.orderNumber}</span>
+        <ChevronRight size={14} className="text-th-faint" />
+        <span className="text-th-secondary font-medium">{order.orderNumber}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-xl font-bold text-th-primary flex items-center gap-3">
             <ShoppingCart size={22} className="text-siemens-accent" />
             {order.orderNumber}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-th-muted mt-1">
             {order.customer || 'Unknown customer'}
             {order.agreementName ? ` \u00b7 ${order.agreementName}` : ''}
           </p>
@@ -214,7 +207,7 @@ export default function OrderDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Properties Panel */}
         <div className="metric-card space-y-0">
-          <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
+          <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3">
             Order Properties
           </h3>
           <DetailRow label="Order Number" value={order.orderNumber} icon={Hash} />
@@ -247,10 +240,10 @@ export default function OrderDetail() {
               <div className="metric-card relative overflow-hidden">
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
                 <div className="relative">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
                     Revenue
                   </span>
-                  <div className="text-xl font-bold text-white mt-1">
+                  <div className="text-xl font-bold text-th-primary mt-1">
                     {formatCurrency(cogsData.revenue)}
                   </div>
                 </div>
@@ -258,7 +251,7 @@ export default function OrderDetail() {
               <div className="metric-card relative overflow-hidden">
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-amber-500" />
                 <div className="relative">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
                     Est. COGS
                   </span>
                   <div className="text-xl font-bold text-amber-400 mt-1">
@@ -269,13 +262,13 @@ export default function OrderDetail() {
               <div className="metric-card relative overflow-hidden">
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-emerald-500" />
                 <div className="relative">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
                     Margin
                   </span>
                   <div className="text-xl font-bold text-emerald-400 mt-1">
                     {cogsData.marginPct}%
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
+                  <div className="text-[10px] text-th-muted mt-0.5">
                     {formatCurrency(cogsData.margin)}
                   </div>
                 </div>
@@ -287,7 +280,7 @@ export default function OrderDetail() {
           {cogsData && (
             <div className="section-card">
               <div className="section-card-header">
-                <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+                <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
                   Revenue vs COGS Breakdown
                 </h2>
               </div>
@@ -302,25 +295,25 @@ export default function OrderDetail() {
                     layout="vertical"
                     margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" horizontal={false} />
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      axisLine={{ stroke: '#1e293b' }}
-                      tickLine={{ stroke: '#1e293b' }}
+                      tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
+                      axisLine={{ stroke: 'var(--surface-border)' }}
+                      tickLine={{ stroke: 'var(--surface-border)' }}
                       tickFormatter={formatCurrency}
                     />
                     <YAxis
                       type="category"
                       dataKey="name"
                       width={70}
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      axisLine={{ stroke: '#1e293b' }}
+                      tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+                      axisLine={{ stroke: 'var(--surface-border)' }}
                       tickLine={false}
                     />
                     <Tooltip
                       formatter={(value) => [formatCurrency(value)]}
-                      contentStyle={darkTooltipStyle}
+                      contentStyle={tooltipStyle}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={24}>
                       <Cell fill="#009999" />
@@ -346,10 +339,10 @@ export default function OrderDetail() {
       {customerAssets.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               {order.customer}&apos;s Assets
             </h2>
-            <span className="text-[10px] text-gray-500">{customerAssets.length} assets</span>
+            <span className="text-[10px] text-th-muted">{customerAssets.length} assets</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -374,8 +367,8 @@ export default function OrderDetail() {
                           {a.name || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-400">{a.product || '--'}</td>
-                      <td className="text-gray-400 whitespace-nowrap">{a.location || '--'}</td>
+                      <td className="text-th-muted">{a.product || '--'}</td>
+                      <td className="text-th-muted whitespace-nowrap">{a.location || '--'}</td>
                       <td>
                         <span
                           className={`badge ${
@@ -391,7 +384,7 @@ export default function OrderDetail() {
                           {a.status || '--'}
                         </span>
                       </td>
-                      <td className="text-gray-400">
+                      <td className="text-th-muted">
                         {a.utilization != null ? `${a.utilization}%` : '--'}
                       </td>
                     </tr>
@@ -407,10 +400,10 @@ export default function OrderDetail() {
       {customerWorkOrders.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Work Orders for {order.customer}
             </h2>
-            <span className="text-[10px] text-gray-500">{customerWorkOrders.length} work orders</span>
+            <span className="text-[10px] text-th-muted">{customerWorkOrders.length} work orders</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -435,8 +428,8 @@ export default function OrderDetail() {
                           {wo.workOrderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-400 whitespace-nowrap">{wo.assetName || '--'}</td>
-                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td className="text-th-muted whitespace-nowrap">{wo.assetName || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{wo.subject || '--'}</td>
                       <td>
                         <span
                           className={`badge ${
@@ -480,10 +473,10 @@ export default function OrderDetail() {
       {customerOrders.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Other Orders for {order.customer}
             </h2>
-            <span className="text-[10px] text-gray-500">{customerOrders.length} orders</span>
+            <span className="text-[10px] text-th-muted">{customerOrders.length} orders</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -509,10 +502,10 @@ export default function OrderDetail() {
                           {o.orderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-200">{o.agreementName || '--'}</td>
-                      <td className="font-medium text-white">{formatCurrency(o.totalValue)}</td>
-                      <td className="text-gray-500 whitespace-nowrap">{formatDate(o.startDate)}</td>
-                      <td className="text-gray-500 whitespace-nowrap">{formatDate(o.endDate)}</td>
+                      <td className="text-th-secondary">{o.agreementName || '--'}</td>
+                      <td className="font-medium text-th-primary">{formatCurrency(o.totalValue)}</td>
+                      <td className="text-th-muted whitespace-nowrap">{formatDate(o.startDate)}</td>
+                      <td className="text-th-muted whitespace-nowrap">{formatDate(o.endDate)}</td>
                       <td><StatusBadge status={o.status} /></td>
                     </tr>
                   ))}

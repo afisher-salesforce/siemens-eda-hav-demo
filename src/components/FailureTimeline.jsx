@@ -63,10 +63,10 @@ function TimelineEvent({ event, isLast }) {
               ? 'bg-red-500 border-red-500 animate-pulse'
               : event.status === 'In Progress'
               ? 'bg-siemens-teal border-siemens-teal'
-              : 'bg-gray-700 border-gray-600'
+              : 'bg-surface-border border-surface-border'
           }`}
         />
-        {!isLast && <div className="w-0.5 flex-1 bg-gray-800 min-h-[40px]" />}
+        {!isLast && <div className="w-0.5 flex-1 bg-[var(--skeleton-bg)] min-h-[40px]" />}
       </div>
 
       {/* Content */}
@@ -74,13 +74,13 @@ function TimelineEvent({ event, isLast }) {
         <div className="metric-card">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-th-secondary flex items-center gap-2">
                 {isPriorityCritical && (
                   <Zap size={12} className="text-red-400" />
                 )}
                 {event.subject || 'Incident Report'}
               </h3>
-              <p className="text-[10px] text-gray-500 mt-0.5">
+              <p className="text-[10px] text-th-muted mt-0.5">
                 {event.workOrderNumber} &middot; {event.assetName || 'Unknown Asset'} &middot;{' '}
                 {event.customer || '--'}
               </p>
@@ -117,13 +117,13 @@ function TimelineEvent({ event, isLast }) {
                       ? 'bg-emerald-500/15 text-emerald-400'
                       : step.current
                       ? 'bg-siemens-teal/15 text-siemens-accent'
-                      : 'bg-gray-800 text-gray-600'
+                      : 'bg-[var(--skeleton-bg)] text-th-faint'
                   }`}
                 >
                   {step.label}
                 </span>
                 {i < arr.length - 1 && (
-                  <ArrowRight size={10} className="text-gray-700" />
+                  <ArrowRight size={10} className="text-th-faint" />
                 )}
               </React.Fragment>
             ))}
@@ -131,17 +131,17 @@ function TimelineEvent({ event, isLast }) {
 
           {/* Footer */}
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-surface-border">
-            <span className="text-[10px] text-gray-500 flex items-center gap-1">
+            <span className="text-[10px] text-th-muted flex items-center gap-1">
               <Clock size={10} />
               {event.createdDate ? formatTimeAgo(event.createdDate) : '--'}
             </span>
             {event.estimatedCost != null && (
-              <span className="text-xs text-gray-400">
-                Est. cost: <span className="text-white font-medium">${event.estimatedCost.toLocaleString()}</span>
+              <span className="text-xs text-th-muted">
+                Est. cost: <span className="text-th-primary font-medium">${event.estimatedCost.toLocaleString()}</span>
               </span>
             )}
             {event.rmaNumber && (
-              <span className="text-[10px] text-gray-500 font-mono">
+              <span className="text-[10px] text-th-muted font-mono">
                 RMA: {event.rmaNumber}
               </span>
             )}
@@ -218,8 +218,8 @@ export default function FailureTimeline() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Timeline</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{woError}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Timeline</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{woError}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -257,8 +257,8 @@ export default function FailureTimeline() {
         <div className="flex items-center gap-3">
           <AlertTriangle size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Failure Timeline</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Failure Timeline</h1>
+            <p className="text-xs text-th-muted">
               Incident history — detection through resolution
             </p>
           </div>
@@ -268,19 +268,19 @@ export default function FailureTimeline() {
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Critical Incidents
           </span>
           <div className="text-2xl font-bold text-red-400 mt-1">{criticalCount}</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Open
           </span>
           <div className="text-2xl font-bold text-amber-400 mt-1">{openCount}</div>
         </div>
         <div className="metric-card">
-          <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+          <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
             Resolved
           </span>
           <div className="text-2xl font-bold text-emerald-400 mt-1">{resolvedCount}</div>
@@ -290,21 +290,21 @@ export default function FailureTimeline() {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search incidents..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-gray-500" />
+          <Filter size={14} className="text-th-muted" />
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
           >
             <option value="">All Priorities</option>
             <option value="Critical">Critical</option>
@@ -313,7 +313,7 @@ export default function FailureTimeline() {
             <option value="Low">Low</option>
           </select>
         </div>
-        <span className="text-xs text-gray-500 ml-auto">{filtered.length} events</span>
+        <span className="text-xs text-th-muted ml-auto">{filtered.length} events</span>
       </div>
 
       {/* Timeline */}
@@ -329,7 +329,7 @@ export default function FailureTimeline() {
         </div>
       ) : (
         <div className="section-card">
-          <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+          <div className="flex items-center justify-center py-16 text-sm text-th-faint">
             No incidents match the current filters
           </div>
         </div>

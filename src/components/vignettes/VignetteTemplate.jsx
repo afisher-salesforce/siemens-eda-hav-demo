@@ -20,8 +20,8 @@ function OutcomeCard({ metric, label, color }) {
         style={{ backgroundColor: color }}
       />
       <div className="relative">
-        <div className="text-2xl font-bold text-white mb-1">{metric}</div>
-        <div className="text-xs text-gray-500 uppercase tracking-wider">{label}</div>
+        <div className="text-2xl font-bold text-th-primary mb-1">{metric}</div>
+        <div className="text-xs text-th-muted uppercase tracking-wider">{label}</div>
       </div>
     </div>
   );
@@ -29,9 +29,9 @@ function OutcomeCard({ metric, label, color }) {
 
 function CapabilityTag({ name, description }) {
   return (
-    <div className="rounded-lg border border-surface-border bg-[#0d1321] p-4 hover:border-siemens-teal/30 transition-colors">
+    <div className="rounded-lg border border-surface-border bg-[var(--table-header-bg)] p-4 hover:border-siemens-teal/30 transition-colors">
       <div className="text-sm font-semibold text-siemens-accent mb-1">{name}</div>
-      <div className="text-xs text-gray-500 leading-relaxed">{description}</div>
+      <div className="text-xs text-th-muted leading-relaxed">{description}</div>
     </div>
   );
 }
@@ -46,6 +46,7 @@ export default function VignetteTemplate({
   outcomes,
   whySalesforce,
   capabilities,
+  extraSections,
   agentPrompts,
 }) {
   const currentIndex = number - 1;
@@ -64,12 +65,12 @@ export default function VignetteTemplate({
           }}
         />
         <div className="relative px-8 py-10">
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-2 text-xs text-th-muted mb-4">
             <Link to="/vignettes" className="hover:text-siemens-accent transition-colors">
               Vignettes
             </Link>
             <ChevronRight size={12} />
-            <span className="text-gray-400">Story {number} of 6</span>
+            <span className="text-th-muted">Story {number} of 6</span>
           </div>
           <div className="flex items-start gap-5">
             <div
@@ -79,8 +80,8 @@ export default function VignetteTemplate({
               <Icon size={28} style={{ color: iconColor }} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">{title}</h1>
-              <p className="text-sm text-gray-400 leading-relaxed max-w-2xl">{subtitle}</p>
+              <h1 className="text-2xl font-bold text-th-primary mb-2">{title}</h1>
+              <p className="text-sm text-th-muted leading-relaxed max-w-2xl">{subtitle}</p>
             </div>
           </div>
         </div>
@@ -89,12 +90,12 @@ export default function VignetteTemplate({
       {/* Section 1: The Business Challenge */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             The Business Challenge
           </h2>
         </div>
         <div className="section-card-body">
-          <div className="text-sm text-gray-300 leading-relaxed space-y-4">
+          <div className="text-sm text-th-secondary leading-relaxed space-y-4">
             {challenge.map((paragraph, i) => (
               <p key={i}>{paragraph}</p>
             ))}
@@ -105,7 +106,7 @@ export default function VignetteTemplate({
       {/* Section 2: The Outcome */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Potential Business Outcomes
           </h2>
         </div>
@@ -126,7 +127,7 @@ export default function VignetteTemplate({
       {/* Section 3: Why Salesforce, Why Now */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Why Salesforce · Why Now
           </h2>
         </div>
@@ -140,8 +141,8 @@ export default function VignetteTemplate({
                 <item.icon size={16} style={{ color: iconColor }} />
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-200 mb-1">{item.title}</div>
-                <div className="text-xs text-gray-500 leading-relaxed">{item.description}</div>
+                <div className="text-sm font-semibold text-th-secondary mb-1">{item.title}</div>
+                <div className="text-xs text-th-muted leading-relaxed">{item.description}</div>
               </div>
             </div>
           ))}
@@ -151,7 +152,7 @@ export default function VignetteTemplate({
       {/* Section 4: Salesforce Capabilities */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Salesforce Capabilities Powering This Solution
           </h2>
         </div>
@@ -164,11 +165,28 @@ export default function VignetteTemplate({
         </div>
       </div>
 
+      {/* Extra Sections (optional per-vignette content) */}
+      {extraSections && extraSections.map((section, i) => (
+        <div key={i} className="section-card">
+          <div className="section-card-header">
+            <div className="flex items-center gap-2">
+              {section.icon && <section.icon size={14} style={{ color: iconColor }} />}
+              <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+                {section.title}
+              </h2>
+            </div>
+          </div>
+          <div className="section-card-body">
+            {section.content}
+          </div>
+        </div>
+      ))}
+
       {/* Try It With the Agent */}
       {agentPrompts && agentPrompts.length > 0 && openAgentChat && (
         <div className="section-card overflow-hidden">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Try It With the Agent
             </h2>
             <div className="flex items-center gap-1.5">
@@ -177,7 +195,7 @@ export default function VignetteTemplate({
             </div>
           </div>
           <div className="section-card-body">
-            <p className="text-xs text-gray-500 mb-4">
+            <p className="text-xs text-th-muted mb-4">
               Ask the Agentforce agent a question related to this story — it will query live Salesforce data and respond in real time.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -212,7 +230,7 @@ export default function VignetteTemplate({
         {prev ? (
           <Link
             to={prev.path}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-siemens-accent transition-colors group"
+            className="flex items-center gap-2 text-sm text-th-muted hover:text-siemens-accent transition-colors group"
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             <span className="max-w-[200px] truncate">{prev.title}</span>
@@ -223,7 +241,7 @@ export default function VignetteTemplate({
         {next ? (
           <Link
             to={next.path}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-siemens-accent transition-colors group"
+            className="flex items-center gap-2 text-sm text-th-muted hover:text-siemens-accent transition-colors group"
           >
             <span className="max-w-[200px] truncate">{next.title}</span>
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -231,7 +249,7 @@ export default function VignetteTemplate({
         ) : (
           <Link
             to="/vignettes"
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-siemens-accent transition-colors"
+            className="flex items-center gap-2 text-sm text-th-muted hover:text-siemens-accent transition-colors"
           >
             Back to all vignettes
           </Link>

@@ -19,12 +19,12 @@ function StatusBadge({ status }) {
     New: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
     'In Progress': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
     Open: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    Closed: 'bg-gray-500/15 text-gray-400 border-gray-500/30',
-    Draft: 'bg-gray-500/15 text-gray-400 border-gray-500/30',
+    Closed: 'bg-gray-500/15 text-th-muted border-gray-500/30',
+    Draft: 'bg-gray-500/15 text-th-muted border-gray-500/30',
     High: 'bg-red-500/15 text-red-400 border-red-500/30',
     Critical: 'bg-red-500/15 text-red-400 border-red-500/30',
   };
-  const cls = styles[status] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
+  const cls = styles[status] || 'bg-gray-500/15 text-th-muted border-gray-500/30';
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${cls}`}>
       {status}
@@ -60,13 +60,13 @@ function ResultItem({ item, onSelect, isHighlighted }) {
       onClick={() => onSelect(item)}
       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
         isHighlighted
-          ? 'bg-siemens-teal/10 text-white'
-          : 'text-gray-300 hover:bg-white/5'
+          ? 'bg-siemens-teal/10 text-th-primary'
+          : 'text-th-secondary hover:bg-surface-card-hover'
       }`}
     >
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-          isHighlighted ? 'bg-siemens-teal/20' : 'bg-white/5'
+          isHighlighted ? 'bg-siemens-teal/20' : 'bg-surface-card-hover'
         }`}
       >
         <Icon size={16} className={config.color} />
@@ -74,7 +74,7 @@ function ResultItem({ item, onSelect, isHighlighted }) {
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{title || '--'}</div>
         {subtitle && (
-          <div className="text-xs text-gray-500 truncate mt-0.5">{subtitle}</div>
+          <div className="text-xs text-th-muted truncate mt-0.5">{subtitle}</div>
         )}
       </div>
       {item.status && <StatusBadge status={item.status} />}
@@ -87,11 +87,11 @@ function ResultGroup({ title, icon: Icon, items, onSelect, highlightedIndex, sta
   return (
     <div>
       <div className="flex items-center gap-2 px-4 py-2 border-b border-surface-border">
-        <Icon size={12} className="text-gray-500" />
-        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+        <Icon size={12} className="text-th-muted" />
+        <span className="text-[10px] font-semibold text-th-muted uppercase tracking-wider">
           {title}
         </span>
-        <span className="text-[10px] text-gray-600">{items.length}</span>
+        <span className="text-[10px] text-th-faint">{items.length}</span>
       </div>
       <div>
         {items.map((item, i) => (
@@ -212,7 +212,7 @@ export default function GlobalSearch({ open, onClose }) {
       {/* Search Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 pointer-events-none">
         <div
-          className="w-full max-w-xl bg-[#111827] border border-surface-border rounded-xl shadow-2xl shadow-black/50 pointer-events-auto overflow-hidden"
+          className="w-full max-w-xl bg-surface-bg border border-surface-border rounded-xl shadow-2xl shadow-black/50 pointer-events-auto overflow-hidden"
           onKeyDown={handleKeyDown}
         >
           {/* Search Input */}
@@ -220,7 +220,7 @@ export default function GlobalSearch({ open, onClose }) {
             {loading ? (
               <Loader2 size={18} className="text-siemens-accent animate-spin shrink-0" />
             ) : (
-              <Search size={18} className="text-gray-500 shrink-0" />
+              <Search size={18} className="text-th-muted shrink-0" />
             )}
             <input
               ref={inputRef}
@@ -228,12 +228,12 @@ export default function GlobalSearch({ open, onClose }) {
               placeholder="Search assets, work orders, orders..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-gray-200 placeholder:text-gray-600 outline-none"
+              className="flex-1 bg-transparent text-sm text-th-secondary placeholder:text-th-faint outline-none"
               autoComplete="off"
               spellCheck="false"
             />
             <div className="flex items-center gap-1.5 shrink-0">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-gray-700 text-[10px] text-gray-500 font-mono">
+              <kbd className="px-1.5 py-0.5 rounded bg-surface-card-hover border border-surface-border text-[10px] text-th-muted font-mono">
                 esc
               </kbd>
             </div>
@@ -270,15 +270,15 @@ export default function GlobalSearch({ open, onClose }) {
               </div>
             ) : results && query.length >= 2 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Search size={24} className="text-gray-600 mb-3" />
-                <p className="text-sm text-gray-500">No results for &ldquo;{query}&rdquo;</p>
-                <p className="text-xs text-gray-600 mt-1">
+                <Search size={24} className="text-th-faint mb-3" />
+                <p className="text-sm text-th-muted">No results for &ldquo;{query}&rdquo;</p>
+                <p className="text-xs text-th-faint mt-1">
                   Try searching by asset name, serial number, or customer
                 </p>
               </div>
             ) : !loading && query.length < 2 ? (
               <div className="px-4 py-6 text-center">
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-th-faint">
                   Type at least 2 characters to search
                 </p>
               </div>
@@ -287,22 +287,22 @@ export default function GlobalSearch({ open, onClose }) {
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-2 border-t border-surface-border bg-white/[0.02]">
-            <div className="flex items-center gap-3 text-[10px] text-gray-600">
+            <div className="flex items-center gap-3 text-[10px] text-th-faint">
               <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 rounded bg-white/5 border border-gray-700 font-mono">↑↓</kbd>
+                <kbd className="px-1 py-0.5 rounded bg-surface-card-hover border border-surface-border font-mono">↑↓</kbd>
                 navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 rounded bg-white/5 border border-gray-700 font-mono">↵</kbd>
+                <kbd className="px-1 py-0.5 rounded bg-surface-card-hover border border-surface-border font-mono">↵</kbd>
                 select
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 rounded bg-white/5 border border-gray-700 font-mono">esc</kbd>
+                <kbd className="px-1 py-0.5 rounded bg-surface-card-hover border border-surface-border font-mono">esc</kbd>
                 close
               </span>
             </div>
             {results && (
-              <span className="text-[10px] text-gray-600">
+              <span className="text-[10px] text-th-faint">
                 {results.totalResults} result{results.totalResults !== 1 ? 's' : ''}
               </span>
             )}

@@ -35,14 +35,7 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
+import { tooltipStyle } from '../utils/chartStyles';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -61,11 +54,11 @@ function StatusBadge({ status }) {
 function DetailRow({ label, value, icon: Icon }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-surface-border last:border-0">
-      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium flex items-center gap-1.5">
+      <span className="text-[10px] text-th-muted uppercase tracking-wider font-medium flex items-center gap-1.5">
         {Icon && <Icon size={12} />}
         {label}
       </span>
-      <span className="text-sm text-gray-200 font-medium">{value || '--'}</span>
+      <span className="text-sm text-th-secondary font-medium">{value || '--'}</span>
     </div>
   );
 }
@@ -247,8 +240,8 @@ export default function AssetDetail() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Asset Not Found</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Asset Not Found</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">
           The asset with ID &ldquo;{assetId}&rdquo; could not be found.
         </p>
         <button
@@ -267,7 +260,7 @@ export default function AssetDetail() {
       <div className="flex items-center gap-2 text-sm flex-wrap">
         <button
           onClick={() => navigate('/assets')}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-siemens-accent transition-colors"
+          className="flex items-center gap-1.5 text-th-muted hover:text-siemens-accent transition-colors"
         >
           <ArrowLeft size={16} />
           Asset Fleet
@@ -275,20 +268,20 @@ export default function AssetDetail() {
         {/* Hierarchy ancestors (reversed: grandparent → parent) */}
         {hierarchyData?.ancestors?.slice().reverse().map((ancestor) => (
           <React.Fragment key={ancestor.id}>
-            <ChevronRight size={14} className="text-gray-600" />
+            <ChevronRight size={14} className="text-th-faint" />
             <Link
               to={`/assets/${ancestor.id}`}
-              className="text-gray-400 hover:text-siemens-accent transition-colors flex items-center gap-1"
+              className="text-th-muted hover:text-siemens-accent transition-colors flex items-center gap-1"
             >
-              <span className="text-[9px] uppercase tracking-wider text-gray-600 font-semibold">
+              <span className="text-[9px] uppercase tracking-wider text-th-faint font-semibold">
                 {ancestor.assetTier}
               </span>
               {ancestor.name}
             </Link>
           </React.Fragment>
         ))}
-        <ChevronRight size={14} className="text-gray-600" />
-        <span className="text-gray-200 font-medium">{asset.name}</span>
+        <ChevronRight size={14} className="text-th-faint" />
+        <span className="text-th-secondary font-medium">{asset.name}</span>
         {asset.assetTier && (
           <span className="text-[9px] uppercase tracking-wider text-siemens-accent/70 font-semibold bg-siemens-teal/10 px-1.5 py-0.5 rounded">
             {asset.assetTier}
@@ -299,11 +292,11 @@ export default function AssetDetail() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-xl font-bold text-th-primary flex items-center gap-3">
             <Server size={22} className="text-siemens-accent" />
             {asset.name}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-th-muted mt-1">
             {asset.product} &middot; S/N: {asset.serialNumber || 'N/A'}
           </p>
           <SalesforceLink recordId={asset.id} />
@@ -336,7 +329,7 @@ export default function AssetDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Properties Panel */}
         <div className="metric-card space-y-0">
-          <h3 className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-3">
+          <h3 className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-3">
             Asset Properties
           </h3>
           <DetailRow label="Serial Number" value={asset.serialNumber} icon={Server} />
@@ -386,51 +379,51 @@ export default function AssetDetail() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Loan Start</span>
-                <span className="text-sm font-medium text-gray-200">
+                <span className="text-[10px] text-th-muted uppercase tracking-wider block mb-1">Loan Start</span>
+                <span className="text-sm font-medium text-th-secondary">
                   {loanerInfo.originalLoanerDate
                     ? new Date(loanerInfo.originalLoanerDate).toLocaleDateString()
                     : '--'}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Expiry Date</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider block mb-1">Expiry Date</span>
                 <span className={`text-sm font-medium ${
                   loanerInfo.daysUntilExpiry != null && loanerInfo.daysUntilExpiry <= 30
-                    ? 'text-red-400' : 'text-gray-200'
+                    ? 'text-red-400' : 'text-th-secondary'
                 }`}>
                   {loanerInfo.loanerExpiryDate
                     ? new Date(loanerInfo.loanerExpiryDate).toLocaleDateString()
                     : '--'}
                   {loanerInfo.daysUntilExpiry != null && (
-                    <span className="text-xs text-gray-500 ml-1">
+                    <span className="text-xs text-th-muted ml-1">
                       ({loanerInfo.daysUntilExpiry}d)
                     </span>
                   )}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Months on Loan</span>
-                <span className="text-sm font-medium text-gray-200">
+                <span className="text-[10px] text-th-muted uppercase tracking-wider block mb-1">Months on Loan</span>
+                <span className="text-sm font-medium text-th-secondary">
                   {loanerInfo.monthsOnLoan != null ? `${loanerInfo.monthsOnLoan} mo` : '--'}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Conversion Opp</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider block mb-1">Conversion Opp</span>
                 {loanerInfo.conversionOpportunity ? (
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-medium text-siemens-accent">
                       {loanerInfo.conversionOpportunity.stageName}
                     </span>
                     {loanerInfo.conversionOpportunity.amount != null && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-th-muted">
                         (${(loanerInfo.conversionOpportunity.amount / 1000).toFixed(0)}K)
                       </span>
                     )}
                     <ArrowUpRight size={12} className="text-siemens-accent" />
                   </div>
                 ) : (
-                  <span className="text-sm text-gray-500">None</span>
+                  <span className="text-sm text-th-muted">None</span>
                 )}
               </div>
             </div>
@@ -440,10 +433,10 @@ export default function AssetDetail() {
         {/* Telemetry Chart */}
         <div className="section-card lg:col-span-2">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Telemetry History
             </h2>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-th-muted">
               {assetTelemetry.length} readings
             </span>
           </div>
@@ -451,23 +444,23 @@ export default function AssetDetail() {
             {assetTelemetry.length > 0 ? (
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={assetTelemetry} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                   <XAxis
                     dataKey="timestamp"
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    axisLine={{ stroke: '#1e293b' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
+                    axisLine={{ stroke: 'var(--surface-border)' }}
                     tickFormatter={(v) =>
                       v ? new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
                     }
                   />
                   <YAxis
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    axisLine={{ stroke: '#1e293b' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
+                    axisLine={{ stroke: 'var(--surface-border)' }}
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip
-                    contentStyle={darkTooltipStyle}
+                    contentStyle={tooltipStyle}
                     labelFormatter={(v) =>
                       v ? new Date(v).toLocaleString() : ''
                     }
@@ -491,7 +484,7 @@ export default function AssetDetail() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">
                 No telemetry data available for this asset
               </div>
             )}
@@ -510,11 +503,11 @@ export default function AssetDetail() {
       {lineageData && (lineageData.hasPredecessors || lineageData.hasSuccessors) && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] flex items-center gap-1.5">
               <GitBranch size={13} className="text-siemens-accent" />
               Serial Number Lineage
             </h2>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-th-muted">
               {lineageData.lineage.length} replacement{lineageData.lineage.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -536,7 +529,7 @@ export default function AssetDetail() {
                         <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">
                           Replaced
                         </span>
-                        <span className="text-[10px] text-gray-600">
+                        <span className="text-[10px] text-th-faint">
                           {entry.date
                             ? new Date(entry.date).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -546,7 +539,7 @@ export default function AssetDetail() {
                             : ''}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-300 mb-1">
+                      <p className="text-sm text-th-secondary mb-1">
                         This asset replaced{' '}
                         {entry.asset ? (
                           <Link
@@ -559,7 +552,7 @@ export default function AssetDetail() {
                           'an unknown asset'
                         )}
                         {entry.asset?.serialNumber && (
-                          <span className="text-gray-500 font-mono text-xs ml-1.5">
+                          <span className="text-th-muted font-mono text-xs ml-1.5">
                             (S/N: {entry.asset.serialNumber})
                           </span>
                         )}
@@ -571,19 +564,19 @@ export default function AssetDetail() {
                           </span>
                         )}
                         {entry.workOrderNumber && (
-                          <span className="text-gray-500 flex items-center gap-1">
+                          <span className="text-th-muted flex items-center gap-1">
                             <Wrench size={11} />
                             WO #{entry.workOrderNumber}
                           </span>
                         )}
                         {entry.asset?.status && (
-                          <span className="text-gray-600">
+                          <span className="text-th-faint">
                             Previous status: {entry.asset.status}
                           </span>
                         )}
                       </div>
                       {entry.notes && (
-                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed italic">
+                        <p className="text-xs text-th-muted mt-1.5 leading-relaxed italic">
                           {entry.notes}
                         </p>
                       )}
@@ -597,8 +590,8 @@ export default function AssetDetail() {
                   <Server size={16} className="text-siemens-accent" />
                 </div>
                 <div className="flex-1 pt-2">
-                  <span className="text-sm font-semibold text-white">{asset.name}</span>
-                  <span className="text-xs text-gray-500 ml-2">Current Asset</span>
+                  <span className="text-sm font-semibold text-th-primary">{asset.name}</span>
+                  <span className="text-xs text-th-muted ml-2">Current Asset</span>
                 </div>
               </div>
 
@@ -615,7 +608,7 @@ export default function AssetDetail() {
                         <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
                           Replaced By
                         </span>
-                        <span className="text-[10px] text-gray-600">
+                        <span className="text-[10px] text-th-faint">
                           {entry.date
                             ? new Date(entry.date).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -625,7 +618,7 @@ export default function AssetDetail() {
                             : ''}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-300 mb-1">
+                      <p className="text-sm text-th-secondary mb-1">
                         This asset was replaced by{' '}
                         {entry.asset ? (
                           <Link
@@ -638,7 +631,7 @@ export default function AssetDetail() {
                           'an unknown asset'
                         )}
                         {entry.asset?.serialNumber && (
-                          <span className="text-gray-500 font-mono text-xs ml-1.5">
+                          <span className="text-th-muted font-mono text-xs ml-1.5">
                             (S/N: {entry.asset.serialNumber})
                           </span>
                         )}
@@ -650,19 +643,19 @@ export default function AssetDetail() {
                           </span>
                         )}
                         {entry.workOrderNumber && (
-                          <span className="text-gray-500 flex items-center gap-1">
+                          <span className="text-th-muted flex items-center gap-1">
                             <Wrench size={11} />
                             WO #{entry.workOrderNumber}
                           </span>
                         )}
                         {entry.asset?.status && (
-                          <span className="text-gray-600">
+                          <span className="text-th-faint">
                             Current status: {entry.asset.status}
                           </span>
                         )}
                       </div>
                       {entry.notes && (
-                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed italic">
+                        <p className="text-xs text-th-muted mt-1.5 leading-relaxed italic">
                           {entry.notes}
                         </p>
                       )}
@@ -678,11 +671,11 @@ export default function AssetDetail() {
       {hierarchyData && (hierarchyData.children?.length > 0 || hierarchyData.ancestors?.length > 0) && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-2">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] flex items-center gap-2">
               <GitBranch size={14} className="text-siemens-accent" />
               Asset Hierarchy
             </h2>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-th-muted">
               {hierarchyData.children?.length || 0} child assets
               {hierarchyData.siblingCount > 0 && ` · ${hierarchyData.siblingCount} siblings`}
             </span>
@@ -691,10 +684,10 @@ export default function AssetDetail() {
             {/* Hierarchy path visualization */}
             {hierarchyData.ancestors?.length > 0 && (
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-surface-border flex-wrap">
-                <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold mr-1">Path:</span>
+                <span className="text-[9px] text-th-faint uppercase tracking-wider font-semibold mr-1">Path:</span>
                 {hierarchyData.ancestors.slice().reverse().map((ancestor, i) => (
                   <React.Fragment key={ancestor.id}>
-                    {i > 0 && <ChevronRight size={12} className="text-gray-700" />}
+                    {i > 0 && <ChevronRight size={12} className="text-th-faint" />}
                     <Link
                       to={`/assets/${ancestor.id}`}
                       className="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-card border border-surface-border hover:border-siemens-teal/30 transition-colors"
@@ -702,20 +695,20 @@ export default function AssetDetail() {
                       <span className={`text-[8px] uppercase tracking-wider font-bold px-1 py-0.5 rounded ${
                         ancestor.assetTier === 'Facility' ? 'bg-purple-500/15 text-purple-400' :
                         ancestor.assetTier === 'Rack' ? 'bg-blue-500/15 text-blue-400' :
-                        'bg-gray-500/15 text-gray-400'
+                        'bg-gray-500/15 text-th-muted'
                       }`}>
                         {ancestor.assetTier}
                       </span>
-                      <span className="text-xs text-gray-300">{ancestor.name}</span>
+                      <span className="text-xs text-th-secondary">{ancestor.name}</span>
                     </Link>
                   </React.Fragment>
                 ))}
-                <ChevronRight size={12} className="text-gray-700" />
+                <ChevronRight size={12} className="text-th-faint" />
                 <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-siemens-teal/10 border border-siemens-teal/20">
                   <span className="text-[8px] uppercase tracking-wider font-bold text-siemens-accent px-1 py-0.5 rounded bg-siemens-teal/15">
                     {asset.assetTier || 'Blade'}
                   </span>
-                  <span className="text-xs text-white font-medium">{asset.name}</span>
+                  <span className="text-xs text-th-primary font-medium">{asset.name}</span>
                 </span>
               </div>
             )}
@@ -752,20 +745,20 @@ export default function AssetDetail() {
                             child.assetTier === 'Rack' ? 'bg-blue-500/15 text-blue-400' :
                             child.assetTier === 'Module' ? 'bg-amber-500/15 text-amber-400' :
                             child.assetTier === 'Card' ? 'bg-pink-500/15 text-pink-400' :
-                            'bg-gray-500/15 text-gray-400'
+                            'bg-gray-500/15 text-th-muted'
                           }`}>
                             {child.assetTier || '--'}
                           </span>
                         </td>
-                        <td className="text-gray-500 font-mono text-xs">{child.serialNumber || '--'}</td>
-                        <td className="text-gray-400 text-xs">{child.rackPosition || '--'}</td>
+                        <td className="text-th-muted font-mono text-xs">{child.serialNumber || '--'}</td>
+                        <td className="text-th-muted text-xs">{child.rackPosition || '--'}</td>
                         <td>
                           <StatusBadge status={child.status} />
                         </td>
-                        <td className="text-gray-400">
+                        <td className="text-th-muted">
                           {child.powerDraw != null ? `${child.powerDraw} kW` : '--'}
                         </td>
-                        <td className="text-gray-400">
+                        <td className="text-th-muted">
                           {child.utilization != null ? `${child.utilization}%` : '--'}
                         </td>
                       </tr>
@@ -782,7 +775,7 @@ export default function AssetDetail() {
       {assetTelemetry.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Recent Telemetry Readings
             </h2>
           </div>
@@ -803,13 +796,13 @@ export default function AssetDetail() {
                 <tbody>
                   {[...assetTelemetry].reverse().slice(0, 10).map((t, i) => (
                     <tr key={i}>
-                      <td className="text-gray-500 text-xs font-mono whitespace-nowrap">
+                      <td className="text-th-muted text-xs font-mono whitespace-nowrap">
                         {t.timestamp ? new Date(t.timestamp).toLocaleString() : '--'}
                       </td>
-                      <td className="text-gray-300 font-mono text-sm">
+                      <td className="text-th-secondary font-mono text-sm">
                         {t.cpuPercent != null ? `${t.cpuPercent}%` : '--'}
                       </td>
-                      <td className="text-gray-300 font-mono text-sm">
+                      <td className="text-th-secondary font-mono text-sm">
                         {t.memoryPercent != null ? `${t.memoryPercent}%` : '--'}
                       </td>
                       <td>
@@ -819,7 +812,7 @@ export default function AssetDetail() {
                               ? 'text-orange-400 font-bold'
                               : (t.temperature || 0) > 70
                               ? 'text-amber-400'
-                              : 'text-gray-300'
+                              : 'text-th-secondary'
                           }`}
                         >
                           {t.temperature != null ? `${t.temperature.toFixed(1)}°C` : '--'}
@@ -828,11 +821,11 @@ export default function AssetDetail() {
                       <td>
                         <StatusBadge status={t.status} />
                       </td>
-                      <td className="text-gray-300 text-center font-mono">{t.jobs ?? '--'}</td>
+                      <td className="text-th-secondary text-center font-mono">{t.jobs ?? '--'}</td>
                       <td>
                         <span
                           className={`font-mono text-sm ${
-                            (t.errors || 0) > 0 ? 'text-orange-400 font-bold' : 'text-gray-500'
+                            (t.errors || 0) > 0 ? 'text-orange-400 font-bold' : 'text-th-muted'
                           }`}
                         >
                           {t.errors ?? '--'}
@@ -851,11 +844,11 @@ export default function AssetDetail() {
       {relatedWorkOrders.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] flex items-center gap-1.5">
               <Wrench size={13} className="text-siemens-accent" />
               Related Work Orders
             </h2>
-            <span className="text-[10px] text-gray-500">{relatedWorkOrders.length} work order{relatedWorkOrders.length !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] text-th-muted">{relatedWorkOrders.length} work order{relatedWorkOrders.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -881,7 +874,7 @@ export default function AssetDetail() {
                           {wo.workOrderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-200 max-w-xs truncate">{wo.subject || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{wo.subject || '--'}</td>
                       <td>
                         <span className={`badge ${
                           wo.priority === 'Critical' ? 'badge-red' :
@@ -897,8 +890,8 @@ export default function AssetDetail() {
                           wo.status === 'Completed' ? 'badge-green' : 'badge-gray'
                         }`}>{wo.status || '--'}</span>
                       </td>
-                      <td className="font-mono text-xs text-gray-500">{wo.rmaNumber || '--'}</td>
-                      <td className="font-medium text-white">
+                      <td className="font-mono text-xs text-th-muted">{wo.rmaNumber || '--'}</td>
+                      <td className="font-medium text-th-primary">
                         {wo.estimatedCost != null ? `$${wo.estimatedCost.toLocaleString()}` : '--'}
                       </td>
                     </tr>
@@ -914,11 +907,11 @@ export default function AssetDetail() {
       {relatedCases && relatedCases.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em] flex items-center gap-1.5">
               <FileText size={13} className="text-amber-400" />
               Related Cases
             </h2>
-            <span className="text-[10px] text-gray-500">{relatedCases.length} case{relatedCases.length !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] text-th-muted">{relatedCases.length} case{relatedCases.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -939,7 +932,7 @@ export default function AssetDetail() {
                       <td className="font-medium whitespace-nowrap text-siemens-accent">
                         {c.caseNumber || '--'}
                       </td>
-                      <td className="text-gray-200 max-w-xs truncate">{c.subject || '--'}</td>
+                      <td className="text-th-secondary max-w-xs truncate">{c.subject || '--'}</td>
                       <td>
                         <span className={`badge ${
                           c.priority === 'Critical' ? 'badge-red' :
@@ -955,8 +948,8 @@ export default function AssetDetail() {
                           c.status === 'Closed' ? 'badge-green' : 'badge-gray'
                         }`}>{c.status || '--'}</span>
                       </td>
-                      <td className="text-gray-400">{c.type || '--'}</td>
-                      <td className="text-gray-500 text-xs whitespace-nowrap">
+                      <td className="text-th-muted">{c.type || '--'}</td>
+                      <td className="text-th-muted text-xs whitespace-nowrap">
                         {c.createdDate
                           ? new Date(c.createdDate).toLocaleDateString()
                           : '--'}
@@ -976,7 +969,7 @@ export default function AssetDetail() {
           <div className="bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-lg mx-4">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-th-primary flex items-center gap-2">
                 {actionModal === 'Case' ? (
                   <ShieldAlert size={16} className="text-amber-400" />
                 ) : (
@@ -986,7 +979,7 @@ export default function AssetDetail() {
               </h3>
               <button
                 onClick={() => setActionModal(null)}
-                className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                className="p-1 text-th-muted hover:text-th-secondary transition-colors"
               >
                 <X size={16} />
               </button>
@@ -996,10 +989,10 @@ export default function AssetDetail() {
             {actionSuccess ? (
               <div className="px-5 py-8 text-center">
                 <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-white mb-1">
+                <p className="text-sm font-semibold text-th-primary mb-1">
                   {actionSuccess.recordType === 'Case' ? 'Case' : 'Work Order'} Created
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-th-muted">
                   {actionSuccess.CaseNumber || actionSuccess.WorkOrderNumber} — {actionSuccess.Subject}
                 </p>
               </div>
@@ -1007,7 +1000,7 @@ export default function AssetDetail() {
               <div className="px-5 py-4 space-y-4">
                 {/* Subject */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Subject
                   </label>
                   <input
@@ -1015,14 +1008,14 @@ export default function AssetDetail() {
                     value={actionForm.subject}
                     onChange={(e) => setActionForm({ ...actionForm, subject: e.target.value })}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                      text-th-secondary placeholder:text-th-faint outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
                     placeholder="Brief description"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Description
                   </label>
                   <textarea
@@ -1030,7 +1023,7 @@ export default function AssetDetail() {
                     onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
                     rows={5}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
+                      text-th-secondary placeholder:text-th-faint outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
                       resize-none font-mono text-xs leading-relaxed"
                     placeholder="Detailed description..."
                   />
@@ -1038,14 +1031,14 @@ export default function AssetDetail() {
 
                 {/* Priority */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Priority
                   </label>
                   <select
                     value={actionForm.priority}
                     onChange={(e) => setActionForm({ ...actionForm, priority: e.target.value })}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                      text-th-secondary outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -1069,7 +1062,7 @@ export default function AssetDetail() {
               <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-surface-border">
                 <button
                   onClick={() => setActionModal(null)}
-                  className="px-4 py-2 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                  className="px-4 py-2 text-xs text-th-muted hover:text-th-secondary transition-colors"
                 >
                   Cancel
                 </button>

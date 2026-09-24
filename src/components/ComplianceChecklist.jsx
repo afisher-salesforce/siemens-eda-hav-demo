@@ -66,7 +66,7 @@ function RestrictionBadge({ type }) {
     'Unverified List': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
   };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${styles[type] || 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${styles[type] || 'bg-gray-500/10 text-th-muted border-gray-500/20'}`}>
       {type}
     </span>
   );
@@ -152,8 +152,8 @@ export default function ComplianceChecklist() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Compliance Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{compError}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Compliance Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{compError}</p>
         <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
           Retry
         </button>
@@ -183,8 +183,8 @@ export default function ComplianceChecklist() {
         <div className="flex items-center gap-3">
           <Shield size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Trade Compliance</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Trade Compliance</h1>
+            <p className="text-xs text-th-muted">
               EAR/ECCN export controls, OFAC sanctions screening, embargo enforcement
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function ComplianceChecklist() {
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-siemens-accent text-siemens-accent'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
+                  : 'border-transparent text-th-muted hover:text-th-secondary'
               }`}
             >
               <TabIcon size={13} />
@@ -219,34 +219,34 @@ export default function ComplianceChecklist() {
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <Globe size={14} className="text-red-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Embargoed Countries</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Embargoed Countries</span>
               </div>
               <div className="text-2xl font-bold text-red-400">{metrics.embargoedCountries ?? 0}</div>
-              <div className="text-xs text-gray-500">active trade embargoes</div>
+              <div className="text-xs text-th-muted">active trade embargoes</div>
             </div>
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <Ban size={14} className="text-amber-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Restricted Parties</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Restricted Parties</span>
               </div>
               <div className="text-2xl font-bold text-amber-400">{metrics.restrictedParties ?? 0}</div>
-              <div className="text-xs text-gray-500">on SDN/Entity lists</div>
+              <div className="text-xs text-th-muted">on SDN/Entity lists</div>
             </div>
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <FileCheck size={14} className="text-blue-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">ECCN Classifications</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">ECCN Classifications</span>
               </div>
               <div className="text-2xl font-bold text-blue-400">{metrics.eccnClassifications ?? 0}</div>
-              <div className="text-xs text-gray-500">controlled items</div>
+              <div className="text-xs text-th-muted">controlled items</div>
             </div>
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 size={14} className="text-emerald-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Compliance Records</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Compliance Records</span>
               </div>
               <div className="text-2xl font-bold text-emerald-400">{metrics.totalRecords ?? 0}</div>
-              <div className="text-xs text-gray-500">{metrics.clearRecords ?? 0} clear, {metrics.flaggedRecords ?? 0} flagged, {metrics.blockedRecords ?? 0} blocked</div>
+              <div className="text-xs text-th-muted">{metrics.clearRecords ?? 0} clear, {metrics.flaggedRecords ?? 0} flagged, {metrics.blockedRecords ?? 0} blocked</div>
             </div>
           </div>
 
@@ -254,7 +254,7 @@ export default function ComplianceChecklist() {
           {complianceData?.complianceRecords?.length > 0 && (
             <div className="section-card">
               <div className="section-card-header">
-                <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Recent Compliance Assessments</h2>
+                <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Recent Compliance Assessments</h2>
               </div>
               <div className="section-card-body p-0">
                 <div className="overflow-x-auto">
@@ -276,13 +276,13 @@ export default function ComplianceChecklist() {
                         return (
                           <React.Fragment key={cr.id}>
                             <tr
-                              className="cursor-pointer hover:bg-white/[0.03]"
+                              className="cursor-pointer hover:bg-[var(--overlay-hover)]"
                               onClick={() => setExpandedRecord(isExpanded ? null : cr.id)}
                             >
                               <td className="w-8 text-center">
                                 {isExpanded
-                                  ? <ChevronDown size={14} className="text-gray-500 inline" />
-                                  : <ChevronRight size={14} className="text-gray-500 inline" />}
+                                  ? <ChevronDown size={14} className="text-th-muted inline" />
+                                  : <ChevronRight size={14} className="text-th-muted inline" />}
                               </td>
                               <td className="font-mono text-xs text-siemens-accent font-medium">{cr.name}</td>
                               <td>
@@ -294,29 +294,29 @@ export default function ComplianceChecklist() {
                                   {cr.assessmentOutcome || '--'}
                                 </span>
                               </td>
-                              <td className="text-gray-300">{cr.account?.name || '--'}</td>
-                              <td className="text-gray-400 text-xs">{cr.quote?.quoteNumber || '--'}</td>
-                              <td className="text-gray-500 text-xs whitespace-nowrap">
+                              <td className="text-th-secondary">{cr.account?.name || '--'}</td>
+                              <td className="text-th-muted text-xs">{cr.quote?.quoteNumber || '--'}</td>
+                              <td className="text-th-muted text-xs whitespace-nowrap">
                                 {cr.createdDate ? new Date(cr.createdDate).toLocaleDateString() : '--'}
                               </td>
                               <td>
                                 {cr.createdByAgent ? (
                                   <span className="badge badge-blue text-[9px]">AI Agent</span>
                                 ) : (
-                                  <span className="text-gray-600 text-xs">Manual</span>
+                                  <span className="text-th-faint text-xs">Manual</span>
                                 )}
                               </td>
                             </tr>
                             {isExpanded && (
                               <tr>
-                                <td colSpan={7} className="bg-[#0a0f1a] border-b border-surface-border p-0">
+                                <td colSpan={7} className="bg-surface-bg border-b border-surface-border p-0">
                                   <div className="px-6 py-4 space-y-3">
                                     <div className="flex justify-end">
                                       <SalesforceLink recordId={cr.id} />
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                       <div>
-                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Compliance Status</div>
+                                        <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1">Compliance Status</div>
                                         <span className={`badge ${
                                           cr.complianceStatus === 'Clear' ? 'badge-green' :
                                           cr.complianceStatus === 'Flagged' ? 'badge-yellow' :
@@ -327,22 +327,22 @@ export default function ComplianceChecklist() {
                                         </span>
                                       </div>
                                       <div>
-                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Data Sources</div>
-                                        <div className="text-xs text-gray-400">{cr.dataSources || 'Not specified'}</div>
+                                        <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1">Data Sources</div>
+                                        <div className="text-xs text-th-muted">{cr.dataSources || 'Not specified'}</div>
                                       </div>
                                     </div>
                                     {cr.screeningDetails && (
                                       <div>
-                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Screening Details</div>
-                                        <div className="text-xs text-gray-400 bg-surface-card rounded-md p-3 border border-surface-border whitespace-pre-wrap max-h-40 overflow-y-auto">
+                                        <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1">Screening Details</div>
+                                        <div className="text-xs text-th-muted bg-surface-card rounded-md p-3 border border-surface-border whitespace-pre-wrap max-h-40 overflow-y-auto">
                                           {cr.screeningDetails}
                                         </div>
                                       </div>
                                     )}
                                     {cr.account && (
                                       <div>
-                                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Account Details</div>
-                                        <div className="text-xs text-gray-400">
+                                        <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1">Account Details</div>
+                                        <div className="text-xs text-th-muted">
                                           {cr.account.name}{cr.account.country ? ` — ${cr.account.country}` : ''}
                                           {cr.account.embargoFlag && (
                                             <span className="ml-2 badge badge-red text-[9px]">Embargo Flagged</span>
@@ -378,10 +378,10 @@ export default function ComplianceChecklist() {
       {activeTab === 'embargoes' && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Active Trade Embargoes
             </h2>
-            <span className="text-[10px] text-gray-500">{complianceData?.embargoedCountries?.length || 0} countries</span>
+            <span className="text-[10px] text-th-muted">{complianceData?.embargoedCountries?.length || 0} countries</span>
           </div>
           <div className="section-card-body p-0">
             <div className="overflow-x-auto">
@@ -398,20 +398,20 @@ export default function ComplianceChecklist() {
                 <tbody>
                   {(complianceData?.embargoedCountries || []).map((ec, i) => (
                     <tr key={i}>
-                      <td className="text-gray-200 font-medium">
+                      <td className="text-th-secondary font-medium">
                         <div className="flex items-center">
                           <CountryFlag code={ec.countryCode} />
                           {ec.countryName}
                         </div>
                       </td>
-                      <td className="font-mono text-xs text-gray-400">{ec.countryCode}</td>
+                      <td className="font-mono text-xs text-th-muted">{ec.countryCode}</td>
                       <td>
                         <span className="badge badge-red">Embargoed</span>
                       </td>
-                      <td className="text-gray-500 text-xs whitespace-nowrap">
+                      <td className="text-th-muted text-xs whitespace-nowrap">
                         {ec.effectiveDate ? new Date(ec.effectiveDate).toLocaleDateString() : '--'}
                       </td>
-                      <td className="text-gray-500 text-xs max-w-[300px] truncate">
+                      <td className="text-th-muted text-xs max-w-[300px] truncate">
                         {ec.restrictionNotes || '--'}
                       </td>
                     </tr>
@@ -427,21 +427,21 @@ export default function ComplianceChecklist() {
       {activeTab === 'parties' && (
         <>
           <div className="relative max-w-md">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
             <input
               type="text"
               placeholder="Search restricted parties..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
             />
           </div>
           <div className="section-card">
             <div className="section-card-header">
-              <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+              <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
                 Active Restricted Parties
               </h2>
-              <span className="text-[10px] text-gray-500">{filteredParties.length} entities</span>
+              <span className="text-[10px] text-th-muted">{filteredParties.length} entities</span>
             </div>
             <div className="section-card-body p-0">
               <div className="overflow-x-auto">
@@ -457,8 +457,8 @@ export default function ComplianceChecklist() {
                   <tbody>
                     {filteredParties.map((rp, i) => (
                       <tr key={i}>
-                        <td className="text-gray-200 font-medium text-sm">{rp.entityName}</td>
-                        <td className="text-gray-400">
+                        <td className="text-th-secondary font-medium text-sm">{rp.entityName}</td>
+                        <td className="text-th-muted">
                           <div className="flex items-center">
                             <CountryFlag code={rp.country} />
                             {rp.country}
@@ -467,7 +467,7 @@ export default function ComplianceChecklist() {
                         <td>
                           <RestrictionBadge type={rp.restrictionType} />
                         </td>
-                        <td className="text-gray-500 text-xs">{rp.sourceList || '--'}</td>
+                        <td className="text-th-muted text-xs">{rp.sourceList || '--'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -482,21 +482,21 @@ export default function ComplianceChecklist() {
       {activeTab === 'eccn' && (
         <>
           <div className="relative max-w-md">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
             <input
               type="text"
               placeholder="Search ECCN codes or categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
             />
           </div>
           <div className="section-card">
             <div className="section-card-header">
-              <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+              <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
                 ECCN / HS Code Classifications
               </h2>
-              <span className="text-[10px] text-gray-500">{filteredEccn.length} classifications</span>
+              <span className="text-[10px] text-th-muted">{filteredEccn.length} classifications</span>
             </div>
             <div className="section-card-body p-0">
               <div className="overflow-x-auto">
@@ -514,9 +514,9 @@ export default function ComplianceChecklist() {
                     {filteredEccn.map((ec, i) => (
                       <tr key={i}>
                         <td className="font-mono text-sm text-siemens-accent font-medium">{ec.eccnCode}</td>
-                        <td className="font-mono text-xs text-gray-400">{ec.hsCode || '--'}</td>
-                        <td className="text-gray-300 text-sm">{ec.productCategory || '--'}</td>
-                        <td className="text-gray-500 text-xs max-w-[200px] truncate">{ec.controlReason || '--'}</td>
+                        <td className="font-mono text-xs text-th-muted">{ec.hsCode || '--'}</td>
+                        <td className="text-th-secondary text-sm">{ec.productCategory || '--'}</td>
+                        <td className="text-th-muted text-xs max-w-[200px] truncate">{ec.controlReason || '--'}</td>
                         <td>
                           {ec.licenseRequired ? (
                             <span className="badge badge-red">Required</span>
@@ -542,38 +542,38 @@ export default function ComplianceChecklist() {
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 size={14} className="text-emerald-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Passed</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Passed</span>
               </div>
               <div className="text-2xl font-bold text-emerald-400">{passedChecks}</div>
-              <div className="text-xs text-gray-500">of {totalChecks} total checks</div>
+              <div className="text-xs text-th-muted">of {totalChecks} total checks</div>
             </div>
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <Clock size={14} className="text-amber-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Pending</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Pending</span>
               </div>
               <div className="text-2xl font-bold text-amber-400">{pendingChecks}</div>
-              <div className="text-xs text-gray-500">awaiting verification</div>
+              <div className="text-xs text-th-muted">awaiting verification</div>
             </div>
             <div className="metric-card">
               <div className="flex items-center gap-2 mb-1">
                 <XCircle size={14} className="text-red-400" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Flagged</span>
+                <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Flagged</span>
               </div>
               <div className="text-2xl font-bold text-red-400">{failedChecks}</div>
-              <div className="text-xs text-gray-500">requires attention</div>
+              <div className="text-xs text-th-muted">requires attention</div>
             </div>
           </div>
 
           {/* Search */}
           <div className="relative max-w-md">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
             <input
               type="text"
               placeholder="Search orders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
             />
           </div>
 
@@ -589,7 +589,7 @@ export default function ComplianceChecklist() {
                 <div key={order.id || i} className="section-card">
                   <button
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id || i)}
-                    className="w-full section-card-header cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="w-full section-card-header cursor-pointer hover:bg-[var(--overlay-hover)] transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -599,10 +599,10 @@ export default function ComplianceChecklist() {
                         {allPassed ? <CheckCircle2 size={16} /> : hasFailed ? <XCircle size={16} /> : <Clock size={16} />}
                       </div>
                       <div className="text-left">
-                        <div className="text-sm font-medium text-gray-200">
+                        <div className="text-sm font-medium text-th-secondary">
                           {order.orderNumber || '--'} &middot; {order.customer}
                         </div>
-                        <div className="text-[10px] text-gray-500">
+                        <div className="text-[10px] text-th-muted">
                           {order.product || 'Veloce System'} &middot; {checks.filter((c) => c.status === 'passed').length}/{checks.length} checks passed
                         </div>
                       </div>
@@ -611,7 +611,7 @@ export default function ComplianceChecklist() {
                       <span className={`badge ${allPassed ? 'badge-green' : hasFailed ? 'badge-red' : 'badge-yellow'}`}>
                         {allPassed ? 'Cleared' : hasFailed ? 'Flagged' : 'Pending'}
                       </span>
-                      {isExpanded ? <ChevronDown size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
+                      {isExpanded ? <ChevronDown size={14} className="text-th-muted" /> : <ChevronRight size={14} className="text-th-muted" />}
                     </div>
                   </button>
                   {isExpanded && (
@@ -622,10 +622,10 @@ export default function ComplianceChecklist() {
                           return (
                             <div key={check.id} className="flex items-center justify-between py-2 border-b border-surface-border last:border-0">
                               <div className="flex items-center gap-3">
-                                <CheckIcon size={14} className="text-gray-500" />
+                                <CheckIcon size={14} className="text-th-muted" />
                                 <div>
-                                  <div className="text-sm text-gray-200">{check.label}</div>
-                                  <div className="text-[10px] text-gray-500">{check.description}</div>
+                                  <div className="text-sm text-th-secondary">{check.label}</div>
+                                  <div className="text-[10px] text-th-muted">{check.description}</div>
                                 </div>
                               </div>
                               <CheckStatusIcon status={check.status} />

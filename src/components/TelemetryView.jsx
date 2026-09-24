@@ -27,13 +27,13 @@ function StatusBadge({ status }) {
 }
 
 function TempDisplay({ temp }) {
-  if (temp == null) return <span className="text-gray-600">--</span>;
+  if (temp == null) return <span className="text-th-faint">--</span>;
   const isHigh = temp > 80;
   const isWarn = temp > 70;
   return (
     <span
       className={`font-mono text-sm ${
-        isHigh ? 'text-orange-400 font-bold' : isWarn ? 'text-amber-400' : 'text-gray-300'
+        isHigh ? 'text-orange-400 font-bold' : isWarn ? 'text-amber-400' : 'text-th-secondary'
       }`}
     >
       {temp.toFixed(1)}&deg;C
@@ -61,7 +61,7 @@ function ActionDropdown({ reading, onAction }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="p-1 text-gray-600 hover:text-gray-300 transition-colors rounded hover:bg-white/5"
+        className="p-1 text-th-faint hover:text-th-secondary transition-colors rounded hover:bg-surface-card-hover"
       >
         <MoreVertical size={14} />
       </button>
@@ -69,14 +69,14 @@ function ActionDropdown({ reading, onAction }) {
         <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-card border border-surface-border rounded-lg shadow-xl overflow-hidden">
           <button
             onClick={() => { setOpen(false); onAction('Case', reading); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-th-secondary hover:bg-surface-card-hover transition-colors"
           >
             <ShieldAlert size={13} className="text-amber-400" />
             Create Case
           </button>
           <button
             onClick={() => { setOpen(false); onAction('WorkOrder', reading); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-th-secondary hover:bg-surface-card-hover transition-colors"
           >
             <Wrench size={13} className="text-siemens-accent" />
             Create Work Order
@@ -201,8 +201,8 @@ export default function TelemetryView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Telemetry</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Telemetry</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -219,26 +219,26 @@ export default function TelemetryView() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search by asset name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+          className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
         >
           <option value="">All Statuses</option>
           {statuses.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
-        <div className="flex items-center gap-1 ml-auto text-xs text-gray-500">
+        <div className="flex items-center gap-1 ml-auto text-xs text-th-muted">
           <Activity size={12} />
           <span>{loading ? 'Loading...' : `${filtered.length} readings`}</span>
         </div>
@@ -272,17 +272,17 @@ export default function TelemetryView() {
                 {filtered.length > 0 ? (
                   filtered.map((r, i) => (
                     <tr key={i}>
-                      <td className="font-medium text-gray-200 whitespace-nowrap">
+                      <td className="font-medium text-th-secondary whitespace-nowrap">
                         {r.assetName || '--'}
                       </td>
-                      <td className="text-gray-500 text-xs whitespace-nowrap font-mono">
+                      <td className="text-th-muted text-xs whitespace-nowrap font-mono">
                         {r.timestamp
                           ? new Date(r.timestamp).toLocaleString()
                           : '--'}
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                          <div className="w-16 h-1.5 rounded-full bg-[var(--skeleton-bg)] overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
                                 (r.cpuPercent || 0) > 90
@@ -294,7 +294,7 @@ export default function TelemetryView() {
                               style={{ width: `${Math.min(r.cpuPercent || 0, 100)}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-400 w-10 text-right font-mono">
+                          <span className="text-xs text-th-muted w-10 text-right font-mono">
                             {r.cpuPercent != null ? `${r.cpuPercent}%` : '--'}
                           </span>
                           {(r.cpuPercent || 0) > 90 && <AlertTriangle size={10} className="text-orange-400 shrink-0" />}
@@ -302,7 +302,7 @@ export default function TelemetryView() {
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                          <div className="w-16 h-1.5 rounded-full bg-[var(--skeleton-bg)] overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
                                 (r.memoryPercent || 0) > 90
@@ -314,7 +314,7 @@ export default function TelemetryView() {
                               style={{ width: `${Math.min(r.memoryPercent || 0, 100)}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-400 w-10 text-right font-mono">
+                          <span className="text-xs text-th-muted w-10 text-right font-mono">
                             {r.memoryPercent != null ? `${r.memoryPercent}%` : '--'}
                           </span>
                           {(r.memoryPercent || 0) > 90 && <AlertTriangle size={10} className="text-orange-400 shrink-0" />}
@@ -326,21 +326,21 @@ export default function TelemetryView() {
                       <td>
                         <StatusBadge status={r.status} />
                       </td>
-                      <td className="text-gray-300 text-center font-mono text-sm">
+                      <td className="text-th-secondary text-center font-mono text-sm">
                         {r.jobs ?? '--'}
                       </td>
                       <td>
                         {r.errors != null ? (
                           <span
                             className={`font-mono text-sm ${
-                              r.errors > 0 ? 'text-orange-400 font-bold' : 'text-gray-500'
+                              r.errors > 0 ? 'text-orange-400 font-bold' : 'text-th-muted'
                             }`}
                           >
                             {r.errors}
                             {r.errors > 0 && <AlertTriangle size={10} className="inline ml-1 text-orange-400" />}
                           </span>
                         ) : (
-                          <span className="text-gray-600">--</span>
+                          <span className="text-th-faint">--</span>
                         )}
                       </td>
                       <td>
@@ -350,7 +350,7 @@ export default function TelemetryView() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-gray-600">
+                    <td colSpan={9} className="text-center py-12 text-th-faint">
                       No telemetry readings match the current filters
                     </td>
                   </tr>
@@ -367,7 +367,7 @@ export default function TelemetryView() {
           <div className="bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-lg mx-4">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-th-primary flex items-center gap-2">
                 {actionModal.type === 'Case' ? (
                   <ShieldAlert size={16} className="text-amber-400" />
                 ) : (
@@ -377,7 +377,7 @@ export default function TelemetryView() {
               </h3>
               <button
                 onClick={() => setActionModal(null)}
-                className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                className="p-1 text-th-muted hover:text-th-secondary transition-colors"
               >
                 <X size={16} />
               </button>
@@ -387,10 +387,10 @@ export default function TelemetryView() {
             {actionSuccess ? (
               <div className="px-5 py-8 text-center">
                 <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-white mb-1">
+                <p className="text-sm font-semibold text-th-primary mb-1">
                   {actionSuccess.recordType === 'Case' ? 'Case' : 'Work Order'} Created
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-th-muted">
                   {actionSuccess.CaseNumber || actionSuccess.WorkOrderNumber} — {actionSuccess.Subject}
                 </p>
               </div>
@@ -398,7 +398,7 @@ export default function TelemetryView() {
               <div className="px-5 py-4 space-y-4">
                 {/* Subject */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Subject
                   </label>
                   <input
@@ -406,14 +406,14 @@ export default function TelemetryView() {
                     value={actionForm.subject}
                     onChange={(e) => setActionForm({ ...actionForm, subject: e.target.value })}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                      text-th-secondary placeholder:text-th-faint outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
                     placeholder="Brief description"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Description
                   </label>
                   <textarea
@@ -421,7 +421,7 @@ export default function TelemetryView() {
                     onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
                     rows={5}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
+                      text-th-secondary placeholder:text-th-faint outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50
                       resize-none font-mono text-xs leading-relaxed"
                     placeholder="Detailed description..."
                   />
@@ -429,14 +429,14 @@ export default function TelemetryView() {
 
                 {/* Priority */}
                 <div>
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5">
+                  <label className="block text-[10px] text-th-muted uppercase tracking-wider font-semibold mb-1.5">
                     Priority
                   </label>
                   <select
                     value={actionForm.priority}
                     onChange={(e) => setActionForm({ ...actionForm, priority: e.target.value })}
                     className="w-full px-3 py-2 text-sm bg-surface-bg border border-surface-border rounded-md
-                      text-gray-200 outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+                      text-th-secondary outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -460,7 +460,7 @@ export default function TelemetryView() {
               <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-surface-border">
                 <button
                   onClick={() => setActionModal(null)}
-                  className="px-4 py-2 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                  className="px-4 py-2 text-xs text-th-muted hover:text-th-secondary transition-colors"
                 >
                   Cancel
                 </button>

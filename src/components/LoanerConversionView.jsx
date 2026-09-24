@@ -33,12 +33,12 @@ function MetricCard({ icon: Icon, label, value, color, subtitle }) {
             <Icon size={18} style={{ color }} />
           </div>
         </div>
-        <div className="text-2xl font-bold text-white">{value}</div>
-        <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-[0.08em] font-medium">
+        <div className="text-2xl font-bold text-th-primary">{value}</div>
+        <div className="text-[10px] text-th-muted mt-1 uppercase tracking-[0.08em] font-medium">
           {label}
         </div>
         {subtitle && (
-          <div className="text-[10px] text-gray-600 mt-0.5">{subtitle}</div>
+          <div className="text-[10px] text-th-faint mt-0.5">{subtitle}</div>
         )}
       </div>
     </div>
@@ -50,10 +50,10 @@ function StatusBadge({ status }) {
     'Active Loan': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
     'Conversion Pending': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
     'Converted to Sale': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-    Returned: 'bg-gray-500/15 text-gray-400 border-gray-500/30',
+    Returned: 'bg-gray-500/15 text-th-muted border-gray-500/30',
     Expired: 'bg-red-500/15 text-red-400 border-red-500/30',
   };
-  const cls = styles[status] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
+  const cls = styles[status] || 'bg-gray-500/15 text-th-muted border-gray-500/30';
   return (
     <span className={`text-[10px] px-2 py-0.5 rounded border font-medium whitespace-nowrap ${cls}`}>
       {status || '--'}
@@ -62,7 +62,7 @@ function StatusBadge({ status }) {
 }
 
 function ExpiryBadge({ days }) {
-  if (days == null) return <span className="text-gray-600">--</span>;
+  if (days == null) return <span className="text-th-faint">--</span>;
   if (days <= 30) {
     return (
       <span className="badge badge-red">
@@ -95,7 +95,7 @@ function OppStageBadge({ stage }) {
     'Closed Won': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
     'Closed Lost': 'bg-red-500/15 text-red-400 border-red-500/30',
   };
-  const cls = styles[stage] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
+  const cls = styles[stage] || 'bg-gray-500/15 text-th-muted border-gray-500/30';
   return (
     <span className={`text-[10px] px-2 py-0.5 rounded border font-medium whitespace-nowrap ${cls}`}>
       {stage || '--'}
@@ -131,8 +131,8 @@ function ErrorState({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <AlertTriangle size={48} className="text-amber-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Loaner Data</h3>
-      <p className="text-sm text-gray-500 max-w-md mb-4">{message}</p>
+      <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Loaner Data</h3>
+      <p className="text-sm text-th-muted max-w-md mb-4">{message}</p>
       <button
         onClick={onRetry}
         className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -215,7 +215,7 @@ export default function LoanerConversionView() {
       {/* Loaner Table */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Loaner Fleet & Conversion Status
           </h2>
           <div className="flex items-center gap-2">
@@ -250,29 +250,29 @@ export default function LoanerConversionView() {
                       <td>
                         <Link
                           to={`/assets/${l.id}`}
-                          className="font-medium text-gray-200 hover:text-siemens-accent transition-colors"
+                          className="font-medium text-th-secondary hover:text-siemens-accent transition-colors"
                         >
                           {l.name}
                         </Link>
-                        <div className="text-[10px] text-gray-600 mt-0.5 font-mono">
+                        <div className="text-[10px] text-th-faint mt-0.5 font-mono">
                           {l.serialNumber}
                         </div>
                       </td>
-                      <td className="text-gray-300">{l.customer || '--'}</td>
-                      <td className="text-gray-400">{l.product || '--'}</td>
+                      <td className="text-th-secondary">{l.customer || '--'}</td>
+                      <td className="text-th-muted">{l.product || '--'}</td>
                       <td>
                         <StatusBadge status={l.loanerStatus} />
                       </td>
                       <td className="text-center">
                         {l.monthsOnLoan != null ? (
-                          <span className="text-gray-300 font-mono text-xs">
+                          <span className="text-th-secondary font-mono text-xs">
                             {l.monthsOnLoan}mo
                           </span>
                         ) : (
                           '--'
                         )}
                       </td>
-                      <td className="text-gray-400 text-xs whitespace-nowrap">
+                      <td className="text-th-muted text-xs whitespace-nowrap">
                         {l.loanerExpiryDate
                           ? new Date(l.loanerExpiryDate).toLocaleDateString()
                           : '--'}
@@ -283,7 +283,7 @@ export default function LoanerConversionView() {
                       <td className="text-center">
                         {l.utilization != null ? (
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
+                            <div className="flex-1 h-1.5 bg-surface-card-hover rounded-full overflow-hidden max-w-[60px]">
                               <div
                                 className={`h-full rounded-full ${
                                   l.utilization > 80
@@ -295,7 +295,7 @@ export default function LoanerConversionView() {
                                 style={{ width: `${Math.min(l.utilization, 100)}%` }}
                               />
                             </div>
-                            <span className="text-xs text-gray-400 font-mono">
+                            <span className="text-xs text-th-muted font-mono">
                               {l.utilization}%
                             </span>
                           </div>
@@ -303,14 +303,14 @@ export default function LoanerConversionView() {
                           '--'
                         )}
                       </td>
-                      <td className="text-gray-300 text-xs max-w-[140px] truncate">
+                      <td className="text-th-secondary text-xs max-w-[140px] truncate">
                         {l.conversionOpportunity ? (
                           <div className="flex items-center gap-1">
                             <TrendingUp size={12} className="text-emerald-400 shrink-0" />
                             <span className="truncate">{l.conversionOpportunity.name}</span>
                           </div>
                         ) : (
-                          <span className="text-gray-600 italic">No opp</span>
+                          <span className="text-th-faint italic">No opp</span>
                         )}
                       </td>
                       <td>
@@ -320,7 +320,7 @@ export default function LoanerConversionView() {
                           '--'
                         )}
                       </td>
-                      <td className="text-white font-semibold whitespace-nowrap">
+                      <td className="text-th-primary font-semibold whitespace-nowrap">
                         {l.conversionOpportunity?.amount != null
                           ? `$${l.conversionOpportunity.amount.toLocaleString()}`
                           : '--'}
@@ -332,9 +332,9 @@ export default function LoanerConversionView() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <RefreshCcw size={32} className="text-gray-600 mb-3" />
-              <p className="text-sm text-gray-500">No loaner assets found</p>
-              <p className="text-xs text-gray-600 mt-1">
+              <RefreshCcw size={32} className="text-th-faint mb-3" />
+              <p className="text-sm text-th-muted">No loaner assets found</p>
+              <p className="text-xs text-th-faint mt-1">
                 Loaner assets will appear here when assets with Lease Type "Loan" have loaner tracking enabled
               </p>
             </div>

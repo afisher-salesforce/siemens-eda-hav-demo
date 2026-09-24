@@ -26,14 +26,7 @@ import { getFinancials, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
+import { tooltipStyle } from '../utils/chartStyles';
 
 function formatCurrency(value) {
   if (value == null) return '--';
@@ -136,8 +129,8 @@ export default function COGSReconciliation() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load COGS Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load COGS Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={finRefetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -182,8 +175,8 @@ export default function COGSReconciliation() {
         <div className="flex items-center gap-3">
           <FileSpreadsheet size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">COGS Reconciliation</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">COGS Reconciliation</h1>
+            <p className="text-xs text-th-muted">
               Revenue vs. cost of goods — BOM matching and margin analysis
             </p>
           </div>
@@ -195,37 +188,37 @@ export default function COGSReconciliation() {
         <div className="metric-card relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
           <div className="relative">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
               Total Revenue
             </span>
-            <div className="text-2xl font-bold text-white mt-1">{formatCurrency(totalRevenue)}</div>
+            <div className="text-2xl font-bold text-th-primary mt-1">{formatCurrency(totalRevenue)}</div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
                 <Database size={8} />CRM Forecast
               </span>
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-faint"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>
         <div className="metric-card relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-amber-500" />
           <div className="relative">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
               Total COGS
             </span>
-            <div className="text-2xl font-bold text-white mt-1">{formatCurrency(totalCOGS)}</div>
+            <div className="text-2xl font-bold text-th-primary mt-1">{formatCurrency(totalCOGS)}</div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
                 <Database size={8} />SAP Actuals
               </span>
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-faint"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>
         <div className="metric-card relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-emerald-500" />
           <div className="relative">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
               Gross Margin
             </span>
             <div className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-2">
@@ -233,20 +226,20 @@ export default function COGSReconciliation() {
               <ArrowUpRight size={16} />
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
                 <Database size={8} />CRM + SAP
               </span>
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-faint"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>
         <div className="metric-card relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-indigo-500" />
           <div className="relative">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+            <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
               BOM Match Rate
             </span>
-            <div className="text-2xl font-bold text-white mt-1 flex items-center gap-2">
+            <div className="text-2xl font-bold text-th-primary mt-1 flex items-center gap-2">
               {bomMatchRate}%
               {parseInt(bomMatchRate) >= 90 ? (
                 <CheckCircle2 size={16} className="text-emerald-400" />
@@ -255,10 +248,10 @@ export default function COGSReconciliation() {
               )}
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
                 <Database size={8} />SAP BOM
               </span>
-              <span className="inline-flex items-center gap-1 text-[9px] text-gray-600"><Clock size={8} />{todayStr}</span>
+              <span className="inline-flex items-center gap-1 text-[9px] text-th-faint"><Clock size={8} />{todayStr}</span>
             </div>
           </div>
         </div>
@@ -267,7 +260,7 @@ export default function COGSReconciliation() {
       {/* Margin by Customer Chart */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Revenue vs COGS by Customer
           </h2>
         </div>
@@ -275,33 +268,33 @@ export default function COGSReconciliation() {
           {marginByCustomer.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={marginByCustomer} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                 <XAxis
                   dataKey="customer"
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
                   axisLine={{ stroke: '#1e293b' }}
                   tickLine={{ stroke: '#1e293b' }}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: 'var(--text-faint)' }}
                   axisLine={{ stroke: '#1e293b' }}
                   tickLine={{ stroke: '#1e293b' }}
                   tickFormatter={formatCurrency}
                 />
                 <Tooltip
                   formatter={(value, name) => [formatCurrency(value), name]}
-                  contentStyle={darkTooltipStyle}
+                  contentStyle={tooltipStyle}
                 />
                 <Legend
                   iconType="circle"
-                  wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }}
+                  wrapperStyle={{ fontSize: '11px', color: 'var(--text-muted)' }}
                 />
                 <Bar dataKey="revenue" name="Revenue" fill="#009999" radius={[4, 4, 0, 0]} maxBarSize={35} />
                 <Bar dataKey="cogs" name="COGS" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={35} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-64 text-sm text-gray-600">
+            <div className="flex items-center justify-center h-64 text-sm text-th-faint">
               No data available
             </div>
           )}
@@ -311,17 +304,17 @@ export default function COGSReconciliation() {
       {/* BOM Detail Table */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             BOM Reconciliation Detail
           </h2>
           <div className="relative max-w-xs">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-th-muted" />
             <input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
             />
           </div>
         </div>
@@ -352,9 +345,9 @@ export default function COGSReconciliation() {
                           {r.orderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-400">{r.customer || '--'}</td>
-                      <td className="text-gray-400">{r.product || '--'}</td>
-                      <td className="font-medium text-white">{formatCurrency(r.revenue)}</td>
+                      <td className="text-th-muted">{r.customer || '--'}</td>
+                      <td className="text-th-muted">{r.product || '--'}</td>
+                      <td className="font-medium text-th-primary">{formatCurrency(r.revenue)}</td>
                       <td className="text-amber-400">{formatCurrency(r.cogs)}</td>
                       <td className="text-emerald-400 font-medium">{formatCurrency(r.margin)}</td>
                       <td>
@@ -381,7 +374,7 @@ export default function COGSReconciliation() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-gray-600">
+                    <td colSpan={8} className="text-center py-12 text-th-faint">
                       No reconciliation data matches current filters
                     </td>
                   </tr>

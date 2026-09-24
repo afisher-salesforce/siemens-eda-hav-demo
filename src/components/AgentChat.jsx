@@ -236,7 +236,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
       />
 
       {/* Panel */}
-      <div className="fixed top-0 right-0 h-screen w-96 bg-[#0d1321] shadow-2xl z-50 flex flex-col border-l border-surface-border">
+      <div className="fixed top-0 right-0 h-screen w-96 bg-[var(--table-header-bg)] shadow-2xl z-50 flex flex-col border-l border-surface-border">
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-5 border-b border-surface-border shrink-0">
           <div className="flex items-center gap-3">
@@ -244,7 +244,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
               <Sparkles size={16} className="text-siemens-accent" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-gray-200">HAV Operations Agent</div>
+              <div className="text-sm font-semibold text-th-secondary">HAV Operations Agent</div>
               <div className="text-[10px] text-siemens-accent uppercase tracking-[0.12em] font-medium">
                 Powered by Agentforce
               </div>
@@ -254,7 +254,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
             {messages.length > 0 && (
               <button
                 onClick={handleNewChat}
-                className="px-2 py-1 rounded-md text-[10px] text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors uppercase tracking-wider font-medium"
+                className="px-2 py-1 rounded-md text-[10px] text-th-muted hover:text-th-secondary hover:bg-surface-card-hover transition-colors uppercase tracking-wider font-medium"
                 title="New conversation"
               >
                 New Chat
@@ -262,7 +262,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-md text-th-muted hover:text-th-secondary hover:bg-surface-card-hover transition-colors"
               aria-label="Close chat"
             >
               <X size={18} />
@@ -278,10 +278,10 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
               <div className="w-16 h-16 rounded-2xl bg-siemens-teal/10 border border-siemens-teal/20 flex items-center justify-center mb-5">
                 <Sparkles size={28} className="text-siemens-accent" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">
+              <h3 className="text-lg font-semibold text-th-secondary mb-2">
                 HAV Operations Agent
               </h3>
-              <p className="text-xs text-gray-500 max-w-xs leading-relaxed mb-6">
+              <p className="text-xs text-th-muted max-w-xs leading-relaxed mb-6">
                 Ask about emulator fleet status, capacity planning, work orders,
                 telemetry alerts, or financial summaries.
               </p>
@@ -311,11 +311,11 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
                         ? 'bg-siemens-teal text-white rounded-br-sm'
                         : msg.role === 'error'
                         ? 'bg-red-900/30 border border-red-500/30 text-red-300 rounded-bl-sm'
-                        : 'bg-surface-card border border-surface-border text-gray-300 rounded-bl-sm'
+                        : 'bg-surface-card border border-surface-border text-th-secondary rounded-bl-sm'
                     }`}
                   >
                     {msg.role === 'agent' && !msg.content && (
-                      <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex items-center gap-2 text-th-muted">
                         <Loader2 size={14} className="animate-spin" />
                         <span className="text-xs">Thinking...</span>
                       </div>
@@ -336,7 +336,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
               {loading && messages[messages.length - 1]?.role === 'user' && (
                 <div className="flex justify-start">
                   <div className="bg-surface-card border border-surface-border rounded-xl rounded-bl-sm px-4 py-2.5">
-                    <div className="flex items-center gap-2 text-gray-500">
+                    <div className="flex items-center gap-2 text-th-muted">
                       <Loader2 size={14} className="animate-spin" />
                       <span className="text-xs">Agent is thinking...</span>
                     </div>
@@ -351,7 +351,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
           {initializing && (
             <div className="flex items-center justify-center py-8">
               <Loader2 size={20} className="animate-spin text-siemens-accent mr-2" />
-              <span className="text-sm text-gray-500">Starting session...</span>
+              <span className="text-sm text-th-muted">Starting session...</span>
             </div>
           )}
         </div>
@@ -382,7 +382,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
               onChange={(e) => setInput(e.target.value)}
               disabled={loading || initializing}
               placeholder="Ask the HAV Agent..."
-              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-siemens-teal/50 focus:ring-1 focus:ring-siemens-teal/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-th-secondary placeholder:text-th-faint focus:outline-none focus:border-siemens-teal/50 focus:ring-1 focus:ring-siemens-teal/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             />
             <button
               type="submit"

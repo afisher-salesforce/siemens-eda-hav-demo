@@ -59,8 +59,8 @@ export default function OrdersView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Orders</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Orders</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button
           onClick={refetch}
           className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors"
@@ -77,16 +77,16 @@ export default function OrdersView() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-th-muted" />
           <input
             type="text"
             placeholder="Search orders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-gray-600"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
         </div>
-        <div className="flex items-center gap-1 ml-auto text-xs text-gray-500">
+        <div className="flex items-center gap-1 ml-auto text-xs text-th-muted">
           <ShoppingCart size={12} />
           <span>{loading ? 'Loading...' : `${filtered.length} orders`}</span>
         </div>
@@ -140,19 +140,19 @@ export default function OrdersView() {
                           {order.orderNumber || '--'}
                         </Link>
                       </td>
-                      <td className="text-gray-200">{order.agreementName || '--'}</td>
-                      <td className="text-gray-400">{order.customer || '--'}</td>
-                      <td className="text-gray-400">{order.product || '--'}</td>
-                      <td className="text-gray-300 text-center">{order.quantity ?? '--'}</td>
-                      <td className="font-medium text-white">
+                      <td className="text-th-secondary">{order.agreementName || '--'}</td>
+                      <td className="text-th-muted">{order.customer || '--'}</td>
+                      <td className="text-th-muted">{order.product || '--'}</td>
+                      <td className="text-th-secondary text-center">{order.quantity ?? '--'}</td>
+                      <td className="font-medium text-th-primary">
                         {formatCurrency(order.totalValue)}
                       </td>
-                      <td className="text-gray-500 whitespace-nowrap">
+                      <td className="text-th-muted whitespace-nowrap">
                         {order.startDate
                           ? new Date(order.startDate).toLocaleDateString()
                           : '--'}
                       </td>
-                      <td className="text-gray-500 whitespace-nowrap">
+                      <td className="text-th-muted whitespace-nowrap">
                         {order.endDate
                           ? new Date(order.endDate).toLocaleDateString()
                           : '--'}
@@ -165,7 +165,7 @@ export default function OrdersView() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={10} className="text-center py-12 text-gray-600">
+                    <td colSpan={10} className="text-center py-12 text-th-faint">
                       No orders match the current search
                     </td>
                   </tr>

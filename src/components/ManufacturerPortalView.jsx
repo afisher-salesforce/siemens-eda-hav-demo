@@ -28,14 +28,7 @@ import { getManufacturerData } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-
-const darkTooltipStyle = {
-  borderRadius: '8px',
-  border: '1px solid #1e293b',
-  backgroundColor: '#111827',
-  fontSize: '12px',
-  color: '#94a3b8',
-};
+import { tooltipStyle } from '../utils/chartStyles';
 
 const STATUS_COLORS = {
   New: '#f59e0b',
@@ -73,10 +66,10 @@ function MetricCard({ icon: Icon, label, value, subtitle, color = 'text-siemens-
     <div className="metric-card">
       <div className="flex items-center gap-2 mb-1">
         <Icon size={14} className={color} />
-        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{label}</span>
+        <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">{label}</span>
       </div>
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
+      {subtitle && <div className="text-xs text-th-muted">{subtitle}</div>}
     </div>
   );
 }
@@ -114,8 +107,8 @@ export default function ManufacturerPortalView() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle size={48} className="text-amber-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-200 mb-2">Unable to Load Manufacturer Data</h3>
-        <p className="text-sm text-gray-500 max-w-md mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-th-secondary mb-2">Unable to Load Manufacturer Data</h3>
+        <p className="text-sm text-th-muted max-w-md mb-4">{error}</p>
         <button onClick={refetch} className="px-4 py-2 bg-siemens-teal text-white text-sm rounded-md hover:bg-siemens-dark transition-colors">
           Retry
         </button>
@@ -147,8 +140,8 @@ export default function ManufacturerPortalView() {
         <div className="flex items-center gap-3">
           <Factory size={20} className="text-siemens-accent" />
           <div>
-            <h1 className="text-lg font-bold text-white">Contract Manufacturer Portal</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-th-primary">Contract Manufacturer Portal</h1>
+            <p className="text-xs text-th-muted">
               Work order management, cost analysis, and vendor performance
             </p>
           </div>
@@ -157,7 +150,7 @@ export default function ManufacturerPortalView() {
         <select
           value={vendorFilter}
           onChange={(e) => setVendorFilter(e.target.value)}
-          className="px-3 py-1.5 text-xs border border-surface-border rounded-md bg-surface-card text-gray-300 focus:outline-none focus:ring-2 focus:ring-siemens-teal/30"
+          className="px-3 py-1.5 text-xs border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30"
         >
           <option value="all">All Vendors</option>
           {(data?.vendorSummary || []).map((v) => (
@@ -179,7 +172,7 @@ export default function ManufacturerPortalView() {
         {/* Cost Breakdown by Vendor */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Cost Breakdown by Vendor
             </h2>
           </div>
@@ -187,16 +180,16 @@ export default function ManufacturerPortalView() {
             {costByVendor.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={costByVendor} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="vendor" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#1e293b' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={darkTooltipStyle} formatter={(v) => [`$${Number(v).toLocaleString()}`, '']} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
+                  <XAxis dataKey="vendor" tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={{ stroke: '#1e293b' }} />
+                  <YAxis tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={{ stroke: '#1e293b' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`$${Number(v).toLocaleString()}`, '']} />
                   <Bar dataKey="parts" name="Parts" fill="#3b82f6" stackId="cost" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="labor" name="Labor" fill="#8b5cf6" stackId="cost" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">No vendor data</div>
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">No vendor data</div>
             )}
           </div>
         </div>
@@ -204,7 +197,7 @@ export default function ManufacturerPortalView() {
         {/* Status Distribution */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Work Order Status Distribution
             </h2>
           </div>
@@ -226,11 +219,11 @@ export default function ManufacturerPortalView() {
                       <Cell key={idx} fill={STATUS_COLORS[entry.name] || PIE_COLORS[idx % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={darkTooltipStyle} />
+                  <Tooltip contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-sm text-gray-600">No status data</div>
+              <div className="flex items-center justify-center h-64 text-sm text-th-faint">No status data</div>
             )}
           </div>
         </div>
@@ -240,7 +233,7 @@ export default function ManufacturerPortalView() {
       {data?.vendorSummary && data.vendorSummary.length > 0 && (
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Vendor Performance</h2>
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Vendor Performance</h2>
           </div>
           <div className="section-card-body">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -250,37 +243,37 @@ export default function ManufacturerPortalView() {
                   className={`p-4 rounded-lg border transition-colors cursor-pointer ${
                     vendorFilter === v.vendor
                       ? 'border-siemens-accent/50 bg-siemens-teal/5'
-                      : 'border-surface-border hover:border-gray-600'
+                      : 'border-surface-border hover:border-surface-border'
                   }`}
                   onClick={() => setVendorFilter(vendorFilter === v.vendor ? 'all' : v.vendor)}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-200">{v.vendor}</h3>
-                    <span className="text-xs text-gray-500">{v.totalOrders} orders</span>
+                    <h3 className="text-sm font-semibold text-th-secondary">{v.vendor}</h3>
+                    <span className="text-xs text-th-muted">{v.totalOrders} orders</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
                       <div className="text-lg font-bold text-amber-400">{v.openOrders}</div>
-                      <div className="text-[9px] text-gray-500 uppercase">Open</div>
+                      <div className="text-[9px] text-th-muted uppercase">Open</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-emerald-400">{v.completedOrders}</div>
-                      <div className="text-[9px] text-gray-500 uppercase">Complete</div>
+                      <div className="text-[9px] text-th-muted uppercase">Complete</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-blue-400">{fmt(v.avgCost)}</div>
-                      <div className="text-[9px] text-gray-500 uppercase">Avg Cost</div>
+                      <div className="text-[9px] text-th-muted uppercase">Avg Cost</div>
                     </div>
                   </div>
                   {/* Completion bar */}
                   <div className="mt-3">
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-[var(--skeleton-bg)] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all"
                         style={{ width: `${v.totalOrders > 0 ? (v.completedOrders / v.totalOrders) * 100 : 0}%` }}
                       />
                     </div>
-                    <div className="text-[9px] text-gray-600 mt-1">
+                    <div className="text-[9px] text-th-faint mt-1">
                       {v.totalOrders > 0 ? Math.round((v.completedOrders / v.totalOrders) * 100) : 0}% completion rate
                     </div>
                   </div>
@@ -294,10 +287,10 @@ export default function ManufacturerPortalView() {
       {/* Work Orders Table */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Work Orders {vendorFilter !== 'all' ? `— ${vendorFilter}` : ''}
           </h2>
-          <span className="text-[10px] text-gray-500">{filteredOrders.length} orders</span>
+          <span className="text-[10px] text-th-muted">{filteredOrders.length} orders</span>
         </div>
         <div className="section-card-body p-0">
           <div className="overflow-x-auto">
@@ -325,18 +318,18 @@ export default function ManufacturerPortalView() {
                         {wo.workOrderNumber}
                       </Link>
                     </td>
-                    <td className="text-gray-200 text-sm font-medium">{wo.assetName || '--'}</td>
-                    <td className="text-gray-400 text-xs">{wo.productName || '--'}</td>
-                    <td className="text-gray-400">{wo.customer || '--'}</td>
+                    <td className="text-th-secondary text-sm font-medium">{wo.assetName || '--'}</td>
+                    <td className="text-th-muted text-xs">{wo.productName || '--'}</td>
+                    <td className="text-th-muted">{wo.customer || '--'}</td>
                     <td><StatusBadge status={wo.status} /></td>
                     <td><PriorityBadge priority={wo.priority} /></td>
-                    <td className="font-mono text-xs text-gray-500">{wo.rmaNumber || '--'}</td>
+                    <td className="font-mono text-xs text-th-muted">{wo.rmaNumber || '--'}</td>
                     <td className="text-blue-400 font-mono text-xs">{wo.partsCost != null ? fmt(wo.partsCost) : '--'}</td>
                     <td className="text-purple-400 font-mono text-xs">{wo.laborCost != null ? fmt(wo.laborCost) : '--'}</td>
                     <td className="text-amber-400 font-mono text-xs font-medium">{wo.estimatedCost != null ? fmt(wo.estimatedCost) : '--'}</td>
-                    <td className="text-gray-400 text-center">
+                    <td className="text-th-muted text-center">
                       {wo.turnaroundDays != null ? (
-                        <span className={wo.turnaroundDays > 30 ? 'text-orange-400 font-medium' : wo.turnaroundDays > 14 ? 'text-amber-400' : 'text-gray-400'}>
+                        <span className={wo.turnaroundDays > 30 ? 'text-orange-400 font-medium' : wo.turnaroundDays > 14 ? 'text-amber-400' : 'text-th-muted'}>
                           {wo.turnaroundDays}d
                         </span>
                       ) : '--'}

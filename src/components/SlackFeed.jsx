@@ -71,14 +71,14 @@ function MessageBubble({ message }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs font-semibold text-gray-200 leading-none">
+          <span className="text-xs font-semibold text-th-secondary leading-none">
             {user.displayName || user.name || 'Unknown'}
           </span>
-          <span className="text-[10px] text-gray-600 leading-none">
+          <span className="text-[10px] text-th-faint leading-none">
             {timeAgo(message.ts)}
           </span>
         </div>
-        <p className="text-[13px] text-gray-400 mt-0.5 leading-snug break-words">
+        <p className="text-[13px] text-th-muted mt-0.5 leading-snug break-words">
           {formatSlackText(message.text)}
         </p>
 
@@ -98,9 +98,9 @@ function MessageBubble({ message }) {
             {message.reactions.map((r) => (
               <span
                 key={r.name}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-surface-border text-[10px] text-gray-400"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-card-hover border border-surface-border text-[10px] text-th-muted"
               >
-                :{r.name}: <span className="text-gray-500">{r.count}</span>
+                :{r.name}: <span className="text-th-muted">{r.count}</span>
               </span>
             ))}
           </div>
@@ -259,16 +259,16 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
       <div className="section-card">
         <div className="section-card-header">
           <div className="flex items-center gap-2">
-            <Hash size={14} className="text-gray-500" />
-            <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-[0.1em]">
+            <Hash size={14} className="text-th-muted" />
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Slack
             </h2>
           </div>
         </div>
         <div className="section-card-body">
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <MessageSquare size={24} className="text-gray-600 mb-2" />
-            <p className="text-xs text-gray-600">Slack integration not configured</p>
+            <MessageSquare size={24} className="text-th-faint mb-2" />
+            <p className="text-xs text-th-faint">Slack integration not configured</p>
           </div>
         </div>
       </div>
@@ -287,7 +287,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
           <div className="w-4 h-4 rounded bg-[#611f69]/30 flex items-center justify-center">
             <Hash size={10} className="text-[#e01e5a]" />
           </div>
-          <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
+          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Slack · {channelDisplayName}
           </h2>
         </div>
@@ -295,7 +295,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
           {!loading && !notFound && (
             <button
               onClick={fetchMessages}
-              className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 text-th-muted hover:text-th-secondary transition-colors"
               title="Refresh"
             >
               <RefreshCw size={12} />
@@ -306,7 +306,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
               href={slackChannelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-siemens-accent transition-colors"
+              className="flex items-center gap-1 text-[10px] text-th-muted hover:text-siemens-accent transition-colors"
             >
               Open in Slack
               <ExternalLink size={10} />
@@ -341,11 +341,11 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
         {/* Channel not found — offer to create */}
         {notFound && !loading && (
           <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
-            <Hash size={20} className="text-gray-600 mb-2" />
-            <p className="text-xs text-gray-500 mb-1">
+            <Hash size={20} className="text-th-faint mb-2" />
+            <p className="text-xs text-th-muted mb-1">
               Channel {channelDisplayName} doesn&apos;t exist yet
             </p>
-            <p className="text-[10px] text-gray-600 mb-3">
+            <p className="text-[10px] text-th-faint mb-3">
               Create a Slack channel to enable collaboration for this {recordType}
             </p>
             <button
@@ -372,9 +372,9 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <MessageSquare size={20} className="text-gray-600 mb-2" />
-                  <p className="text-xs text-gray-500">No messages yet</p>
-                  <p className="text-[10px] text-gray-600 mt-1">
+                  <MessageSquare size={20} className="text-th-faint mb-2" />
+                  <p className="text-xs text-th-muted">No messages yet</p>
+                  <p className="text-[10px] text-th-faint mt-1">
                     Start the conversation about this {recordType}
                   </p>
                 </div>
@@ -390,7 +390,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
                 onChange={(e) => setComposing(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={sending}
-                className="flex-1 bg-transparent text-xs text-gray-300 placeholder:text-gray-600 outline-none"
+                className="flex-1 bg-transparent text-xs text-th-secondary placeholder:text-th-faint outline-none"
               />
               <button
                 onClick={handleSend}

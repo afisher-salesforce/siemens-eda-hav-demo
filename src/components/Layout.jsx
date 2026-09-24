@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import AgentChat from './AgentChat';
 import TradeAgentChat from './TradeAgentChat';
 import GlobalSearch from './GlobalSearch';
+import ThemeToggle from './ThemeToggle';
 import { getTelemetry } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 
@@ -146,9 +147,9 @@ export default function Layout({ children }) {
         }`}
       >
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 h-14 bg-[#0d1321]/80 backdrop-blur-xl border-b border-surface-border flex items-center justify-between px-6">
+        <header className="sticky top-0 z-20 h-14 bg-[var(--table-header-bg)]/80 backdrop-blur-xl border-b border-surface-border flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold text-gray-200 tracking-wide">
+            <h1 className="text-sm font-semibold text-th-secondary tracking-wide">
               {pageTitle}
             </h1>
             <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-siemens-teal/10 border border-siemens-teal/20">
@@ -162,26 +163,27 @@ export default function Layout({ children }) {
             {/* Search Button */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-gray-500 hover:text-siemens-accent hover:bg-white/5 transition-colors border border-transparent hover:border-surface-border group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-th-muted hover:text-siemens-accent hover:bg-surface-card-hover transition-colors border border-transparent hover:border-surface-border group"
               title="Search (⌘K)"
             >
               <Search size={14} />
-              <span className="text-xs text-gray-600 group-hover:text-gray-400 hidden sm:inline">Search</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-gray-700 text-[10px] text-gray-600 font-mono hidden sm:inline">
+              <span className="text-xs text-th-faint group-hover:text-th-muted hidden sm:inline">Search</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-surface-card-hover border border-surface-border text-[10px] text-th-faint font-mono hidden sm:inline">
                 ⌘K
               </kbd>
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="p-2 rounded-md text-gray-500 hover:text-siemens-accent hover:bg-white/5 transition-colors"
+              className="p-2 rounded-md text-th-faint hover:text-siemens-accent hover:bg-surface-card-hover transition-colors"
               title="Refresh data"
             >
               <RefreshCw size={16} />
             </button>
+            <ThemeToggle />
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="p-2 rounded-md text-gray-500 hover:text-siemens-accent hover:bg-white/5 transition-colors relative"
+                className="p-2 rounded-md text-th-muted hover:text-siemens-accent hover:bg-surface-card-hover transition-colors relative"
                 title="Notifications"
               >
                 <Bell size={16} />
@@ -192,10 +194,10 @@ export default function Layout({ children }) {
                 )}
               </button>
               {notificationsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-[#0d1321] border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--table-header-bg)] border border-surface-border rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-surface-border">
-                    <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Fleet Alerts</span>
-                    <button onClick={() => setNotificationsOpen(false)} className="p-0.5 text-gray-500 hover:text-gray-300">
+                    <span className="text-xs font-semibold text-th-secondary uppercase tracking-wider">Fleet Alerts</span>
+                    <button onClick={() => setNotificationsOpen(false)} className="p-0.5 text-th-muted hover:text-th-secondary">
                       <X size={14} />
                     </button>
                   </div>
@@ -206,7 +208,7 @@ export default function Layout({ children }) {
                           key={i}
                           to="/telemetry"
                           onClick={() => setNotificationsOpen(false)}
-                          className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors border-b border-surface-border last:border-b-0"
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--overlay-hover)] transition-colors border-b border-surface-border last:border-b-0"
                         >
                           <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
                             a.status === 'Error' ? 'bg-red-500/15 border border-red-500/25' : 'bg-amber-500/15 border border-amber-500/25'
@@ -218,14 +220,14 @@ export default function Layout({ children }) {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-gray-200 truncate">{a.assetName || 'Unknown Asset'}</div>
-                            <div className="text-[10px] text-gray-500 mt-0.5">
+                            <div className="text-xs font-medium text-th-secondary truncate">{a.assetName || 'Unknown Asset'}</div>
+                            <div className="text-[10px] text-th-muted mt-0.5">
                               {a.status === 'Error'
                                 ? `${a.errors || 0} errors — CPU ${a.cpuPercent || 0}%, Temp ${a.temperature != null ? a.temperature.toFixed(0) : '--'}°C`
                                 : `High temp ${a.temperature != null ? a.temperature.toFixed(0) : '--'}°C — CPU ${a.cpuPercent || 0}%`}
                             </div>
                             {a.timestamp && (
-                              <div className="text-[9px] text-gray-600 mt-0.5 font-mono">{new Date(a.timestamp).toLocaleString()}</div>
+                              <div className="text-[9px] text-th-faint mt-0.5 font-mono">{new Date(a.timestamp).toLocaleString()}</div>
                             )}
                           </div>
                           <span className={`badge text-[9px] shrink-0 ${a.status === 'Error' ? 'badge-red' : 'badge-yellow'}`}>{a.status}</span>
@@ -233,8 +235,8 @@ export default function Layout({ children }) {
                       ))
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Activity size={20} className="text-gray-600 mb-2" />
-                        <span className="text-xs text-gray-600">No active alerts</span>
+                        <Activity size={20} className="text-th-faint mb-2" />
+                        <span className="text-xs text-th-faint">No active alerts</span>
                       </div>
                     )}
                   </div>
@@ -242,7 +244,7 @@ export default function Layout({ children }) {
                     <Link
                       to="/telemetry"
                       onClick={() => setNotificationsOpen(false)}
-                      className="block text-center text-[10px] text-siemens-accent hover:text-white font-medium uppercase tracking-wider py-2.5 border-t border-surface-border hover:bg-white/[0.03] transition-colors"
+                      className="block text-center text-[10px] text-siemens-accent hover:text-th-primary font-medium uppercase tracking-wider py-2.5 border-t border-surface-border hover:bg-[var(--overlay-hover)] transition-colors"
                     >
                       View All Telemetry →
                     </Link>
@@ -255,7 +257,7 @@ export default function Layout({ children }) {
               <div className="w-8 h-8 rounded-full bg-siemens-teal/20 border border-siemens-teal/30 text-siemens-accent flex items-center justify-center text-xs font-semibold">
                 <User size={14} />
               </div>
-              <span className="text-sm text-gray-400 hidden sm:inline">Admin</span>
+              <span className="text-sm text-th-muted hidden sm:inline">Admin</span>
             </div>
           </div>
         </header>

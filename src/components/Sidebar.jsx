@@ -97,13 +97,13 @@ function NavTooltip({ label, visible }) {
   return (
     <div
       className={`absolute left-full ml-3 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap z-50
-        bg-[#1e293b] text-gray-200 border border-gray-700 shadow-lg shadow-black/40
+        bg-[var(--nav-tooltip-bg)] text-th-secondary border border-surface-border shadow-lg shadow-black/40
         pointer-events-none transition-all duration-150
         ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1'}`}
     >
       {label}
       {/* Arrow */}
-      <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-[#1e293b] border-l border-b border-gray-700 rotate-45" />
+      <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-[var(--nav-tooltip-bg)] border-l border-b border-surface-border rotate-45" />
     </div>
   );
 }
@@ -133,7 +133,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
     <aside
       onMouseEnter={onPeekEnter}
       onMouseLeave={onPeekLeave}
-      className={`fixed top-0 left-0 h-screen bg-[#080c14] text-white flex flex-col z-30 transition-all duration-300 ease-in-out border-r border-surface-border ${
+      className={`fixed top-0 left-0 h-screen bg-surface-bg text-th-primary flex flex-col z-30 transition-all duration-300 ease-in-out border-r border-surface-border ${
         isExpanded ? 'w-56' : 'w-16'
       } ${peeking ? 'shadow-2xl shadow-black/50' : ''}`}
     >
@@ -156,7 +156,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
         </div>
         <button
           onClick={onToggle}
-          className={`p-1.5 rounded-lg text-gray-500 hover:text-gray-200 hover:bg-white/10 transition-all duration-200 shrink-0 ${
+          className={`p-1.5 rounded-lg text-th-muted hover:text-th-secondary hover:bg-white/10 transition-all duration-200 shrink-0 ${
             isExpanded ? '' : 'mx-auto'
           }`}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -193,8 +193,8 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                       linkActive
                         ? 'bg-siemens-teal/15 text-siemens-accent border-l-2 border-siemens-teal'
                         : isActive
-                        ? 'bg-white/[0.03] text-gray-300'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                        ? 'bg-white/[0.03] text-th-secondary'
+                        : 'text-th-muted hover:bg-surface-card-hover hover:text-th-secondary'
                     }`
                   }
                 >
@@ -208,7 +208,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                   >
                     {label}
                     {persona && persona !== 'All' && (
-                      <span className="text-[8px] text-gray-600 font-medium tracking-wider uppercase">{persona}</span>
+                      <span className="text-[8px] text-th-faint font-medium tracking-wider uppercase">{persona}</span>
                     )}
                   </span>
                 </NavLink>
@@ -217,7 +217,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                     onClick={() =>
                       setExpandedParent(isChildExpanded ? null : to)
                     }
-                    className={`p-1 text-gray-500 hover:text-gray-300 transition-all duration-200 ${
+                    className={`p-1 text-th-muted hover:text-th-secondary transition-all duration-200 ${
                       isExpanded ? 'opacity-100 w-6' : 'opacity-0 w-0 overflow-hidden'
                     }`}
                   >
@@ -249,7 +249,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                           `flex items-center h-8 px-3 mx-2 rounded-md text-xs transition-all duration-150 ${
                             childActive
                               ? 'bg-siemens-teal/10 text-siemens-accent'
-                              : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+                              : 'text-th-muted hover:bg-surface-card-hover hover:text-th-secondary'
                           }`
                         }
                       >

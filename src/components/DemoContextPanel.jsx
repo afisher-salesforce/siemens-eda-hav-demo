@@ -21,7 +21,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
   if (!personas || personas.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-surface-border bg-[#0a0e1a] overflow-hidden transition-all duration-300">
+    <div className="rounded-lg border border-surface-border bg-surface-bg overflow-hidden transition-all duration-300">
       {/* Collapsed Bar */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -38,11 +38,11 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
                 >
                   {p.initials}
                 </div>
-                <span className="text-[11px] text-gray-400 font-medium hidden sm:inline whitespace-nowrap">
+                <span className="text-[11px] text-th-muted font-medium hidden sm:inline whitespace-nowrap">
                   {p.name}
                 </span>
                 {i < personas.length - 1 && (
-                  <span className="text-gray-700 text-xs hidden sm:inline">·</span>
+                  <span className="text-th-faint text-xs hidden sm:inline">·</span>
                 )}
               </div>
             ))}
@@ -50,9 +50,9 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
 
           {/* Pain Quote */}
           {painQuote && (
-            <div className="flex items-center gap-1.5 min-w-0 ml-2 border-l border-gray-800 pl-3">
-              <MessageSquare size={10} className="text-gray-600 shrink-0" />
-              <span className="text-[11px] text-gray-500 italic truncate">
+            <div className="flex items-center gap-1.5 min-w-0 ml-2 border-l border-surface-border pl-3">
+              <MessageSquare size={10} className="text-th-faint shrink-0" />
+              <span className="text-[11px] text-th-muted italic truncate">
                 "{painQuote}"
               </span>
             </div>
@@ -60,13 +60,13 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
         </div>
 
         <div className="flex items-center gap-2 shrink-0 ml-3">
-          <span className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold hidden md:inline">
+          <span className="text-[9px] text-th-faint uppercase tracking-wider font-semibold hidden md:inline">
             Demo Context
           </span>
           {expanded ? (
-            <ChevronUp size={14} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+            <ChevronUp size={14} className="text-th-muted group-hover:text-th-secondary transition-colors" />
           ) : (
-            <ChevronDown size={14} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+            <ChevronDown size={14} className="text-th-muted group-hover:text-th-secondary transition-colors" />
           )}
         </div>
       </button>
@@ -85,7 +85,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
             <div>
               <div className="flex items-center gap-1.5 mb-3">
                 <Users size={11} className="text-siemens-accent" />
-                <span className="text-[9px] text-gray-500 uppercase tracking-[0.12em] font-bold">
+                <span className="text-[9px] text-th-muted uppercase tracking-[0.12em] font-bold">
                   Personas
                 </span>
               </div>
@@ -99,8 +99,8 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
                       {p.initials}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold text-gray-200 leading-tight">{p.name}</div>
-                      <div className="text-[10px] text-gray-500 leading-tight">{p.role}</div>
+                      <div className="text-xs font-semibold text-th-secondary leading-tight">{p.name}</div>
+                      <div className="text-[10px] text-th-muted leading-tight">{p.role}</div>
                     </div>
                   </div>
                 ))}
@@ -111,7 +111,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
             <div>
               <div className="flex items-center gap-1.5 mb-3">
                 <Zap size={11} className="text-amber-400" />
-                <span className="text-[9px] text-gray-500 uppercase tracking-[0.12em] font-bold">
+                <span className="text-[9px] text-th-muted uppercase tracking-[0.12em] font-bold">
                   Pain Points
                 </span>
               </div>
@@ -119,7 +119,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
                 {painPoints.map((point, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="w-1 h-1 rounded-full bg-amber-500/60 mt-1.5 shrink-0" />
-                    <span className="text-[11px] text-gray-400 leading-relaxed">{point}</span>
+                    <span className="text-[11px] text-th-muted leading-relaxed">{point}</span>
                   </div>
                 ))}
               </div>
@@ -129,7 +129,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
             <div>
               <div className="flex items-center gap-1.5 mb-3">
                 <Target size={11} className="text-emerald-400" />
-                <span className="text-[9px] text-gray-500 uppercase tracking-[0.12em] font-bold">
+                <span className="text-[9px] text-th-muted uppercase tracking-[0.12em] font-bold">
                   Outcomes
                 </span>
               </div>
@@ -137,7 +137,7 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
                 {outcomes.map((outcome, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="w-1 h-1 rounded-full bg-emerald-500/60 mt-1.5 shrink-0" />
-                    <span className="text-[11px] text-gray-400 leading-relaxed">{outcome}</span>
+                    <span className="text-[11px] text-th-muted leading-relaxed">{outcome}</span>
                   </div>
                 ))}
               </div>
@@ -146,13 +146,13 @@ export default function DemoContextPanel({ personas, painQuote, painPoints, outc
 
           {/* Handoff Flow */}
           {handoffs && (
-            <div className="mt-4 pt-3 border-t border-gray-800/60 flex items-center gap-2 flex-wrap">
-              <span className="text-[9px] text-gray-600 uppercase tracking-wider font-bold shrink-0">
+            <div className="mt-4 pt-3 border-t border-surface-border flex items-center gap-2 flex-wrap">
+              <span className="text-[9px] text-th-faint uppercase tracking-wider font-bold shrink-0">
                 Handoffs
               </span>
               {handoffs.split('→').map((step, i, arr) => (
                 <span key={i} className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap">
+                  <span className="text-[11px] text-th-muted font-medium whitespace-nowrap">
                     {step.trim()}
                   </span>
                   {i < arr.length - 1 && (

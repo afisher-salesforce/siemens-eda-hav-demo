@@ -230,7 +230,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
       />
 
       {/* Panel */}
-      <div className="fixed top-0 right-0 h-screen w-96 bg-[#0d1321] shadow-2xl z-50 flex flex-col border-l border-surface-border">
+      <div className="fixed top-0 right-0 h-screen w-96 bg-[var(--table-header-bg)] shadow-2xl z-50 flex flex-col border-l border-surface-border">
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-5 border-b border-surface-border shrink-0">
           <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
               <Shield size={16} className="text-amber-400" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-gray-200">Trade Compliance</div>
+              <div className="text-sm font-semibold text-th-secondary">Trade Compliance</div>
               <div className="text-[10px] text-amber-400 uppercase tracking-[0.12em] font-medium">
                 Sentinel Agent
               </div>
@@ -248,7 +248,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
             {messages.length > 0 && (
               <button
                 onClick={handleNewChat}
-                className="px-2 py-1 rounded-md text-[10px] text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors uppercase tracking-wider font-medium"
+                className="px-2 py-1 rounded-md text-[10px] text-th-muted hover:text-th-secondary hover:bg-surface-card-hover transition-colors uppercase tracking-wider font-medium"
                 title="New conversation"
               >
                 New Chat
@@ -256,7 +256,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-md text-th-muted hover:text-th-secondary hover:bg-surface-card-hover transition-colors"
               aria-label="Close chat"
             >
               <X size={18} />
@@ -272,10 +272,10 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5">
                 <Shield size={28} className="text-amber-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">
+              <h3 className="text-lg font-semibold text-th-secondary mb-2">
                 Trade Compliance Sentinel
               </h3>
-              <p className="text-xs text-gray-500 max-w-xs leading-relaxed mb-6">
+              <p className="text-xs text-th-muted max-w-xs leading-relaxed mb-6">
                 Screen quotes for export controls (EAR/ECCN), embargo compliance (OFAC/BIS),
                 restricted party checks, and import tariff calculations.
               </p>
@@ -305,11 +305,11 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
                         ? 'bg-amber-600 text-white rounded-br-sm'
                         : msg.role === 'error'
                         ? 'bg-red-900/30 border border-red-500/30 text-red-300 rounded-bl-sm'
-                        : 'bg-surface-card border border-surface-border text-gray-300 rounded-bl-sm'
+                        : 'bg-surface-card border border-surface-border text-th-secondary rounded-bl-sm'
                     }`}
                   >
                     {msg.role === 'agent' && !msg.content && (
-                      <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex items-center gap-2 text-th-muted">
                         <Loader2 size={14} className="animate-spin" />
                         <span className="text-xs">Screening...</span>
                       </div>
@@ -330,7 +330,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
               {loading && messages[messages.length - 1]?.role === 'user' && (
                 <div className="flex justify-start">
                   <div className="bg-surface-card border border-surface-border rounded-xl rounded-bl-sm px-4 py-2.5">
-                    <div className="flex items-center gap-2 text-gray-500">
+                    <div className="flex items-center gap-2 text-th-muted">
                       <Loader2 size={14} className="animate-spin" />
                       <span className="text-xs">Sentinel is screening...</span>
                     </div>
@@ -345,7 +345,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
           {initializing && (
             <div className="flex items-center justify-center py-8">
               <Loader2 size={20} className="animate-spin text-amber-400 mr-2" />
-              <span className="text-sm text-gray-500">Starting compliance session...</span>
+              <span className="text-sm text-th-muted">Starting compliance session...</span>
             </div>
           )}
         </div>
@@ -376,7 +376,7 @@ export default function TradeAgentChat({ open, onClose, prefill, onPrefillConsum
               onChange={(e) => setInput(e.target.value)}
               disabled={loading || initializing}
               placeholder="Ask the Trade Compliance Sentinel..."
-              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-surface-border bg-surface-card text-sm text-th-secondary placeholder:text-th-faint focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             />
             <button
               type="submit"
