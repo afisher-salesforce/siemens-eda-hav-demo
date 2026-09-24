@@ -158,6 +158,43 @@ app.get('/api/debug/agent-test', async (_req, res) => {
     const text = await sfResponse.text();
     console.log(`[Debug] Agent API response: status=${sfResponse.status} body=${text.slice(0, 500)}`);
 
+    // Session-body variants: the current body sends bypassUser:true, which
+    // requires the agent to have an assigned user; without one the API returns
+    // "Invalid user ID provided on start session". Try alternatives to find the
+    // one that yields 200 before changing the real handlers. tokenSub is the
+    // client-credentials Run-As user from the token.
+    const tokenSub = (tokenClaims?.sub || '').replace(/^uid:/, '');
+    const baseBody = {
+      externalSessionKey:
+        globalThis.crypto?.randomUUID?.() ??
+        `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      instanceConfig: { endpoint: instanceUrl },
+      streamingCapabilities: { chunkTypes: ['Text'] },
+    };
+    const variants = {
+      'no-bypassUser': { ...baseBody },
+      'bypassUser-false': { ...baseBody, bypassUser: false },
+      ...(tokenSub ? { 'bypassUser-false+userId': { ...baseBody, bypassUser: false, userId: tokenSub } } : {}),
+    };
+    const variantResults = {};
+    for (const [name, body] of Object.entries(variants)) {
+      try {
+        const r = await fetch(sfUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ ...body, externalSessionKey: `probe-${name}-${Date.now()}` }),
+        });
+        const b = await r.text();
+        variantResults[name] = { status: r.status, body: b.slice(0, 400) };
+      } catch (e) {
+        variantResults[name] = { error: `${e.name}: ${e.message}` };
+      }
+    }
+
     // Egress probes: distinguish a real Salesforce reply from an infra
     // (Private Space proxy / DNS) interception. A genuine api.salesforce.com
     // response carries a Server header and a body; a blackholed/reset request
@@ -204,6 +241,7 @@ app.get('/api/debug/agent-test', async (_req, res) => {
       status: sfResponse.status,
       headers: Object.fromEntries(sfResponse.headers.entries()),
       body: text.slice(0, 1000),
+      variantResults,
       egress,
     });
   } catch (err) {
