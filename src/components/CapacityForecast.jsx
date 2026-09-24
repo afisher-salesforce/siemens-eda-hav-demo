@@ -71,18 +71,25 @@ function WaterfallBar(props) {
   );
 }
 
+
 function WaterfallTooltip({ active, payload }) {
   if (!active || !payload || !payload.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
+  const isTotal = d.type === 'total' || d.type === 'base';
   return (
     <div style={tooltipStyle} className="px-3 py-2">
       <div className="text-xs font-semibold text-th-secondary mb-1">{d.label}</div>
       <div className="text-xs text-th-muted">
-        {d.type === 'total' || d.type === 'base'
-          ? `${d.value} racks`
+        {isTotal
+          ? `${d.barEnd} racks`
           : `${d.delta >= 0 ? '+' : ''}${d.delta} racks`}
       </div>
+      {!isTotal && (
+        <div className="text-[10px] text-th-faint mt-0.5">
+          Running total: {d.runningAfter} racks
+        </div>
+      )}
       {d.type === 'total' && d.capacity != null && (
         <div className="text-[10px] text-th-muted mt-0.5">Capacity: {d.capacity} racks</div>
       )}
@@ -135,9 +142,18 @@ function ScenarioSlider({ label, value, onChange, min, max, step, unit, icon: Ic
   );
 }
 
+// ── Prepare waterfall chart data from segments ──
+function prepareWaterfallData(segments) {
+  return segments.map((s) => ({
+    ...s,
+    invisibleBase: s.barStart,
+    visibleValue: s.barEnd - s.barStart,
+  }));
+}
+
 // ── Mini Waterfall for per-facility cards ──
 function MiniWaterfall({ segments, totalCapacity, height = 130 }) {
-  const data = segments.map((s) => ({ ...s, invisibleBase: s.base, visibleValue: s.value }));
+  const data = prepareWaterfallData(segments);
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 4, left: -10, bottom: 4 }}>
@@ -145,12 +161,11 @@ function MiniWaterfall({ segments, totalCapacity, height = 130 }) {
         <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
         <XAxis dataKey="shortLabel" tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} interval={0} />
         <YAxis tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
-          domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]} />
+          domain={[0, (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]} />
         <Tooltip content={<WaterfallTooltip />} />
         {totalCapacity > 0 && (
           <ReferenceLine y={totalCapacity} stroke="#475569" strokeDasharray="4 4" />
         )}
-        <ReferenceLine y={0} stroke="var(--surface-border-light)" />
         <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
         <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={24} shape={<WaterfallBar />}>
           {data.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
@@ -382,59 +397,69 @@ function ProjectionFormula() {
   );
 }
 
-// ── Build 6-segment waterfall data ──
+// ── Build 6-segment TRUE waterfall data ──
+// Each segment stores barStart (bottom of visible bar) and barEnd (top of visible bar).
+// For additions: bar floats upward from running total.
+// For subtractions: bar hangs downward from running total.
+// For totals (Base, Projected): bar rises from 0.
 function buildWaterfallSegments(cBase, pipeline, expiring, rmaOut, rmaIn, totalCapacity) {
-  let running = cBase;
-
+  let running = 0;
   const segments = [];
 
-  // 1. Current Base
+  // 1. Current Base (total — from 0)
   segments.push({
     label: 'Current Base', shortLabel: 'Base',
-    value: cBase, base: 0, delta: cBase,
-    type: 'base', fill: '#009999',
+    barStart: 0, barEnd: cBase,
+    delta: cBase, type: 'base', fill: '#009999',
+    runningAfter: cBase,
   });
+  running = cBase;
 
-  // 2. +Pipeline
+  // 2. +Pipeline (addition — floats upward from running)
   segments.push({
-    label: `+Pipeline`, shortLabel: '+Pipe',
-    value: pipeline, base: running, delta: pipeline,
-    type: 'add', fill: '#22c55e',
+    label: '+Pipeline', shortLabel: '+Pipe',
+    barStart: running, barEnd: running + pipeline,
+    delta: pipeline, type: 'add', fill: '#22c55e',
+    runningAfter: running + pipeline,
   });
   running += pipeline;
 
-  // 3. −Expiring Contracts
+  // 3. −Expiring Contracts (subtraction — hangs downward from running)
   segments.push({
     label: '−Expiring', shortLabel: '−Exp',
-    value: expiring, base: running - expiring, delta: -expiring,
-    type: 'subtract', fill: '#f97316',
+    barStart: running - expiring, barEnd: running,
+    delta: -expiring, type: 'subtract', fill: '#f97316',
+    runningAfter: running - expiring,
   });
   running -= expiring;
 
-  // 4. −OEM Repair Out
+  // 4. −OEM Repair Out (subtraction — hangs downward from running)
   segments.push({
     label: '−OEM Repair', shortLabel: '−RMA',
-    value: rmaOut, base: running - rmaOut, delta: -rmaOut,
-    type: 'rma-out', fill: '#ef4444',
+    barStart: running - rmaOut, barEnd: running,
+    delta: -rmaOut, type: 'rma-out', fill: '#ef4444',
+    runningAfter: running - rmaOut,
   });
   running -= rmaOut;
 
-  // 5. +RMA Return
+  // 5. +RMA Return (addition — floats upward from running)
   segments.push({
     label: '+RMA Return', shortLabel: '+Ret',
-    value: rmaIn, base: running, delta: rmaIn,
-    type: 'add', fill: '#10b981',
+    barStart: running, barEnd: running + rmaIn,
+    delta: rmaIn, type: 'add', fill: '#10b981',
+    runningAfter: running + rmaIn,
   });
   running += rmaIn;
 
-  // 6. Projected
+  // 6. Projected (total — from 0)
   const projected = running;
   segments.push({
     label: 'Projected', shortLabel: 'Proj',
-    value: projected, base: 0, delta: projected,
-    type: 'total',
+    barStart: 0, barEnd: projected,
+    delta: projected, type: 'total',
     fill: projected > totalCapacity ? '#f59e0b' : '#6366f1',
     capacity: totalCapacity,
+    runningAfter: projected,
   });
 
   return { segments, projected };
@@ -870,7 +895,7 @@ export default function CapacityForecast() {
           <div className="section-card-body">
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
-                data={agg.segments.map((s) => ({ ...s, invisibleBase: s.base, visibleValue: s.value }))}
+                data={prepareWaterfallData(agg.segments)}
                 margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
               >
                 <WaterfallDefs />
@@ -878,7 +903,7 @@ export default function CapacityForecast() {
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} />
                 <YAxis
                   tick={{ fontSize: 11, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
-                  domain={[(dataMin) => Math.min(0, dataMin), (dataMax) => Math.max(dataMax, agg.totalCapacity) * 1.1]}
+                  domain={[0, (dataMax) => Math.max(dataMax, agg.totalCapacity) * 1.1]}
                   label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'var(--text-faint)' } }}
                 />
                 <Tooltip content={<WaterfallTooltip />} />
@@ -886,12 +911,11 @@ export default function CapacityForecast() {
                   <ReferenceLine y={agg.totalCapacity} stroke="#475569" strokeDasharray="6 4"
                     label={{ value: `Total Capacity: ${agg.totalCapacity}`, position: 'top', style: { fontSize: 11, fill: 'var(--text-faint)' } }} />
                 )}
-                <ReferenceLine y={0} stroke="var(--surface-border-light)" />
                 <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
                 <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={56} shape={<WaterfallBar />}>
                   {agg.segments.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
                 </Bar>
-              </BarChart>
+                      </BarChart>
             </ResponsiveContainer>
 
             {/* Legend */}
