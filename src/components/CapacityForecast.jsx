@@ -21,77 +21,288 @@ import {
   Loader2,
   BookOpen,
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ReferenceLine,
-} from 'recharts';
+// No Recharts — we use pure SVG for waterfall charts
 import { getCapacityEngine, updateWorkOrderStatus } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-import { tooltipStyle } from '../utils/chartStyles';
+// tooltipStyle no longer needed — waterfall uses pure SVG with custom tooltip
 
-// ── SVG patterns for subtract and RMA bars ──
-function WaterfallDefs() {
+// ── Pure SVG Waterfall Chart ──
+// This renders a TRUE waterfall chart with manually calculated pixel positions.
+// No Recharts stacking — complete control over bar placement.
+
+function PureSvgWaterfall({ segments, totalCapacity, width = 600, height = 300, showLabels = true, mini = false }) {
+  const [tooltip, setTooltip] = useState(null);
+  const svgRef = React.useRef(null);
+
+  // Layout margins
+  const margin = mini
+    ? { top: 8, right: 8, bottom: 28, left: 32 }
+    : { top: 16, right: 24, bottom: 40, left: 52 };
+
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+
+  // Find Y scale: max of all barEnd values and totalCapacity
+  const yMax = Math.max(
+    ...segments.map((s) => s.barEnd),
+    totalCapacity || 0
+  ) * 1.12; // 12% padding
+
+  // Y scale: value → pixel (0 is at bottom of plot)
+  const yScale = (val) => margin.top + plotH - (val / yMax) * plotH;
+  const yScaleHeight = (val) => (val / yMax) * plotH;
+
+  // X scale: distribute bars evenly
+  const n = segments.length;
+  const barGroupWidth = plotW / n;
+  const barWidth = mini ? Math.min(barGroupWidth * 0.55, 20) : Math.min(barGroupWidth * 0.55, 48);
+  const barX = (i) => margin.left + i * barGroupWidth + (barGroupWidth - barWidth) / 2;
+
+  // Y-axis ticks
+  const tickCount = mini ? 4 : 6;
+  const yTicks = [];
+  for (let i = 0; i <= tickCount; i++) {
+    const val = Math.round((yMax / tickCount) * i);
+    yTicks.push(val);
+  }
+
+  const handleMouseMove = (e, seg) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    setTooltip({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      seg,
+    });
+  };
+
+  const handleMouseLeave = () => setTooltip(null);
+
+  const fontSize = mini ? 8 : 11;
+  const labelFontSize = mini ? 7 : 10;
+
   return (
-    <defs>
-      <pattern id="subtract-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-        <rect width="6" height="6" fill="#f97316" />
-        <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
-      </pattern>
-      <pattern id="rma-out-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-        <rect width="6" height="6" fill="#ef4444" />
-        <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
-      </pattern>
-    </defs>
-  );
-}
+    <div className="relative" style={{ width: '100%', height }}>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid meet"
+        className="overflow-visible"
+      >
+        {/* Defs for stripe patterns */}
+        <defs>
+          <pattern id="wf-subtract-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#f97316" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
+          </pattern>
+          <pattern id="wf-rma-stripe" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#ef4444" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
+          </pattern>
+        </defs>
 
-function WaterfallBar(props) {
-  const { x, y, width, height, fill, payload } = props;
-  if (!payload || height === 0) return null;
-  const radius = 3;
-  const barHeight = Math.abs(height);
-  const barY = height >= 0 ? y : y + height;
-  const isSubtract = payload.type === 'subtract';
-  const isRmaOut = payload.type === 'rma-out';
-  return (
-    <g>
-      <rect
-        x={x} y={barY} width={width} height={barHeight}
-        rx={radius} ry={radius}
-        fill={isRmaOut ? 'url(#rma-out-stripe)' : isSubtract ? 'url(#subtract-stripe)' : fill}
-      />
-    </g>
-  );
-}
+        {/* Grid lines */}
+        {yTicks.map((val) => (
+          <line
+            key={val}
+            x1={margin.left}
+            y1={yScale(val)}
+            x2={width - margin.right}
+            y2={yScale(val)}
+            stroke="var(--surface-border)"
+            strokeDasharray="3 3"
+            strokeWidth={0.5}
+          />
+        ))}
 
+        {/* Y-axis labels */}
+        {yTicks.map((val) => (
+          <text
+            key={`label-${val}`}
+            x={margin.left - 6}
+            y={yScale(val)}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fill="var(--text-faint)"
+            fontSize={fontSize}
+          >
+            {val}
+          </text>
+        ))}
 
-function WaterfallTooltip({ active, payload }) {
-  if (!active || !payload || !payload.length) return null;
-  const d = payload[0]?.payload;
-  if (!d) return null;
-  const isTotal = d.type === 'total' || d.type === 'base';
-  return (
-    <div style={tooltipStyle} className="px-3 py-2">
-      <div className="text-xs font-semibold text-th-secondary mb-1">{d.label}</div>
-      <div className="text-xs text-th-muted">
-        {isTotal
-          ? `${d.barEnd} racks`
-          : `${d.delta >= 0 ? '+' : ''}${d.delta} racks`}
-      </div>
-      {!isTotal && (
-        <div className="text-[10px] text-th-faint mt-0.5">
-          Running total: {d.runningAfter} racks
+        {/* Y-axis line */}
+        <line
+          x1={margin.left}
+          y1={margin.top}
+          x2={margin.left}
+          y2={margin.top + plotH}
+          stroke="var(--surface-border)"
+          strokeWidth={1}
+        />
+
+        {/* X-axis line (at y=0) */}
+        <line
+          x1={margin.left}
+          y1={yScale(0)}
+          x2={width - margin.right}
+          y2={yScale(0)}
+          stroke="var(--surface-border)"
+          strokeWidth={1}
+        />
+
+        {/* Capacity reference line */}
+        {totalCapacity > 0 && (
+          <g>
+            <line
+              x1={margin.left}
+              y1={yScale(totalCapacity)}
+              x2={width - margin.right}
+              y2={yScale(totalCapacity)}
+              stroke="#475569"
+              strokeDasharray="6 4"
+              strokeWidth={1}
+            />
+            {!mini && (
+              <text
+                x={width - margin.right}
+                y={yScale(totalCapacity) - 6}
+                textAnchor="end"
+                fill="var(--text-faint)"
+                fontSize={10}
+              >
+                Capacity: {totalCapacity}
+              </text>
+            )}
+          </g>
+        )}
+
+        {/* Connector lines between bars */}
+        {segments.map((seg, i) => {
+          if (i === segments.length - 1) return null; // no connector after last bar
+          const nextSeg = segments[i + 1];
+          // Connector goes from the "running after" of current bar to the start of next bar
+          const connectorY = yScale(seg.runningAfter);
+          const x1 = barX(i) + barWidth;
+          const x2 = barX(i + 1);
+          // Don't draw connector to/from total bars
+          if (nextSeg.type === 'total' || nextSeg.type === 'base') return null;
+          return (
+            <line
+              key={`conn-${i}`}
+              x1={x1}
+              y1={connectorY}
+              x2={x2}
+              y2={connectorY}
+              stroke="var(--text-faint)"
+              strokeDasharray="3 2"
+              strokeWidth={0.8}
+              opacity={0.5}
+            />
+          );
+        })}
+
+        {/* Bars */}
+        {segments.map((seg, i) => {
+          const x = barX(i);
+          const topY = yScale(seg.barEnd);
+          const bottomY = yScale(seg.barStart);
+          const barH = Math.max(bottomY - topY, 1); // at least 1px
+
+          const fillColor =
+            seg.type === 'subtract' ? 'url(#wf-subtract-stripe)' :
+            seg.type === 'rma-out' ? 'url(#wf-rma-stripe)' :
+            seg.fill;
+
+          return (
+            <g key={i}>
+              <rect
+                x={x}
+                y={topY}
+                width={barWidth}
+                height={barH}
+                rx={mini ? 2 : 3}
+                ry={mini ? 2 : 3}
+                fill={fillColor}
+                className="cursor-pointer"
+                onMouseMove={(e) => handleMouseMove(e, seg)}
+                onMouseLeave={handleMouseLeave}
+              />
+              {/* Value label on top of bar */}
+              {showLabels && !mini && (
+                <text
+                  x={x + barWidth / 2}
+                  y={topY - 5}
+                  textAnchor="middle"
+                  fill="var(--text-muted)"
+                  fontSize={labelFontSize}
+                  fontWeight={600}
+                >
+                  {seg.type === 'base' || seg.type === 'total'
+                    ? seg.barEnd
+                    : `${seg.delta >= 0 ? '+' : ''}${seg.delta}`}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* X-axis labels */}
+        {segments.map((seg, i) => (
+          <text
+            key={`xlabel-${i}`}
+            x={barX(i) + barWidth / 2}
+            y={margin.top + plotH + (mini ? 14 : 20)}
+            textAnchor="middle"
+            fill="var(--text-muted)"
+            fontSize={mini ? 7 : 11}
+          >
+            {mini ? seg.shortLabel : seg.label}
+          </text>
+        ))}
+
+        {/* Y-axis label (non-mini only) */}
+        {!mini && (
+          <text
+            x={14}
+            y={margin.top + plotH / 2}
+            textAnchor="middle"
+            fill="var(--text-faint)"
+            fontSize={10}
+            transform={`rotate(-90, 14, ${margin.top + plotH / 2})`}
+          >
+            Racks
+          </text>
+        )}
+      </svg>
+
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg shadow-lg border"
+          style={{
+            left: Math.min(tooltip.x + 12, width - 160),
+            top: tooltip.y - 60,
+            backgroundColor: 'var(--surface-card)',
+            borderColor: 'var(--surface-border)',
+          }}
+        >
+          <div className="text-xs font-semibold text-th-secondary mb-1">{tooltip.seg.label}</div>
+          <div className="text-xs text-th-muted">
+            {tooltip.seg.type === 'base' || tooltip.seg.type === 'total'
+              ? `${tooltip.seg.barEnd} racks`
+              : `${tooltip.seg.delta >= 0 ? '+' : ''}${tooltip.seg.delta} racks`}
+          </div>
+          {tooltip.seg.type !== 'base' && tooltip.seg.type !== 'total' && (
+            <div className="text-[10px] text-th-faint mt-0.5">
+              Running total: {tooltip.seg.runningAfter} racks
+            </div>
+          )}
+          {tooltip.seg.type === 'total' && tooltip.seg.capacity != null && (
+            <div className="text-[10px] text-th-muted mt-0.5">Capacity: {tooltip.seg.capacity}</div>
+          )}
         </div>
-      )}
-      {d.type === 'total' && d.capacity != null && (
-        <div className="text-[10px] text-th-muted mt-0.5">Capacity: {d.capacity} racks</div>
       )}
     </div>
   );
@@ -142,36 +353,17 @@ function ScenarioSlider({ label, value, onChange, min, max, step, unit, icon: Ic
   );
 }
 
-// ── Prepare waterfall chart data from segments ──
-function prepareWaterfallData(segments) {
-  return segments.map((s) => ({
-    ...s,
-    invisibleBase: s.barStart,
-    visibleValue: s.barEnd - s.barStart,
-  }));
-}
-
-// ── Mini Waterfall for per-facility cards ──
+// ── Mini Waterfall wrapper for per-facility cards ──
 function MiniWaterfall({ segments, totalCapacity, height = 130 }) {
-  const data = prepareWaterfallData(segments);
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 4, left: -10, bottom: 4 }}>
-        <WaterfallDefs />
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
-        <XAxis dataKey="shortLabel" tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} interval={0} />
-        <YAxis tick={{ fontSize: 8, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
-          domain={[0, (dataMax) => Math.max(dataMax, totalCapacity) * 1.1]} />
-        <Tooltip content={<WaterfallTooltip />} />
-        {totalCapacity > 0 && (
-          <ReferenceLine y={totalCapacity} stroke="#475569" strokeDasharray="4 4" />
-        )}
-        <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
-        <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={24} shape={<WaterfallBar />}>
-          {data.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <PureSvgWaterfall
+      segments={segments}
+      totalCapacity={totalCapacity}
+      width={320}
+      height={height}
+      showLabels={false}
+      mini={true}
+    />
   );
 }
 
@@ -893,30 +1085,14 @@ export default function CapacityForecast() {
             </span>
           </div>
           <div className="section-card-body">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart
-                data={prepareWaterfallData(agg.segments)}
-                margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
-              >
-                <WaterfallDefs />
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false} />
-                <YAxis
-                  tick={{ fontSize: 11, fill: 'var(--text-faint)' }} axisLine={{ stroke: 'var(--surface-border)' }} tickLine={false}
-                  domain={[0, (dataMax) => Math.max(dataMax, agg.totalCapacity) * 1.1]}
-                  label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'var(--text-faint)' } }}
-                />
-                <Tooltip content={<WaterfallTooltip />} />
-                {agg.totalCapacity > 0 && (
-                  <ReferenceLine y={agg.totalCapacity} stroke="#475569" strokeDasharray="6 4"
-                    label={{ value: `Total Capacity: ${agg.totalCapacity}`, position: 'top', style: { fontSize: 11, fill: 'var(--text-faint)' } }} />
-                )}
-                <Bar dataKey="invisibleBase" stackId="waterfall" fill="transparent" />
-                <Bar dataKey="visibleValue" stackId="waterfall" maxBarSize={56} shape={<WaterfallBar />}>
-                  {agg.segments.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
-                </Bar>
-                      </BarChart>
-            </ResponsiveContainer>
+            <PureSvgWaterfall
+              segments={agg.segments}
+              totalCapacity={agg.totalCapacity}
+              width={800}
+              height={320}
+              showLabels={true}
+              mini={false}
+            />
 
             {/* Legend */}
             <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-[10px] text-th-muted">
