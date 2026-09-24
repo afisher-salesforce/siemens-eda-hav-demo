@@ -19,7 +19,7 @@ const SF_LOGIN_URL = process.env.SF_LOGIN_URL || SF_INSTANCE_URL;
 // ─── Agentforce Agent Configuration ─────────────────────────────────────────
 const SF_AGENT_ID = process.env.SF_AGENT_ID || '0XxWt000000wiqHKAQ'; // HAV Operations Agent
 const SF_TRADE_AGENT_ID = process.env.SF_TRADE_AGENT_ID || '0XxWt000000wkaLKAQ'; // Trade Compliance Sentinel
-const AGENT_API_BASE = '/services/einstein/ai-agent/v1';
+const AGENT_API_BASE = '/einstein/ai-agent/v1';
 
 // ─── Token Cache ─────────────────────────────────────────────────────────────
 let tokenCache = {
