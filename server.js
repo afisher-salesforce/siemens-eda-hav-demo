@@ -139,17 +139,54 @@ app.get('/api/debug/agent-test', async (_req, res) => {
     const text = await sfResponse.text();
     console.log(`[Debug] Agent API response: status=${sfResponse.status} body=${text.slice(0, 500)}`);
 
+    // Egress probes: distinguish a real Salesforce reply from an infra
+    // (Private Space proxy / DNS) interception. A genuine api.salesforce.com
+    // response carries a Server header and a body; a blackholed/reset request
+    // does not. We probe three hosts and report each raw outcome.
+    async function probe(label, url, opts = {}) {
+      const started = Date.now();
+      try {
+        const r = await fetch(url, { redirect: 'manual', ...opts });
+        const b = await r.text().catch(() => '');
+        return {
+          label,
+          url,
+          reachable: true,
+          status: r.status,
+          server: r.headers.get('server'),
+          xRequestId: r.headers.get('x-request-id') || r.headers.get('x-b3-traceid'),
+          contentType: r.headers.get('content-type'),
+          bodyLen: b.length,
+          bodySnippet: b.slice(0, 300),
+          ms: Date.now() - started,
+        };
+      } catch (e) {
+        return { label, url, reachable: false, error: `${e.name}: ${e.message}`, cause: e.cause ? String(e.cause.code || e.cause.message || e.cause) : undefined, ms: Date.now() - started };
+      }
+    }
+
+    const egress = await Promise.all([
+      // Reference host that already works (Apex REST). Bare GET → expect a Salesforce reply.
+      probe('org-instance', `${instanceUrl}/services/data/`, { method: 'GET' }),
+      // The Agent API host root — no auth. A reachable host returns *something* (401/404 with a Server header + body).
+      probe('agent-api-root', `${AGENT_API_HOST}/`, { method: 'GET' }),
+      // A well-known always-up host to prove general internet egress at all.
+      probe('internet-baseline', 'https://api.github.com/', { method: 'GET' }),
+    ]);
+
     res.json({
       instanceUrl,
+      agentApiHost: AGENT_API_HOST,
       agentId: SF_AGENT_ID,
       tradeAgentId: SF_TRADE_AGENT_ID,
       sfUrl,
       status: sfResponse.status,
       headers: Object.fromEntries(sfResponse.headers.entries()),
       body: text.slice(0, 1000),
+      egress,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 
