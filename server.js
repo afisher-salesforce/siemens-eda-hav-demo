@@ -137,8 +137,14 @@ app.get('/api/sf-org-url', (_req, res) => {
   res.json({ url: SF_INSTANCE_URL || null });
 });
 
-// Force token refresh and Agent API diagnostic
+// Force token refresh and Agent API diagnostic. Gated off by default: it
+// echoes token claims (incl. the Run-As user ID), force-refreshes the token
+// cache, and spins up throwaway agent sessions on every hit — all unauthenticated.
+// Set ENABLE_DEBUG_ENDPOINT=true to re-enable while troubleshooting.
 app.get('/api/debug/agent-test', async (_req, res) => {
+  if (process.env.ENABLE_DEBUG_ENDPOINT !== 'true') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   try {
     // Force fresh token
     tokenCache = { accessToken: null, instanceUrl: null, expiresAt: 0 };
