@@ -137,6 +137,31 @@ app.get('/api/sf-org-url', (_req, res) => {
   res.json({ url: SF_INSTANCE_URL || null });
 });
 
+// Authenticated Salesforce user info (name, initials, photo) for the UI avatar
+app.get('/api/user', async (_req, res) => {
+  try {
+    const { accessToken, instanceUrl } = await getAccessToken();
+    const response = await fetch(`${instanceUrl}/services/oauth2/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error(`UserInfo failed: ${response.status}`);
+    const data = await response.json();
+    const firstName = data.given_name || (data.name ? data.name.split(' ')[0] : 'User');
+    const lastName = data.family_name || (data.name ? data.name.split(' ').slice(1).join(' ') : '');
+    const initials = ((firstName[0] || '') + (lastName[0] || '')).toUpperCase() || 'U';
+    res.json({
+      name: data.name || 'User',
+      firstName,
+      initials,
+      photo: data.picture || null,
+      profileUrl: `${instanceUrl}/lightning/settings/personal/PersonalInformation/home`,
+    });
+  } catch (err) {
+    console.error('[User] Error fetching user info:', err.message);
+    res.json({ name: 'Admin', firstName: 'Admin', initials: 'A', photo: null, profileUrl: null });
+  }
+});
+
 // Force token refresh and Agent API diagnostic. Gated off by default: it
 // echoes token claims (incl. the Run-As user ID), force-refreshes the token
 // cache, and spins up throwaway agent sessions on every hit — all unauthenticated.

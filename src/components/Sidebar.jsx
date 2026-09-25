@@ -27,6 +27,19 @@ import {
 } from 'lucide-react';
 
 const navItems = [
+  {
+    to: '/vignettes',
+    icon: BookOpen,
+    label: 'Vignettes',
+    children: [
+      { to: '/vignettes/order-close', icon: ShoppingCart, label: 'Order Close' },
+      { to: '/vignettes/capacity', icon: BarChart3, label: 'Capacity' },
+      { to: '/vignettes/finance', icon: DollarSign, label: 'Finance' },
+      { to: '/vignettes/traveler', icon: FileText, label: 'Traveler' },
+      { to: '/vignettes/platform', icon: Layers, label: 'Platform' },
+      { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
+    ],
+  },
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
   {
     to: '/assets',
@@ -76,19 +89,6 @@ const navItems = [
     persona: 'Shari',
     children: [
       { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
-    ],
-  },
-  {
-    to: '/vignettes',
-    icon: BookOpen,
-    label: 'Vignettes',
-    children: [
-      { to: '/vignettes/order-close', icon: ShoppingCart, label: 'Order Close' },
-      { to: '/vignettes/capacity', icon: BarChart3, label: 'Capacity' },
-      { to: '/vignettes/finance', icon: DollarSign, label: 'Finance' },
-      { to: '/vignettes/traveler', icon: FileText, label: 'Traveler' },
-      { to: '/vignettes/platform', icon: Layers, label: 'Platform' },
-      { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
     ],
   },
 ];
@@ -271,7 +271,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
           onClick={onOpenTradeChat}
           className={`flex items-center w-full h-10 px-3 rounded-md text-sm transition-all duration-150 group relative
             ${isExpanded ? '' : 'justify-center'}
-            bg-violet-500/10 text-violet-400 border border-violet-500/20
+            bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-500/20
             hover:bg-violet-500/20 hover:border-violet-500/40`}
           onMouseEnter={() => setHoveredItem('trade')}
           onMouseLeave={() => setHoveredItem(null)}

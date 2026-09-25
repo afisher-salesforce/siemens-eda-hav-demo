@@ -12,9 +12,9 @@
     --surface-border: #e2e8f0;
     --surface-border-light: #cbd5e1;
     --text-primary: #0f172a;
-    --text-secondary: #334155;
-    --text-muted: #64748b;
-    --text-faint: #94a3b8;
+    --text-secondary: #1e293b;
+    --text-muted: #475569;
+    --text-faint: #64748b;
     --text-inverse: #ffffff;
     --siemens-accent: #007a7a;
     --tooltip-bg: #ffffff;
@@ -54,9 +54,9 @@
     --surface-border: #1e293b;
     --surface-border-light: #334155;
     --text-primary: #f1f5f9;
-    --text-secondary: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
+    --text-secondary: #f1f5f9;
+    --text-muted: #cbd5e1;
+    --text-faint: #94a3b8;
     --text-inverse: #111827;
     --siemens-accent: #00b8b8;
     --tooltip-bg: #111827;

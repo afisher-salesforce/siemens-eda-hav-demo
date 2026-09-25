@@ -207,12 +207,12 @@ export default function VignetteTemplate({
                     onClick={() => openAgentChat(ap.agent, ap.prompt)}
                     className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-lg border transition-all cursor-pointer group ${
                       isTradeAgent
-                        ? 'border-violet-500/20 text-violet-300/80 bg-violet-500/5 hover:bg-violet-500/15 hover:border-violet-500/40'
+                        ? 'border-violet-500/20 text-violet-700 dark:text-violet-300/80 bg-violet-500/5 hover:bg-violet-500/15 hover:border-violet-500/40'
                         : 'border-siemens-teal/20 text-siemens-accent/80 bg-siemens-teal/5 hover:bg-siemens-teal/15 hover:border-siemens-teal/40'
                     }`}
                   >
                     {isTradeAgent ? (
-                      <Shield size={12} className="text-violet-400 shrink-0" />
+                      <Shield size={12} className="text-violet-600 dark:text-violet-400 shrink-0" />
                     ) : (
                       <Zap size={12} className="text-siemens-accent shrink-0" />
                     )}

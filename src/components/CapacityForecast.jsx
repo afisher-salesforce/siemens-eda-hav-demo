@@ -873,7 +873,7 @@ export default function CapacityForecast() {
           <div>
             <h1 className="text-lg font-bold text-th-primary">Capacity Forecasting Engine</h1>
             <p className="text-xs text-th-muted">
-              Multi-variable scenario planner &mdash; C<sub>proj</sub> = C<sub>base</sub> + &Sigma;Pipeline &minus; Expiring &minus; RMA<sub>out</sub> + RMA<sub>in</sub>
+              Multi-variable scenario planner
             </p>
           </div>
         </div>
@@ -945,6 +945,32 @@ export default function CapacityForecast() {
         </div>
       </div>
 
+      {/* Projection Formula Rationale */}
+      <div className="section-card">
+        <div
+          className="section-card-header cursor-pointer"
+          onClick={() => setFormulaOpen(!formulaOpen)}
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen size={14} className="text-siemens-accent" />
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+              Projection Formula
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-th-muted">
+              C<sub className="font-serif italic text-th-muted text-[8px]">proj</sub> = C<sub className="font-serif italic text-th-muted text-[8px]">base</sub> + Pipeline − Expiring − RMA<sub className="font-serif italic text-th-muted text-[8px]">out</sub> + RMA<sub className="font-serif italic text-th-muted text-[8px]">in</sub>
+            </span>
+            {formulaOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
+          </div>
+        </div>
+        {formulaOpen && (
+          <div className="section-card-body">
+            <ProjectionFormula />
+          </div>
+        )}
+      </div>
+
       {/* Scenario Modeling Drawer */}
       <div className="section-card">
         <div
@@ -981,32 +1007,6 @@ export default function CapacityForecast() {
             <p className="text-[10px] text-th-faint pt-1">
               Adjust levers to model different scenarios. Changes apply instantly across all charts.
             </p>
-          </div>
-        )}
-      </div>
-
-      {/* Projection Formula Rationale */}
-      <div className="section-card">
-        <div
-          className="section-card-header cursor-pointer"
-          onClick={() => setFormulaOpen(!formulaOpen)}
-        >
-          <div className="flex items-center gap-2">
-            <BookOpen size={14} className="text-siemens-accent" />
-            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
-              Projection Formula
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-th-muted">
-              C<sub className="font-serif italic text-th-muted text-[8px]">proj</sub> = C<sub className="font-serif italic text-th-muted text-[8px]">base</sub> + Pipeline − Expiring − RMA<sub className="font-serif italic text-th-muted text-[8px]">out</sub> + RMA<sub className="font-serif italic text-th-muted text-[8px]">in</sub>
-            </span>
-            {formulaOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
-          </div>
-        </div>
-        {formulaOpen && (
-          <div className="section-card-body">
-            <ProjectionFormula />
           </div>
         )}
       </div>
