@@ -9,6 +9,7 @@ const VIGNETTES = [
   { path: '/vignettes/finance', title: 'The Spreadsheet That Owns the Quarter Close' },
   { path: '/vignettes/traveler', title: 'The Traveler That Traveled by Email' },
   { path: '/vignettes/platform', title: 'The Platform That Connects It All' },
+  { path: '/vignettes/accounts', title: 'The Renewal That Nobody Saw Coming' },
   { path: '/vignettes/automation', title: 'From Heroic Manual Efforts to Closed-Loop Automation' },
 ];
 
@@ -70,7 +71,7 @@ export default function VignetteTemplate({
               Vignettes
             </Link>
             <ChevronRight size={12} />
-            <span className="text-th-muted">Story {number} of 6</span>
+            <span className="text-th-muted">Story {number} of {VIGNETTES.length}</span>
           </div>
           <div className="flex items-start gap-5">
             <div

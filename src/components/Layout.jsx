@@ -35,6 +35,7 @@ const pageTitles = {
   '/vignettes/finance': 'The Spreadsheet That Owns the Quarter Close',
   '/vignettes/traveler': 'The Traveler That Traveled by Email',
   '/vignettes/platform': 'The Platform That Connects It All',
+  '/vignettes/accounts': 'The Renewal That Nobody Saw Coming',
   '/vignettes/automation': 'From Heroic Manual Efforts to Closed-Loop Automation',
 };
 

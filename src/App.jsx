@@ -28,6 +28,7 @@ import Vignette3 from './components/vignettes/Vignette3';
 import Vignette4 from './components/vignettes/Vignette4';
 import Vignette5 from './components/vignettes/Vignette5';
 import Vignette6 from './components/vignettes/Vignette6';
+import Vignette7 from './components/vignettes/Vignette7';
 
 export default function App() {
   return (
@@ -59,7 +60,8 @@ export default function App() {
         <Route path="/vignettes/finance" element={<Vignette3 />} />
         <Route path="/vignettes/traveler" element={<Vignette4 />} />
         <Route path="/vignettes/platform" element={<Vignette5 />} />
-        <Route path="/vignettes/automation" element={<Vignette6 />} />
+        <Route path="/vignettes/accounts" element={<Vignette6 />} />
+        <Route path="/vignettes/automation" element={<Vignette7 />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </ErrorBoundary>

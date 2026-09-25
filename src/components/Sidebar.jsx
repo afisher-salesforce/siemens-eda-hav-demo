@@ -24,6 +24,7 @@ import {
   BookOpen,
   Zap,
   Layers,
+  HeartHandshake,
 } from 'lucide-react';
 
 const navItems = [
@@ -37,6 +38,7 @@ const navItems = [
       { to: '/vignettes/finance', icon: DollarSign, label: 'Finance' },
       { to: '/vignettes/traveler', icon: FileText, label: 'Traveler' },
       { to: '/vignettes/platform', icon: Layers, label: 'Platform' },
+      { to: '/vignettes/accounts', icon: HeartHandshake, label: 'Accounts' },
       { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
     ],
   },

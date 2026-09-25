@@ -6,6 +6,7 @@ import {
   DollarSign,
   FileText,
   Layers,
+  HeartHandshake,
   Zap,
   ArrowUpRight,
 } from 'lucide-react';
@@ -58,6 +59,15 @@ const vignettes = [
   },
   {
     number: 6,
+    path: '/vignettes/accounts',
+    title: 'The Renewal That Nobody Saw Coming',
+    description:
+      'Renewal dates, utilization, support, and margin scattered across four systems. Expiring EaaS agreements and idle-capacity upsell surface too late — or only after the customer raises them.',
+    icon: HeartHandshake,
+    color: '#0ea5e9',
+  },
+  {
+    number: 7,
     path: '/vignettes/automation',
     title: 'From Heroic Manual Efforts to Closed-Loop Automation',
     description:
@@ -75,7 +85,7 @@ export default function VignetteIndex() {
         <div className="px-8 py-8">
           <h1 className="text-xl font-bold text-th-primary mb-2">Solution Vignettes</h1>
           <p className="text-sm text-th-muted leading-relaxed max-w-2xl">
-            Six stories illustrating how Siemens EDA's Hardware-Assisted Verification business
+            Seven stories illustrating how Siemens EDA's Hardware-Assisted Verification business
             transforms from spreadsheet-driven coordination to connected, intelligent operations
             — all on a platform already within the Siemens Enterprise License Agreement.
           </p>

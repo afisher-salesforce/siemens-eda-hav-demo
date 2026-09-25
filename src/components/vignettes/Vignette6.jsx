@@ -1,86 +1,82 @@
 import React from 'react';
-import { Zap, Database, MessageSquare, Bot, FileX } from 'lucide-react';
+import { HeartHandshake, Database, MessageSquare, Bot, FileX } from 'lucide-react';
 import VignetteTemplate from './VignetteTemplate';
 
 export default function Vignette6() {
   return (
     <VignetteTemplate
       number={6}
-      title="From Heroic Manual Efforts to Closed-Loop Automation"
-      subtitle="How real-time telemetry, automated field service, and closed-loop financial tracking replace the 'hear about it days later' operating model."
-      icon={Zap}
-      iconColor="#8b5cf6"
+      title="The Renewal That Nobody Saw Coming"
+      subtitle="How a connected account 360 turns renewal risk and idle-capacity upsell into proactive moves the account team makes months ahead — instead of surprises the customer discovers first."
+      icon={HeartHandshake}
+      iconColor="#0ea5e9"
       challenge={[
-        "A blade card fails in a colocation facility at 2 AM. In today's world, the operations team doesn't learn about it until IT opens a service request — often days later. A technician then walks the colo floor scanning barcodes for two days to identify affected hardware — they can't even tell which rack or facility the blade belongs to without cross-referencing a spreadsheet. The repair gets tracked in a disconnected system. Costs are manually entered into SAP weeks after the fact.",
-        "Between the failure and the resolution, a customer's emulation capacity is degraded. No automated alert. No automated dispatch. No automated cost tracking. Every step requires a person to notice something, tell someone else, and manually record what happened.",
-        "Even when the repair is complete, the financial picture isn't. Cost data from the contract manufacturer lives in a separate system. Margin impact isn't visible until the next monthly reconciliation. The business runs on lagging indicators because the systems aren't connected.",
+        "Emulation-as-a-Service is a relationship business. The revenue isn't the sale — it's the renewal, the expansion, and the multi-year commitment. Yet the signals that protect that revenue are scattered. Contract dates live in one system, utilization in the capacity spreadsheet, support history in cases, and margin in finance's month-end reconciliation. No one owns the whole picture of an account.",
+        "So the Pinnacle Chip Design EaaS agreement drifts toward its expiration date, and the account team learns it's at risk when Pinnacle mentions they're evaluating alternatives — not months earlier when a proactive conversation could have secured the renewal and shaped an expansion.",
+        "The mirror image hurts just as much. Accounts running well below the capacity they're paying for are prime expansion candidates — or churn risks if they conclude they're over-provisioned. But under-utilization only shows up if someone manually cross-references usage against contract terms, account by account. The expansion that was sitting in plain sight goes unsold; the churn risk goes unseen until it's a lost deal.",
+        "Every account review is a fire drill of pulling reports from four systems into a slide the day before the meeting. The account team spends its time assembling the picture instead of acting on it.",
       ]}
       outcomes={[
-        { metric: 'Instant', label: 'Telemetry-triggered work orders' },
-        { metric: 'Real-Time', label: 'Vendor RMA and cost tracking' },
-        { metric: '2 Days \u2192 0', label: 'Manual inventory scan time' },
+        { metric: 'Months Earlier', label: 'Renewal risk surfaced before the customer raises it' },
+        { metric: 'Proactive', label: 'Expansion signals from idle capacity, not manual cross-referencing' },
+        { metric: 'One View', label: 'Usage, contract, support, and margin per account' },
       ]}
       whySalesforce={[
         {
           icon: Database,
           title: 'One System for the Sales Process',
           description:
-            'From failure detection through repair completion and cost write-back, every step is a connected record — the full asset lifecycle in one place.',
+            'Contracts, assets, utilization, cases, and margin roll up to a single account record. The renewal date, the capacity a customer actually uses, and the profitability of the relationship live in one place — the account team acts on one picture, not four exports.',
         },
         {
           icon: MessageSquare,
           title: 'Collaborate in Slack',
           description:
-            'Incident swarming brings the right engineers, operations staff, and vendor contacts together in a Slack channel — replacing the phone tree and email escalation.',
+            'When an account crosses a renewal-risk or expansion-opportunity threshold, the account executive, ops lead, and finance partner are pulled into a Slack channel with the context attached — the save happens as a conversation, not a quarterly report.',
         },
         {
           icon: Bot,
           title: 'Digital Labor with Agentforce',
           description:
-            'An AI agent detects the failure, creates the work order, identifies the nearest spare part, dispatches the technician, and notifies the customer — all autonomously.',
+            'An AI agent watches every account continuously — flagging renewals approaching expiration, accounts running below contracted capacity, and margin drift — and drafts the account team’s next move before anyone opens a spreadsheet.',
         },
         {
           icon: FileX,
           title: 'End the Spreadsheet Era',
           description:
-            'Asset tracking, repair costs, vendor RMA status, and margin impact are all live in the system — no more waiting for monthly reconciliation to see the financial picture.',
+            'The pre-meeting scramble to assemble an account picture from four systems is gone. The account 360 is always current, so the review starts from insight instead of from data assembly.',
         },
       ]}
       capabilities={[
         {
-          name: 'Remote Monitoring & Proactive Service',
+          name: 'Unified Customer Profile',
           description:
-            'Real-time telemetry streams triggering automated work orders when performance degrades or failures occur. The asset hierarchy shows exactly which facility, rack, and blade is affected.',
-        },
-        {
-          name: 'Field Service Worker Mobility',
-          description:
-            'Mobile-enabled technician dispatch with asset location, repair instructions, and spare parts inventory.',
-        },
-        {
-          name: 'RMA / Depot Repair',
-          description:
-            'Closed-loop return merchandise authorization with vendor tracking, cost capture, and financial reconciliation.',
-        },
-        {
-          name: 'Slack Swarming',
-          description:
-            'Instant incident collaboration bringing cross-functional experts together in real-time channels.',
-        },
-        {
-          name: 'Agentforce Autonomous Agents',
-          description:
-            'AI-powered automation handling failure detection, dispatch, notifications, and vendor coordination.',
+            'One account view spanning contracts, deployed and spare assets, utilization, support cases, and margin — the full EaaS relationship for NVIDIA, Samsung, Apex, Pinnacle, and every account in one record.',
         },
         {
           name: 'Revenue Intelligence',
           description:
-            'Live margin impact analysis connecting repair costs to customer profitability and contract terms.',
+            'Renewal and expansion forecasting that connects contract expiration dates to actual usage and profitability, so recurring-revenue risk and upside are quantified per account, not estimated at quarter close.',
+        },
+        {
+          name: 'Proactive Insights',
+          description:
+            'Agentforce continuously scores accounts for renewal risk and idle-capacity-to-upsell, surfacing the Pinnacle-style expiring agreement and the under-utilized fleet as actions on a dashboard rather than discoveries in a hallway.',
+        },
+        {
+          name: 'Account & Opportunity Management',
+          description:
+            'Renewal and expansion opportunities generated from the same signals that raised the flag, with the account team’s next steps, owners, and close dates tracked against the relationship — not a disconnected note.',
+        },
+        {
+          name: 'Slack-First Account Swarming',
+          description:
+            'Cross-functional saves and expansions run in real-time Slack channels — AE, operations, and finance on the same thread with the account context attached.',
         },
       ]}
       agentPrompts={[
-        { agent: 'hav', label: '"Are there any critical alerts or errors across the fleet?"', prompt: 'Are there any critical alerts or errors across the fleet?' },
-        { agent: 'hav', label: '"Which assets have the highest error rates in the last 24 hours?"', prompt: 'Which assets have the highest error rates in the last 24 hours?' },
+        { agent: 'hav', label: '"List all contract renewals expiring in the next 30 days."', prompt: 'List all contract renewals expiring in the next 30 days.' },
+        { agent: 'hav', label: '"Which customers have the lowest utilization on their installed fleet?"', prompt: 'Which customers have the lowest utilization on their installed fleet?' },
       ]}
     />
   );

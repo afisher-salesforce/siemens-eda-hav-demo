@@ -80,13 +80,14 @@ export default function Vignette2() {
       challenge={[
         "The operations team manages colocation facilities filled with emulation hardware worth millions. Which rack positions are allocated to which customers? When does a commitment end? What capacity becomes available next month? The answers live in a master spreadsheet — manually updated, version-controlled by heroics, and disconnected from the sales pipeline.",
         "When a sales rep wins a new emulation-as-a-service deal, operations has no advance signal. They discover demand when it arrives. If capacity isn't available, the customer goes to Cadence Palladium. If too much sits idle, the investment doesn't earn its return.",
-        "Physical inventory counts take two days of barcode scanning per colocation facility. The spreadsheet is already out of date by the time it's complete. Every capacity decision is made on stale data."
+        "Physical inventory counts take two days of barcode scanning per colocation facility. The spreadsheet is already out of date by the time it's complete. Every capacity decision is made on stale data.",
+        "The blind spot extends to hardware that isn't deployed at all. Four HAV towers sit Available in the Munich spare pool and proFPGA units wait on the shelf — deployable capacity and idle capital that never appear on the same page as the racks they could fill. So a customer waits for a build-out while the asset that would satisfy them sits uncounted in a spare-pool spreadsheet nobody cross-references."
       ]}
       outcomes={[
         { metric: "Real-Time", label: "Capacity utilization visibility" },
         { metric: "What-If", label: "6-segment waterfall with 4 interactive scenario levers" },
         { metric: "Months Earlier", label: "Expansion decision lead time" },
-        { metric: "Auto-Surfaced", label: "OEM repair lifecycle and idle capacity identification" }
+        { metric: "Auto-Surfaced", label: "OEM repair lifecycle, spare pool, and idle capital" }
       ]}
       whySalesforce={[
         {
@@ -115,7 +116,8 @@ export default function Vignette2() {
         { name: "Asset Lifecycle Management", description: "Every emulator tracked in a physical hierarchy — Facility → Rack → Blade — with serial number, customer allocation, and contract dates. Drill from a colocation facility down to individual blades via the facility drill-down modal, which also shows active work orders with bilateral write-back to complete repairs and return blades to the rack." },
         { name: "Proactive Insights", description: "Automated analysis surfacing capacity trends, utilization patterns, and expansion timing recommendations." },
         { name: "Unified Customer Profile", description: "Customer commitment history, usage patterns, and renewal timelines in a single view." },
-        { name: "Predictive AI Scoring", description: "Machine learning models predicting future capacity demand based on pipeline, seasonality, and customer growth." }
+        { name: "Predictive AI Scoring", description: "Machine learning models predicting future capacity demand based on pipeline, seasonality, and customer growth." },
+        { name: "Spare Pool & Inventory Visibility", description: "Not-yet-deployed hardware — Available spares, Shipped and Purchased units, OEM/RMA blades — tracked in the same connected asset model as deployed racks. Idle capital and deployable spares surface alongside live capacity, so a spare in the Munich pool is one query away from the customer it could serve rather than buried in a separate inventory sheet." }
       ]}
       extraSections={[
         {
