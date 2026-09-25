@@ -56,21 +56,70 @@ for (Asset a : towers) {
                  ' | status=' + a.Status + ' | family=' + a.Product2.Family);
 }
 
+// --- Home each spare to a real colo facility ---
+// Operating model: a spare belongs to a colocation facility (it doesn't move
+// between colos) but is NOT a child of a rack — a spare only sits in a rack
+// transiently during a physical move. So we parent each spare to its Facility
+// asset, set its LocationId to that facility's location, tag it Asset_Tier__c =
+// 'Facility' (facility-scoped inventory, not rack-installed), and clear any
+// Rack_Position__c. This keeps spares out of the Facility->Rack->Blade rack tree
+// while still giving them a truthful home.
+//
+// We assign by facility NAME (looked up live) rather than hard-coded Ids, and
+// spread the four spares across real colos — including Munich, so the Story-2
+// vignette's "Munich spare pool" line is literally true.
+Map<String, String> spareToFacilityName = new Map<String, String>{
+    'VEL-TWR-301' => 'Facility — Munich Colo (MUC1)',
+    'VEL-TWR-302' => 'Facility — San Jose Colo (SJ1)',
+    'VEL-TWR-303' => 'Facility — Austin Colo (AUS1)',
+    'VEL-TWR-304' => 'Facility — Hsinchu Colo (HSC1)'
+};
+
+// Load the target facility assets (with their LocationId) by name.
+Map<String, Asset> facilityByName = new Map<String, Asset>();
+for (Asset f : [
+    SELECT Id, Name, LocationId
+    FROM Asset
+    WHERE Asset_Tier__c = 'Facility'
+      AND Name IN :spareToFacilityName.values()
+]) {
+    facilityByName.put(f.Name, f);
+}
+System.debug('Resolved ' + facilityByName.size() + ' of ' +
+             new Set<String>(spareToFacilityName.values()).size() + ' target facilities.');
+for (String fn : facilityByName.keySet()) {
+    Asset f = facilityByName.get(fn);
+    System.debug('  FACILITY: ' + f.Name + ' (' + f.Id + ', LocationId=' + f.LocationId + ')');
+}
+
 // --- Apply the fix ---
 List<Asset> updates = new List<Asset>();
 for (Asset a : towers) {
-    updates.add(new Asset(
+    Asset upd = new Asset(
         Id = a.Id,
         Product2Id = veloceProductId,   // -> Family = 'Emulation Systems' (passes the gate)
-        Status = 'Available'            // -> matches vignette copy + demo plan prompt
-    ));
+        Status = 'Available',           // -> matches vignette copy + demo plan prompt
+        Asset_Tier__c = 'Facility',     // facility-scoped spare, NOT a rack-installed Blade
+        Rack_Position__c = null         // a shelf spare isn't racked
+    );
+    String facName = spareToFacilityName.get(a.SerialNumber);
+    Asset fac = (facName != null) ? facilityByName.get(facName) : null;
+    if (fac != null) {
+        upd.Parent_Asset__c = fac.Id;       // home facility (not a rack)
+        upd.LocationId = fac.LocationId;     // co-locate with its facility
+    } else {
+        System.debug('  WARN: no facility resolved for ' + a.SerialNumber +
+                     ' — leaving it unparented.');
+    }
+    updates.add(upd);
 }
 update updates;
-System.debug('Updated ' + updates.size() + ' towers (Product2 + Status).');
+System.debug('Updated ' + updates.size() + ' towers (Product2 + Status + facility home).');
 
 // --- Verify through the SAME query the MCP endpoint runs ---
 List<Asset> nowVisible = [
-    SELECT Id, Name, SerialNumber, Status, Product2.Name, Product2.Family
+    SELECT Id, Name, SerialNumber, Status, Product2.Name, Product2.Family,
+           Asset_Tier__c, Parent_Asset__c, Parent_Asset__r.Name, Parent_Asset__r.Asset_Tier__c
     FROM Asset
     WHERE Product2.Family = 'Emulation Systems'
       AND Status = 'Available'
@@ -80,6 +129,9 @@ System.debug('=== VERIFICATION: assets returned by (Family=Emulation Systems AND
 System.debug('Count: ' + nowVisible.size());
 for (Asset a : nowVisible) {
     System.debug('  LIVE: ' + a.Name + ' | serial=' + a.SerialNumber +
-                 ' | status=' + a.Status + ' | product=' + a.Product2.Name);
+                 ' | status=' + a.Status + ' | tier=' + a.Asset_Tier__c +
+                 ' | homeFacility=' + (a.Parent_Asset__r != null ? a.Parent_Asset__r.Name : '(none)') +
+                 ' | parentTier=' + (a.Parent_Asset__r != null ? a.Parent_Asset__r.Asset_Tier__c : '(none)'));
 }
-System.debug('=== If the four spare towers appear above, hav_get_assets(status:"Available") will now return them. ===');
+System.debug('=== Spares should each show tier=Facility and a home facility with parentTier=Facility (never Rack). ===');
+System.debug('=== hav_get_assets(status:"Available") returns these; hav_get_capacity_engine().sparePool lists them too. ===');
