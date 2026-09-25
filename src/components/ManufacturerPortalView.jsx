@@ -29,6 +29,10 @@ import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { renderChartTooltip } from './ChartTooltip';
+import FutureStateTag from './FutureStateTag';
+
+const PARTS_LABOR_NOTE =
+  'Parts vs. labor split is illustrative — today the contract manufacturer bills against a blanket PO. This breakdown becomes available once the PO is structured to itemize parts and labor.';
 
 const STATUS_COLORS = {
   New: '#f59e0b',
@@ -163,8 +167,14 @@ export default function ManufacturerPortalView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard icon={Wrench} label="Total Work Orders" value={metrics.totalWorkOrders} subtitle={`${metrics.openWorkOrders} open, ${metrics.completedWorkOrders} completed`} />
         <MetricCard icon={DollarSign} label="Total Cost" value={fmt(metrics.totalCost)} subtitle="estimated repair costs" color="text-amber-400" />
-        <MetricCard icon={Package} label="Parts Cost" value={fmt(metrics.totalPartsCost)} subtitle={`${metrics.totalCost > 0 ? Math.round((metrics.totalPartsCost / metrics.totalCost) * 100) : 0}% of total`} color="text-blue-400" />
-        <MetricCard icon={Users} label="Labor Cost" value={fmt(metrics.totalLaborCost)} subtitle={`${metrics.totalCost > 0 ? Math.round((metrics.totalLaborCost / metrics.totalCost) * 100) : 0}% of total`} color="text-purple-400" />
+        <div className="relative">
+          <MetricCard icon={Package} label="Parts Cost" value={fmt(metrics.totalPartsCost)} subtitle={`${metrics.totalCost > 0 ? Math.round((metrics.totalPartsCost / metrics.totalCost) * 100) : 0}% of total`} color="text-blue-400" />
+          <div className="absolute top-3 right-3"><FutureStateTag note={PARTS_LABOR_NOTE} /></div>
+        </div>
+        <div className="relative">
+          <MetricCard icon={Users} label="Labor Cost" value={fmt(metrics.totalLaborCost)} subtitle={`${metrics.totalCost > 0 ? Math.round((metrics.totalLaborCost / metrics.totalCost) * 100) : 0}% of total`} color="text-purple-400" />
+          <div className="absolute top-3 right-3"><FutureStateTag note={PARTS_LABOR_NOTE} /></div>
+        </div>
       </div>
 
       {/* Charts Row */}
@@ -175,6 +185,7 @@ export default function ManufacturerPortalView() {
             <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Cost Breakdown by Vendor
             </h2>
+            <FutureStateTag label="Parts / Labor Illustrative" note={PARTS_LABOR_NOTE} />
           </div>
           <div className="section-card-body">
             {costByVendor.length > 0 ? (
@@ -307,8 +318,8 @@ export default function ManufacturerPortalView() {
                   <th>Status</th>
                   <th>Priority</th>
                   <th>RMA</th>
-                  <th>Parts $</th>
-                  <th>Labor $</th>
+                  <th title={PARTS_LABOR_NOTE}>Parts $ <span className="text-indigo-400">*</span></th>
+                  <th title={PARTS_LABOR_NOTE}>Labor $ <span className="text-indigo-400">*</span></th>
                   <th>Total $</th>
                   <th>Days</th>
                 </tr>
@@ -341,6 +352,14 @@ export default function ManufacturerPortalView() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-4 py-2.5 border-t border-surface-border flex items-center gap-2">
+            <FutureStateTag />
+            <span className="text-[10px] text-th-faint leading-relaxed">
+              <span className="text-indigo-400">*</span> Parts / labor split is illustrative. The
+              contract manufacturer currently bills against a blanket PO; itemized parts vs. labor
+              becomes available once the PO is structured to break them out.
+            </span>
           </div>
         </div>
       </div>

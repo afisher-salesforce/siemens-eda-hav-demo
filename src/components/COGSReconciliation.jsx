@@ -27,6 +27,10 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { renderChartTooltip } from './ChartTooltip';
+import FutureStateTag from './FutureStateTag';
+
+const BOM_NOTE =
+  'BOM match rate is illustrative — automated multi-level BOM-to-sellable-part matching depends on a data model not yet in place (Lighthouse does not currently reconcile to SAP). This shows what the closed-loop reconciliation makes possible.';
 
 function formatCurrency(value) {
   if (value == null) return '--';
@@ -189,12 +193,12 @@ export default function COGSReconciliation() {
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-siemens-teal" />
           <div className="relative">
             <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
-              Total Revenue
+              Total Revenue (Annual)
             </span>
             <div className="text-2xl font-bold text-th-primary mt-1">{formatCurrency(totalRevenue)}</div>
             <div className="flex items-center gap-2 mt-2">
               <span className="inline-flex items-center gap-1 text-[9px] text-th-muted bg-[var(--skeleton-bg)]/60 border border-surface-border/50 rounded-full px-2 py-0.5">
-                <Database size={8} />CRM Forecast
+                <Database size={8} />CRM Forecast · Annualized
               </span>
               <span className="inline-flex items-center gap-1 text-[9px] text-th-faint"><Clock size={8} />{todayStr}</span>
             </div>
@@ -235,6 +239,7 @@ export default function COGSReconciliation() {
         </div>
         <div className="metric-card relative overflow-hidden">
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl bg-indigo-500" />
+          <div className="absolute top-3 right-3 z-10"><FutureStateTag note={BOM_NOTE} /></div>
           <div className="relative">
             <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">
               BOM Match Rate
@@ -303,9 +308,12 @@ export default function COGSReconciliation() {
       {/* BOM Detail Table */}
       <div className="section-card">
         <div className="section-card-header">
-          <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
-            BOM Reconciliation Detail
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+              BOM Reconciliation Detail
+            </h2>
+            <FutureStateTag label="BOM Match Illustrative" note={BOM_NOTE} />
+          </div>
           <div className="relative max-w-xs">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-th-muted" />
             <input

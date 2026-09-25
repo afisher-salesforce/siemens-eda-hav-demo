@@ -222,7 +222,7 @@ export default function DashboardView() {
         />
         <MetricCard
           icon={DollarSign}
-          label="Revenue Estimate"
+          label="Revenue Estimate (Annual)"
           value={
             metrics.revenueEstimate != null
               ? `$${(metrics.revenueEstimate / 1000000).toFixed(1)}M`
