@@ -271,8 +271,8 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
           onClick={onOpenTradeChat}
           className={`flex items-center w-full h-10 px-3 rounded-md text-sm transition-all duration-150 group relative
             ${isExpanded ? '' : 'justify-center'}
-            bg-amber-500/10 text-amber-400 border border-amber-500/20
-            hover:bg-amber-500/20 hover:border-amber-500/40`}
+            bg-violet-500/10 text-violet-400 border border-violet-500/20
+            hover:bg-violet-500/20 hover:border-violet-500/40`}
           onMouseEnter={() => setHoveredItem('trade')}
           onMouseLeave={() => setHoveredItem(null)}
         >
