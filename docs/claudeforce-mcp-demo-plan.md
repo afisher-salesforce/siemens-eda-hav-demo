@@ -12,6 +12,8 @@
 
 Ties to the vignette arc: **Capacity (Story 2)** → **Proactive Account Team (Story 6)** → the compliance/ops guardrail that makes EaaS defensible. One prompt per idea.
 
+> **Live vs. illustrative:** All three prompts below run against **live** Salesforce data — renewals, utilization, spare pool, and compliance are real records. Consistent with the dashboard's "What's Live vs. What's Illustrative" note, keep the honest line if BOM matching comes up: automated BOM-to-part-number matching is an **illustrative future state** (depends on Lighthouse reconciling to SAP, not yet in place). None of these three prompts touch it — if a stakeholder asks, frame it as roadmap, not a live capability.
+
 ---
 
 ## Prompt 1 — The account team's proactive move (Story 6: renewal + expansion)
@@ -38,7 +40,7 @@ Ties to the vignette arc: **Capacity (Story 2)** → **Proactive Account Team (S
 **Why this one:** Lands the Story-2 capacity beat plus the inventory/warehousing point EDA is likely to probe ("you're EaaS — where's the asset visibility?"). Speaks to Ken (ops) and Russell (planning).
 
 **What it should surface (verified live today):**
-- **72 assets, ~70% avg utilization, 0 critical alerts, 29 open work orders** (~$89K open repair cost).
+- **76 assets, ~70% avg utilization, 0 critical alerts, 29 open work orders** (~$89K open repair cost).
 - **6 colocation facilities** (San Jose, Austin, Hsinchu, Seoul, Bangalore, Munich) with rack/power/PUE per site.
 - **Spare pool answers live:** `hav_get_assets(status: "Available")` returns **4 Veloce Strato CS towers** (T-301…304, serials VEL-TWR-301…304) sitting Available across the Munich, San Jose, Austin, and Hsinchu colos — each homed to its facility (tier=Facility, no rack) — deployable capital not yet earning revenue.
 - Low-utilization units (Samsung 33%, Qualcomm 42%) as idle capital — the same signal, now from the ops lens.
