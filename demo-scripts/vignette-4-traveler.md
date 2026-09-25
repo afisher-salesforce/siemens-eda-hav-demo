@@ -55,5 +55,5 @@
 - The audit trail is system-generated — no manual assembly
 - Bottlenecks are visible immediately
 
-## Transition to V6
-> "The traveler gets the order to the customer. But in an Emulation-as-a-Service business, the revenue isn't the sale — it's the renewal and the expansion. Let's look at what happens when the signals that protect that revenue are scattered across four systems, and the renewal nobody saw coming lands on the account team's desk."
+## Transition to V5
+> "We've now seen the order, the capacity behind it, the finance picture, and the traveler that tracks it. Each one is a view into the same connected platform. Let's pull back and see the whole thing — one data model, every stakeholder, in real time."

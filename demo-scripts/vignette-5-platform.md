@@ -1,5 +1,5 @@
 # Vignette 5 — The Platform That Connects It All
-**Duration:** 10 minutes | **Persona:** All stakeholders | **Opener**
+**Duration:** 10 minutes | **Persona:** All stakeholders
 
 ## Narrative Setup
 > "Today, every stakeholder in HAV operations has a different version of the truth — operations tracks assets in spreadsheets, finance reconciles revenue in Excel, the order pipeline lives in SharePoint. What if every stakeholder had a single, connected view — built on the data they already have?"
@@ -65,5 +65,5 @@
 - Real-time, not quarterly
 - AI-powered agent for instant answers
 
-## Transition to V1
-> "Now let's look at a specific scenario. What happens when a loan-to-sale conversion is stuck because three teams can't coordinate?"
+## Transition to V6
+> "One connected platform is the foundation. Now let's see what it protects. In an Emulation-as-a-Service business, the revenue isn't the sale — it's the renewal and the expansion. Let's look at what happens when the signals that protect that revenue are scattered across four systems, and the renewal nobody saw coming lands on the account team's desk."

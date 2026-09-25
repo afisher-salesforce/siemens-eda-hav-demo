@@ -13,7 +13,7 @@ Walk all seven in app order as an executive overview:
 6. **V6 — The Renewal That Nobody Saw Coming** — Account 360, renewal risk + idle-capacity upsell
 7. **V7 — From Heroic Manual Efforts to Closed-Loop Automation** — The hero story
 
-> The individual scripts also carry narrative transitions if you prefer to open with the platform story (V5) as the big-picture frame before drilling into V1–V4; the executive-overview walk above follows the app's own order.
+> Each script ends with a narrative transition into the next, so the seven run as one continuous 1→7 story.
 
 ## Live vs. Illustrative
 The dashboard tags some surfaces as **Illustrative / future-state**, and the scripts follow suit. Most notably, **automated BOM matching** (in V3 — Finance) is illustrative: it depends on Lighthouse reconciling to SAP, and that data model is not yet in place. Revenue, COGS, and margin are live. See the "What's Live vs. What's Illustrative" note in `demo-overview.html`.
