@@ -35,7 +35,8 @@ export default function App() {
     <Layout>
       <ErrorBoundary>
       <Routes>
-        <Route path="/" element={<DashboardView />} />
+        <Route path="/" element={<Navigate to="/vignettes" replace />} />
+        <Route path="/dashboard" element={<DashboardView />} />
         <Route path="/assets" element={<AssetsView />} />
         <Route path="/assets/loaners" element={<LoanerConversionView />} />
         <Route path="/assets/:assetId" element={<AssetDetail />} />
@@ -62,7 +63,7 @@ export default function App() {
         <Route path="/vignettes/platform" element={<Vignette5 />} />
         <Route path="/vignettes/accounts" element={<Vignette6 />} />
         <Route path="/vignettes/automation" element={<Vignette7 />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/vignettes" replace />} />
       </Routes>
       </ErrorBoundary>
     </Layout>

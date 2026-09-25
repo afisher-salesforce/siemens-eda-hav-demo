@@ -42,7 +42,7 @@ const navItems = [
       { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
     ],
   },
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
   {
     to: '/orders',
     icon: ShoppingCart,
