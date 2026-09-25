@@ -35,7 +35,7 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -460,10 +460,10 @@ export default function AssetDetail() {
                     tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip
-                    contentStyle={tooltipStyle}
-                    labelFormatter={(v) =>
-                      v ? new Date(v).toLocaleString() : ''
-                    }
+                    content={renderChartTooltip({
+                      valueFormatter: (v) => (v == null ? '--' : `${v}%`),
+                      labelFormatter: (v) => (v ? new Date(v).toLocaleString() : ''),
+                    })}
                   />
                   <Line
                     type="monotone"

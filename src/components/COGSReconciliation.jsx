@@ -26,7 +26,7 @@ import { getFinancials, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 
 function formatCurrency(value) {
   if (value == null) return '--';
@@ -282,8 +282,7 @@ export default function COGSReconciliation() {
                   tickFormatter={formatCurrency}
                 />
                 <Tooltip
-                  formatter={(value, name) => [formatCurrency(value), name]}
-                  contentStyle={tooltipStyle}
+                  content={renderChartTooltip({ valueFormatter: formatCurrency })}
                 />
                 <Legend
                   iconType="circle"

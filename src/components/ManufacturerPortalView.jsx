@@ -28,7 +28,7 @@ import { getManufacturerData } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 
 const STATUS_COLORS = {
   New: '#f59e0b',
@@ -183,7 +183,7 @@ export default function ManufacturerPortalView() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
                   <XAxis dataKey="vendor" tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={{ stroke: '#1e293b' }} />
                   <YAxis tick={{ fontSize: 10, fill: 'var(--text-faint)' }} axisLine={{ stroke: '#1e293b' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`$${Number(v).toLocaleString()}`, '']} />
+                  <Tooltip content={renderChartTooltip({ valueFormatter: (v) => `$${Number(v).toLocaleString()}` })} />
                   <Bar dataKey="parts" name="Parts" fill="#3b82f6" stackId="cost" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="labor" name="Labor" fill="#8b5cf6" stackId="cost" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -219,7 +219,10 @@ export default function ManufacturerPortalView() {
                       <Cell key={idx} fill={STATUS_COLORS[entry.name] || PIE_COLORS[idx % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <Tooltip content={renderChartTooltip({
+                    valueFormatter: (v) => `${v} work order${v === 1 ? '' : 's'}`,
+                    labelForName: () => 'Count',
+                  })} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

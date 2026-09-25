@@ -28,7 +28,7 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -312,10 +312,12 @@ export default function OrderDetail() {
                       tickLine={false}
                     />
                     <Tooltip
-                      formatter={(value) => [formatCurrency(value)]}
-                      contentStyle={tooltipStyle}
+                      content={renderChartTooltip({
+                        valueFormatter: formatCurrency,
+                        labelForName: () => 'Amount',
+                      })}
                     />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                    <Bar dataKey="value" name="Amount" radius={[0, 4, 4, 0]} maxBarSize={24}>
                       <Cell fill="#009999" />
                       <Cell fill="#f59e0b" />
                       <Cell fill="#10b981" />

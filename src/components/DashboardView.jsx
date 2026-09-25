@@ -35,7 +35,7 @@ import {
 } from 'recharts';
 import { getDashboardSummary } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 
@@ -262,8 +262,10 @@ export default function DashboardView() {
                     tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip
-                    formatter={(value) => [`${value}%`, 'Occupancy']}
-                    contentStyle={tooltipStyle}
+                    content={renderChartTooltip({
+                      valueFormatter: (v) => `${v}%`,
+                      labelForName: () => 'Occupancy',
+                    })}
                   />
                   <Bar dataKey="occupancy" radius={[4, 4, 0, 0]} maxBarSize={40}>
                     {capacityData.map((entry, index) => (

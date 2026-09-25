@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { getCapacity, getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 
@@ -311,8 +311,9 @@ export default function CapacityView() {
                         tickLine={false}
                       />
                       <Tooltip
-                        contentStyle={tooltipStyle}
-                        formatter={(value, name) => [value, name === 'occupied' ? 'Occupied' : 'Available']}
+                        content={renderChartTooltip({
+                          valueFormatter: (v) => `${v} rack${v === 1 ? '' : 's'}`,
+                        })}
                       />
                       <Legend
                         iconType="circle"
@@ -372,7 +373,9 @@ export default function CapacityView() {
                         label={{ value: 'Racks', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'var(--text-faint)' } }}
                       />
                       <Tooltip
-                        contentStyle={tooltipStyle}
+                        content={renderChartTooltip({
+                          valueFormatter: (v) => `${v} rack${v === 1 ? '' : 's'}`,
+                        })}
                       />
                       <Legend
                         iconType="circle"

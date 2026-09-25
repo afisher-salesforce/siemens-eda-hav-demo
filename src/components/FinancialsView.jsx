@@ -21,7 +21,7 @@ import { getFinancials } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
-import { tooltipStyle } from '../utils/chartStyles';
+import { renderChartTooltip } from './ChartTooltip';
 
 const COLORS = ['#009999', '#006666', '#00b8b8', '#003333', '#10b981', '#6366f1', '#f59e0b', '#8b5cf6'];
 
@@ -168,7 +168,7 @@ export default function FinancialsView() {
         {/* Revenue by Product */}
         <div className="section-card">
           <div className="section-card-header">
-            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Revenue by Product</h2>
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Revenue by Product — Monthly Recurring</h2>
           </div>
           <div className="section-card-body">
             {productBreakdown.length > 0 ? (
@@ -188,10 +188,12 @@ export default function FinancialsView() {
                     tickFormatter={formatCurrency}
                   />
                   <Tooltip
-                    formatter={(value) => [formatCurrency(value), 'Revenue']}
-                    contentStyle={tooltipStyle}
+                    content={renderChartTooltip({
+                      valueFormatter: formatCurrency,
+                      labelForName: () => 'Monthly Recurring',
+                    })}
                   />
-                  <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                  <Bar dataKey="revenue" name="Monthly Recurring" radius={[4, 4, 0, 0]} maxBarSize={50}>
                     {productBreakdown.map((_, index) => (
                       <Cell key={index} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -234,8 +236,10 @@ export default function FinancialsView() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value, name) => [value, name]}
-                    contentStyle={tooltipStyle}
+                    content={renderChartTooltip({
+                      valueFormatter: (v) => `${v} asset${v === 1 ? '' : 's'}`,
+                      labelForName: () => 'Count',
+                    })}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -372,9 +376,10 @@ export default function FinancialsView() {
                         tickFormatter={formatCurrency}
                       />
                       <Tooltip
-                        formatter={(value, name) => [formatCurrency(value), name === 'total' ? 'Actuals' : name === 'plan' ? 'Plan' : name]}
-                        contentStyle={tooltipStyle}
-                        labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
+                        content={renderChartTooltip({
+                          valueFormatter: formatCurrency,
+                          labelForName: (n) => (n === 'total' ? 'Actuals' : n === 'plan' ? 'Plan' : n),
+                        })}
                       />
                       <Area
                         type="monotone"
@@ -419,9 +424,7 @@ export default function FinancialsView() {
                         tickFormatter={formatCurrency}
                       />
                       <Tooltip
-                        formatter={(value, name) => [formatCurrency(value), name]}
-                        contentStyle={tooltipStyle}
-                        labelStyle={{ color: 'var(--text-muted)', fontSize: 12 }}
+                        content={renderChartTooltip({ valueFormatter: formatCurrency })}
                       />
                       <Legend
                         iconType="circle"
