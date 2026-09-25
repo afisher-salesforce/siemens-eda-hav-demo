@@ -46,19 +46,11 @@ export default function Layout({ children }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [agentPrefill, setAgentPrefill] = useState(null); // { agent: 'hav'|'trade', prompt: string }
-  const [userInfo, setUserInfo] = useState({ name: 'Admin', firstName: 'Admin', initials: 'A', photo: null, profileUrl: null });
-  const [sfOrgUrl, setSfOrgUrl] = useState(null);
   const location = useLocation();
   const peekTimerRef = useRef(null);
   const notifRef = useRef(null);
 
   const pageTitle = pageTitles[location.pathname] || 'HAV Operations';
-
-  // Fetch authenticated user info + org URL for avatar
-  useEffect(() => {
-    fetch('/api/user').then(r => r.json()).then(setUserInfo).catch(() => {});
-    fetch('/api/sf-org-url').then(r => r.json()).then(d => setSfOrgUrl(d.url)).catch(() => {});
-  }, []);
 
   // Fetch telemetry alerts for notification bell
   const { data: telemetryAlerts } = useSalesforceData(() => getTelemetry(null, 50));
@@ -261,22 +253,15 @@ export default function Layout({ children }) {
               )}
             </div>
             <div className="w-px h-6 bg-surface-border mx-1" />
-            <a
-              href={userInfo.profileUrl || (sfOrgUrl ? `${sfOrgUrl}/lightning/settings/personal/PersonalInformation/home` : '#')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
-              title={userInfo.name}
-            >
-              {userInfo.photo ? (
-                <img src={userInfo.photo} alt={userInfo.name} className="w-8 h-8 rounded-full border border-siemens-teal/30 object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-siemens-teal/20 border border-siemens-teal/30 text-siemens-accent flex items-center justify-center text-xs font-semibold">
-                  {userInfo.initials}
-                </div>
-              )}
-              <span className="text-sm text-th-muted hidden sm:inline">{userInfo.firstName}</span>
-            </a>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-full bg-siemens-teal text-white flex items-center justify-center"
+                title="Siemens"
+              >
+                <span className="text-[5px] font-bold tracking-tight leading-none">SIEMENS</span>
+              </div>
+              <span className="text-sm text-th-muted hidden sm:inline">Admin</span>
+            </div>
           </div>
         </header>
 

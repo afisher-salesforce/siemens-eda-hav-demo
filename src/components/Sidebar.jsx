@@ -42,15 +42,15 @@ const navItems = [
   },
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
   {
-    to: '/assets',
-    icon: Server,
-    label: 'Asset Fleet',
-    persona: 'Ken',
+    to: '/orders',
+    icon: ShoppingCart,
+    label: 'Orders',
+    persona: 'Russell',
     children: [
-      { to: '/assets/loaners', icon: RefreshCcw, label: 'Loaners' },
+      { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
+      { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
     ],
   },
-  { to: '/telemetry', icon: Activity, label: 'Telemetry', persona: 'Ken' },
   {
     to: '/capacity',
     icon: BarChart3,
@@ -62,15 +62,24 @@ const navItems = [
     ],
   },
   {
-    to: '/orders',
-    icon: ShoppingCart,
-    label: 'Orders',
-    persona: 'Russell',
+    to: '/financials',
+    icon: DollarSign,
+    label: 'Financials',
+    persona: 'Shari',
     children: [
-      { to: '/orders/travelers', icon: FileText, label: 'Travelers' },
-      { to: '/orders/compliance', icon: Shield, label: 'Compliance' },
+      { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
     ],
   },
+  {
+    to: '/assets',
+    icon: Server,
+    label: 'Asset Fleet',
+    persona: 'Ken',
+    children: [
+      { to: '/assets/loaners', icon: RefreshCcw, label: 'Loaners' },
+    ],
+  },
+  { to: '/telemetry', icon: Activity, label: 'Telemetry', persona: 'Ken' },
   {
     to: '/workorders',
     icon: Wrench,
@@ -80,15 +89,6 @@ const navItems = [
       { to: '/workorders/manufacturer', icon: Factory, label: 'Manufacturer' },
       { to: '/workorders/failures', icon: AlertTriangle, label: 'Failures' },
       { to: '/workorders/spares', icon: Package, label: 'Spare Parts' },
-    ],
-  },
-  {
-    to: '/financials',
-    icon: DollarSign,
-    label: 'Financials',
-    persona: 'Shari',
-    children: [
-      { to: '/financials/cogs', icon: FileSpreadsheet, label: 'COGS Recon' },
     ],
   },
 ];

@@ -882,6 +882,32 @@ export default function CapacityForecast() {
         </button>
       </div>
 
+      {/* Projection Formula Rationale */}
+      <div className="section-card">
+        <div
+          className="section-card-header cursor-pointer"
+          onClick={() => setFormulaOpen(!formulaOpen)}
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen size={14} className="text-siemens-accent" />
+            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+              Projection Formula
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-th-muted">
+              C<sub className="font-serif italic text-th-muted text-[8px]">proj</sub> = C<sub className="font-serif italic text-th-muted text-[8px]">base</sub> + Pipeline − Expiring − RMA<sub className="font-serif italic text-th-muted text-[8px]">out</sub> + RMA<sub className="font-serif italic text-th-muted text-[8px]">in</sub>
+            </span>
+            {formulaOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
+          </div>
+        </div>
+        {formulaOpen && (
+          <div className="section-card-body">
+            <ProjectionFormula />
+          </div>
+        )}
+      </div>
+
       {/* Global Controls Bar */}
       <div className="section-card">
         <div className="section-card-body py-3">
@@ -943,32 +969,6 @@ export default function CapacityForecast() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Projection Formula Rationale */}
-      <div className="section-card">
-        <div
-          className="section-card-header cursor-pointer"
-          onClick={() => setFormulaOpen(!formulaOpen)}
-        >
-          <div className="flex items-center gap-2">
-            <BookOpen size={14} className="text-siemens-accent" />
-            <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
-              Projection Formula
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-th-muted">
-              C<sub className="font-serif italic text-th-muted text-[8px]">proj</sub> = C<sub className="font-serif italic text-th-muted text-[8px]">base</sub> + Pipeline − Expiring − RMA<sub className="font-serif italic text-th-muted text-[8px]">out</sub> + RMA<sub className="font-serif italic text-th-muted text-[8px]">in</sub>
-            </span>
-            {formulaOpen ? <ChevronUp size={14} className="text-th-muted" /> : <ChevronDown size={14} className="text-th-muted" />}
-          </div>
-        </div>
-        {formulaOpen && (
-          <div className="section-card-body">
-            <ProjectionFormula />
-          </div>
-        )}
       </div>
 
       {/* Scenario Modeling Drawer */}
