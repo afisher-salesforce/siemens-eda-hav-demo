@@ -56,4 +56,4 @@
 - Bottlenecks are visible immediately
 
 ## Transition to V6
-> "The traveler solves order tracking. But what happens when something breaks? A blade fails, a customer is down, and five people scramble. Let's see what closed-loop automation looks like."
+> "The traveler gets the order to the customer. But in an Emulation-as-a-Service business, the revenue isn't the sale — it's the renewal and the expansion. Let's look at what happens when the signals that protect that revenue are scattered across four systems, and the renewal nobody saw coming lands on the account team's desk."

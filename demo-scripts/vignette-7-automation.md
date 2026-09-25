@@ -1,4 +1,4 @@
-# Vignette 6 — From Heroic Manual Efforts to Closed-Loop Automation
+# Vignette 7 — From Heroic Manual Efforts to Closed-Loop Automation
 **Duration:** 20 minutes | **Persona:** Ken (HAV Operations), Russell (Ops), Field Service
 
 ## Narrative Setup

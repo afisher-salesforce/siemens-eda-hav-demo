@@ -45,16 +45,16 @@
 **Navigate to:** `/financials/cogs`
 
 **Talk track:**
-- "Now here's the view Shari has been asking for — COGS reconciliation."
+- "Now here's the view Shari has been asking for — COGS reconciliation. Revenue, COGS, and gross margin are live here, anchored to a single source of truth."
 - Point to **summary cards**: Total Revenue, Total COGS, Gross Margin %, BOM Match Rate.
-- "The BOM match rate tells you how many orders have confirmed bill-of-materials matching between what was sold and what was shipped."
+- Note on **BOM Match Rate** (tagged *Illustrative*): "This one is a future-state view. Automated BOM matching — confirming what was sold against what was shipped — depends on Lighthouse reconciling to SAP, which isn't in place today. So treat the match rate and the reconciliation detail below as illustrative of where this goes, not a live number."
 - Show the **Revenue vs COGS by Customer** bar chart:
-  - "At a glance — which customers are highest margin, which are below target?"
-- Scroll to the **BOM Reconciliation Detail** table:
-  - "Every order with revenue, COGS, margin, and BOM match status."
-  - Point to any **Mismatch** badge: "This order has a BOM discrepancy — needs attention before quarter close."
-  - Point to **Matched** badges: "These are audit-ready."
-- "Today this takes two weeks of Excel work. Here it's always current."
+  - "At a glance — which customers are highest margin, which are below target? This is live."
+- Scroll to the **BOM Reconciliation Detail** table *(illustrative)*:
+  - "Every order with revenue, COGS, margin, and — in the future state — BOM match status."
+  - Point to any **Mismatch** badge: "In the future state, an order like this would surface a BOM discrepancy to resolve before quarter close."
+  - Point to **Matched** badges: "And these would be audit-ready — once the BOM-to-SAP data model is in place."
+- "The live revenue/COGS/margin picture is always current today. The automated BOM matching is the illustrative next step."
 
 ### Step 6: Revenue Intelligence (1 min)
 **Scroll down on:** `/financials`
@@ -72,11 +72,11 @@
 - "The agent can pull financial summaries on demand — no waiting for a report run."
 
 ## Key Messages
-- Revenue, COGS, and BOM reconciliation in one system
+- Live today: revenue, COGS, and gross margin in one system, anchored to a single source of truth
 - Real-time margin visibility by customer and product
-- BOM match rate flags discrepancies before quarter close
 - Auditors get a documented, system-generated trail
 - Replaces two weeks of Excel work with always-current data
+- Illustrative future state: automated BOM matching flags discrepancies before quarter close — once Lighthouse reconciles to SAP (that data model is not yet in place)
 
 ## Transition to V4
 > "The finance team needs accurate data. But that data starts with the order process. Let's look at what happens when the traveler — the order tracking document — travels by email."
