@@ -17,7 +17,7 @@ export default function Vignette3() {
       outcomes={[
         { metric: "Days → Click", label: "Audit preparation time" },
         { metric: "Live", label: "Revenue forecast vs. actuals — single source of truth across all views" },
-        { metric: "Automated", label: "BOM-to-part-number matching" }
+        { metric: "Future State", label: "Automated BOM-to-part-number matching (illustrative — depends on Lighthouse reconciling to SAP, not yet in place)" }
       ]}
       whySalesforce={[
         {
@@ -33,7 +33,7 @@ export default function Vignette3() {
         {
           icon: Bot,
           title: "Digital Labor with Agentforce",
-          description: "An AI agent monitors BOM matching accuracy and flags reconciliation discrepancies automatically — the monthly assembly becomes a continuous, auditable process."
+          description: "In the future state — once BOM data reconciles to SAP — an AI agent monitors BOM matching accuracy and flags reconciliation discrepancies automatically, turning the monthly assembly into a continuous, auditable process."
         },
         {
           icon: FileX,
@@ -45,7 +45,7 @@ export default function Vignette3() {
         { name: "Embedded BI & Dashboards", description: "Live financial dashboards replacing manual Excel reporting with automated actuals-vs-plan visualization. Revenue figures are anchored to one source of truth — Financials and COGS reconciliation always agree." },
         { name: "Revenue Intelligence", description: "AI-powered revenue forecasting combining pipeline data with historical booking patterns." },
         { name: "Enterprise Integration", description: "Bi-directional SAP synchronization ensuring financial data flows automatically between transaction and intelligence systems." },
-        { name: "Data Harmonization", description: "Automated transformation rules matching multi-level BOMs to sellable part numbers across regions." },
+        { name: "Data Harmonization", description: "Future-state automated transformation rules matching multi-level BOMs to sellable part numbers across regions — illustrative, dependent on a BOM-to-SAP data model not yet in place." },
         { name: "Account Management", description: "Complete customer financial history — contracts, orders, revenue, and margin — in a single account record." }
       ]}
       agentPrompts={[

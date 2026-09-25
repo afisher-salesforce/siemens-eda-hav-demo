@@ -120,7 +120,7 @@ const CONTEXT = {
     ],
     outcomes: [
       'Live revenue & COGS dashboard with automated data transformation rules',
-      'Automated multi-level BOM matching to sellable part numbers',
+      'Automated multi-level BOM matching to sellable part numbers (future state — illustrative, depends on Lighthouse reconciling to SAP)',
       'Pre-built, timestamped audit-ready report packages generated automatically',
     ],
     handoffs: 'CRM Forecast → SAP Actuals (via MuleSoft) → Reconciliation → Auditors',
@@ -135,7 +135,7 @@ const CONTEXT = {
       'Revenue vs. COGS always slightly out of sync due to timing gaps',
     ],
     outcomes: [
-      'Automated BOM matching rules eliminate manual Excel manipulation',
+      'Automated BOM matching rules eliminate manual Excel manipulation (future state — illustrative, depends on a BOM-to-SAP data model not yet in place)',
       'Real-time margin visibility with CRM forecast + SAP actuals in one view',
       'Defensible audit trail: every data source tagged with origin and timestamp',
     ],
