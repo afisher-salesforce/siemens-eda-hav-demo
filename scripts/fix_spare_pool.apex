@@ -1,14 +1,18 @@
-// Fix Spare Pool visibility — reclassify the four spare Tower assets so they
+// Fix Spare Pool visibility — reclassify the six spare Tower assets so they
 // answer live via GET /services/apexrest/hav/assets?status=Available
 // (the endpoint behind the hav_get_assets MCP tool).
 //
 // Root cause: HAV_AssetService hard-filters every /assets query to
 //   WHERE Product2.Family = 'Emulation Systems'
-// The spare towers (T-301..304) were seeded with a different product, so they
+// The spare towers (T-301..306) were seeded with a different product, so they
 // were excluded at the family gate before the status filter ever ran — invisible
-// in the assets list, global search, AND the Agentforce ops agent.
+// in the assets list, global search, AND the Agentforce ops agent. (T-301..304
+// were reclassified 2026-09-25; T-305..306 were seeded afterward and had the same
+// gap — null Asset_Tier__c, non-Emulation-Systems family — so they surfaced in
+// hav_get_capacity_engine().sparePool, which has NO family filter, but not in
+// hav_get_assets(status:"Available"). This adds them to close that gap.)
 //
-// Fix (data-only, no Apex deploy): point the four towers at the Veloce Strato CS
+// Fix (data-only, no Apex deploy): point the six towers at the Veloce Strato CS
 // product (Family = 'Emulation Systems') and set Status = 'Available'.
 //
 // Idempotent: safe to run more than once. Run with:
@@ -19,7 +23,9 @@ Set<Id> towerIds = new Set<Id>{
     '02iWt000005AWlJIAW', // T-301  (VEL-TWR-301)
     '02iWt000005AWmvIAG', // T-302  (VEL-TWR-302)
     '02iWt000005AWoXIAW', // T-303  (VEL-TWR-303)
-    '02iWt000005AWq9IAG'  // T-304  (VEL-TWR-304)
+    '02iWt000005AWq9IAG', // T-304  (VEL-TWR-304)
+    '02iWt000005AWrlIAG', // T-305  (VEL-TWR-305)
+    '02iWt000005AWtNIAW'  // T-306  (VEL-TWR-306)
 };
 
 // --- Discover an Emulation Systems product to reclassify the towers under ---
@@ -66,13 +72,16 @@ for (Asset a : towers) {
 // while still giving them a truthful home.
 //
 // We assign by facility NAME (looked up live) rather than hard-coded Ids, and
-// spread the four spares across real colos — including Munich, so the Story-2
-// vignette's "Munich spare pool" line is literally true.
+// spread the six spares across all six real colos — including Munich, so the
+// Story-2 vignette's "Munich spare pool" line is literally true, and one spare
+// per colo makes the "six towers, six sites" spare-pool story clean.
 Map<String, String> spareToFacilityName = new Map<String, String>{
     'VEL-TWR-301' => 'Facility — Munich Colo (MUC1)',
     'VEL-TWR-302' => 'Facility — San Jose Colo (SJ1)',
     'VEL-TWR-303' => 'Facility — Austin Colo (AUS1)',
-    'VEL-TWR-304' => 'Facility — Hsinchu Colo (HSC1)'
+    'VEL-TWR-304' => 'Facility — Hsinchu Colo (HSC1)',
+    'VEL-TWR-305' => 'Facility — Seoul Colo (SEL1)',
+    'VEL-TWR-306' => 'Facility — Bangalore Colo (BLR1)'
 };
 
 // Load the target facility assets (with their LocationId) by name.

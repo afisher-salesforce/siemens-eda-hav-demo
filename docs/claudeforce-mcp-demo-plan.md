@@ -42,10 +42,10 @@ Ties to the vignette arc: **Capacity (Story 2)** → **Proactive Account Team (S
 **What it should surface (verified live today):**
 - **76 assets, ~70% avg utilization, 0 critical alerts, 29 open work orders** (~$89K open repair cost).
 - **6 colocation facilities** (San Jose, Austin, Hsinchu, Seoul, Bangalore, Munich) with rack/power/PUE per site.
-- **Spare pool answers live:** `hav_get_assets(status: "Available")` returns **4 Veloce Strato CS towers** (T-301…304, serials VEL-TWR-301…304) sitting Available across the Munich, San Jose, Austin, and Hsinchu colos — each homed to its facility (tier=Facility, no rack) — deployable capital not yet earning revenue.
+- **Spare pool answers live:** `hav_get_assets(status: "Available")` returns **6 Veloce Strato CS towers** (T-301…306, serials VEL-TWR-301…306) sitting Available — one homed in each of the six colos (Munich, San Jose, Austin, Hsinchu, Seoul, Bangalore), each tied to its facility (tier=Facility, no rack) — deployable capital not yet earning revenue. This matches `hav_get_capacity_engine().sparePool` exactly (both surfaces now agree at 6).
 - Low-utilization units (Samsung 33%, Qualcomm 42%) as idle capital — the same signal, now from the ops lens.
 
-**Talk track:** "The point isn't the dashboard — it's that idle capital and deployable capacity finally sit on the same page as the racks they could fill. Four towers are sitting Available in the spare pool right now — one query away from the customer they could serve, instead of buried in an inventory spreadsheet nobody cross-references."
+**Talk track:** "The point isn't the dashboard — it's that idle capital and deployable capacity finally sit on the same page as the racks they could fill. Six towers are sitting Available in the spare pool right now — one in every colo — each one query away from the customer it could serve, instead of buried in an inventory spreadsheet nobody cross-references."
 
 ---
 
@@ -73,5 +73,5 @@ Ties to the vignette arc: **Capacity (Story 2)** → **Proactive Account Team (S
 
 ## Open items / risks
 
-- ~~**Spare-pool query gap:**~~ **RESOLVED (2026-09-25).** The towers were `Status = Available` all along — but sat in `Product2.Family = 'Assemblies'`, so `HAV_AssetService`'s hard `Family = 'Emulation Systems'` filter excluded them from every read surface (assets list, search, and the ops agent). Fixed data-only via [`scripts/fix_spare_pool.apex`](../scripts/fix_spare_pool.apex) — reclassified T-301…304 under the Veloce Strato CS product. Verified end-to-end: `hav_get_assets(status: "Available")` now returns all four towers. No Apex deploy needed; the script is idempotent and safe to re-run if the org is reset.
-- All figures above were pulled live today (2026-09-25); re-verify morning-of.
+- ~~**Spare-pool query gap:**~~ **RESOLVED (2026-09-25; extended 2026-09-27).** The towers were `Status = Available` all along — but sat in `Product2.Family = 'Assemblies'`, so `HAV_AssetService`'s hard `Family = 'Emulation Systems'` filter excluded them from every read surface (assets list, search, and the ops agent), while `HAV_CapacityEngine`'s spare-pool query (no family filter) still listed them — the two surfaces disagreed. Fixed data-only via [`scripts/fix_spare_pool.apex`](../scripts/fix_spare_pool.apex) — reclassified the towers under the Veloce Strato CS product and homed each to a colo facility. **2026-09-25:** T-301…304 (Munich, San Jose, Austin, Hsinchu). **2026-09-27:** T-305…306 were seeded afterward with the same `Assemblies` gap and surfaced only in the capacity engine — added them (Seoul, Bangalore). Verified end-to-end: `hav_get_assets(status: "Available")` and `hav_get_capacity_engine().sparePool` now both return all **six** towers, one per colo. No Apex deploy needed; the script is idempotent and safe to re-run if the org is reset.
+- All figures above were pulled live today (2026-09-27); re-verify morning-of.
