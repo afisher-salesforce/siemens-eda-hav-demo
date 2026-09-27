@@ -10,6 +10,7 @@ import {
   Zap,
   ArrowUpRight,
 } from 'lucide-react';
+import LeadToCashMap from './LeadToCashMap';
 
 const vignettes = [
   {
@@ -79,7 +80,7 @@ const vignettes = [
 
 export default function VignetteIndex() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="section-card">
         <div className="px-8 py-8">
@@ -91,6 +92,9 @@ export default function VignetteIndex() {
           </p>
         </div>
       </div>
+
+      {/* Lead-to-Cash capability map — grounds the audience before the stories */}
+      <LeadToCashMap />
 
       {/* Vignette Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
