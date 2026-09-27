@@ -14,6 +14,8 @@ Ties to the vignette arc: **Capacity (Story 2)** → **Proactive Account Team (S
 
 > **Live vs. illustrative:** All three prompts below run against **live** Salesforce data — renewals, utilization, spare pool, and compliance are real records. Consistent with the dashboard's "What's Live vs. What's Illustrative" note, keep the honest line if BOM matching comes up: automated BOM-to-part-number matching is an **illustrative future state** (depends on Lighthouse reconciling to SAP, not yet in place). None of these three prompts touch it — if a stakeholder asks, frame it as roadmap, not a live capability.
 
+> **If EDA asks about proactive/predictive spares & third-party repair orchestration:** The inventory reorder signal — par-levels, below-minimum flagging — is **on-screen today** (Spares view) and the spare pool answers live (Prompt 2). What's **illustrative future-state roadmap**, not live: predictive replenishment from failure-rate forecasts, Slack Connect channels shared with the contract manufacturer, and autonomous outreach to a third-party repair service like PagerDuty (via Slack, Agentforce + Apex, or MuleSoft). Frame it as building on the live spare-pool + telemetry + work-order spine — the same honest line as BOM matching. Vignette 7 carries this as a tagged "Proactive Spares & Vendor Orchestration" section; there's no new prompt for it and no live PagerDuty/MuleSoft wiring to demo.
+
 ---
 
 ## Prompt 1 — The account team's proactive move (Story 6: renewal + expansion)
