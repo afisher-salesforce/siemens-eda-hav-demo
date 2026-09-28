@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   Server,
   Activity,
@@ -21,6 +21,13 @@ import {
   Calendar,
   Hash,
   Plug,
+  Send,
+  Share2,
+  PlusCircle,
+  ArrowUpCircle,
+  MessageSquare,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -33,15 +40,24 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { getDashboardSummary } from '../api/salesforce';
+import {
+  getDashboardSummary,
+  getDashboardExceptions,
+  createAssetRecord,
+  updateWorkOrderStatus,
+} from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { renderChartTooltip } from './ChartTooltip';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
+import { AgentChatContext } from './Layout';
 
-function MetricCard({ icon: Icon, label, value, change, changeType, color, glowColor }) {
-  return (
-    <div className="metric-card group relative overflow-hidden">
+const SLACK_API = '/api/slack';
+const OPS_SLACK_CHANNEL = 'hav-operations';
+
+function MetricCard({ icon: Icon, label, value, change, changeType, color, glowColor, to }) {
+  const inner = (
+    <>
       {/* Subtle glow background */}
       <div
         className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-30"
@@ -69,14 +85,32 @@ function MetricCard({ icon: Icon, label, value, change, changeType, color, glowC
               {change}
             </div>
           )}
+          {to && change == null && (
+            <ArrowUpRight
+              size={14}
+              className="text-th-faint group-hover:text-siemens-accent transition-colors"
+            />
+          )}
         </div>
         <div className="text-2xl font-bold text-th-primary">{value}</div>
         <div className="text-[10px] text-th-muted mt-1 uppercase tracking-[0.08em] font-medium">
           {label}
         </div>
       </div>
-    </div>
+    </>
   );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="metric-card group relative overflow-hidden block hover:border-siemens-accent/40 transition-colors cursor-pointer"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="metric-card group relative overflow-hidden">{inner}</div>;
 }
 
 function LoadingSkeleton() {
@@ -141,9 +175,70 @@ function StatusBadge({ status }) {
 }
 
 
+const HORIZONS = [
+  { key: '30d', label: '30d', days: 30 },
+  { key: '90d', label: '90d', days: 90 },
+  { key: 'QTD', label: 'QTD', days: null },
+];
+
+// Days remaining in the current calendar quarter (used for the QTD horizon)
+function daysToQuarterEnd() {
+  const now = new Date();
+  const q = Math.floor(now.getMonth() / 3);
+  const quarterEnd = new Date(now.getFullYear(), q * 3 + 3, 0); // last day of quarter
+  return Math.max(0, Math.ceil((quarterEnd - now) / (1000 * 60 * 60 * 24)));
+}
+
 export default function DashboardView() {
   const { data, loading, error, refetch } = useSalesforceData(getDashboardSummary);
+  const {
+    data: exceptionsData,
+    loading: exceptionsLoading,
+    refetch: refetchExceptions,
+  } = useSalesforceData(getDashboardExceptions);
+  const openAgentWithPrompt = useContext(AgentChatContext);
   const [expandedRenewal, setExpandedRenewal] = useState(null);
+  const [horizon, setHorizon] = useState('90d');
+  const [toast, setToast] = useState(null);
+  const [busyAction, setBusyAction] = useState(null); // key of the in-flight action
+  const [actionedRows, setActionedRows] = useState({}); // { rowKey: 'Task Created' | 'Escalated' | 'WO Created' }
+  const [sharingBriefing, setSharingBriefing] = useState(false);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // ── Slack share helper (resolve channel → fallback create → post) ──
+  const shareToSlack = async (text, channel = OPS_SLACK_CHANNEL) => {
+    let channelId;
+    try {
+      const resolveRes = await fetch(`${SLACK_API}/channel/${encodeURIComponent(channel)}`);
+      if (resolveRes.ok) {
+        const resolved = await resolveRes.json();
+        channelId = resolved.id || resolved.channelId;
+      }
+    } catch {
+      /* fall through to create */
+    }
+    if (!channelId) {
+      const createRes = await fetch(`${SLACK_API}/channels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: channel }),
+      });
+      if (!createRes.ok) throw new Error('Could not resolve or create Slack channel');
+      const created = await createRes.json();
+      channelId = created.id || created.channelId;
+    }
+    const postRes = await fetch(`${SLACK_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!postRes.ok) throw new Error('Failed to post message to Slack');
+    return true;
+  };
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -153,6 +248,137 @@ export default function DashboardView() {
   const capacityData = data.locationCapacity || [];
   const alerts = data.recentAlerts || [];
   const renewals = data.contractRenewals || [];
+  const exceptions = exceptionsData || [];
+
+  const horizonDays = horizon === 'QTD' ? daysToQuarterEnd() : (HORIZONS.find((h) => h.key === horizon)?.days ?? 90);
+
+  // ── Action handlers (real writes to the org) ──
+  const handleShareException = async (ex, rowKey) => {
+    setBusyAction(rowKey + ':slack');
+    try {
+      const text = `:rotating_light: *Exception surfaced from HAV Command Center*\n• *Type:* ${ex.type}\n• *Reference:* ${ex.reference}\n• *Issue:* ${ex.issue}\n• *Owner:* ${ex.assignedTo}\n• *Age:* ${ex.ageDays != null ? `${ex.ageDays}d` : '—'}  •  *Severity:* ${ex.severity}  •  *Status:* ${ex.status}`;
+      await shareToSlack(text);
+      showToast('success', `Shared ${ex.reference} to #${OPS_SLACK_CHANNEL}`);
+    } catch (e) {
+      showToast('error', e.message || 'Failed to share to Slack');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleCreateTask = async (ex, rowKey) => {
+    if (!ex.assetId) {
+      showToast('error', 'No linked asset — cannot create a follow-up task for this record');
+      return;
+    }
+    setBusyAction(rowKey + ':task');
+    try {
+      await createAssetRecord({
+        recordType: 'Case',
+        assetId: ex.assetId,
+        subject: `Follow-up: ${ex.reference}`,
+        description: ex.issue,
+        priority: ex.severity === 'Critical' ? 'High' : 'Medium',
+      });
+      setActionedRows((prev) => ({ ...prev, [rowKey]: 'Task Created' }));
+      showToast('success', `Follow-up task created for ${ex.reference}`);
+    } catch (e) {
+      showToast('error', e.message || 'Failed to create task');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleEscalate = async (ex, rowKey) => {
+    if (!ex.refId) return;
+    setBusyAction(rowKey + ':escalate');
+    try {
+      await updateWorkOrderStatus(ex.refId, { status: 'Escalated', priority: 'Critical' });
+      setActionedRows((prev) => ({ ...prev, [rowKey]: 'Escalated' }));
+      showToast('success', `${ex.reference} escalated to Critical`);
+      refetchExceptions();
+    } catch (e) {
+      showToast('error', e.message || 'Failed to escalate work order');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleCreateWO = async (alert, rowKey) => {
+    if (!alert.assetId) {
+      showToast('error', 'No linked asset — cannot open a work order from this signal');
+      return;
+    }
+    setBusyAction(rowKey + ':wo');
+    try {
+      await createAssetRecord({
+        recordType: 'WorkOrder',
+        assetId: alert.assetId,
+        subject: `Telemetry: ${alert.assetName || 'signal'}`,
+        description: alert.message || 'Telemetry-triggered work order',
+        priority: 'High',
+      });
+      setActionedRows((prev) => ({ ...prev, [rowKey]: 'WO Created' }));
+      showToast('success', `Work order opened for ${alert.assetName || 'asset'}`);
+    } catch (e) {
+      showToast('error', e.message || 'Failed to create work order');
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleShareBriefing = async () => {
+    setSharingBriefing(true);
+    try {
+      const topRenewals = [...renewals]
+        .map((r) => ({
+          ...r,
+          daysLeft: r.contractEnd
+            ? Math.ceil((new Date(r.contractEnd) - new Date()) / (1000 * 60 * 60 * 24))
+            : null,
+        }))
+        .filter((r) => r.daysLeft != null)
+        .sort((a, b) => a.daysLeft - b.daysLeft)
+        .slice(0, 3);
+
+      const lines = [];
+      lines.push(':bar_chart: *HAV Operations Daily Briefing*');
+      lines.push('');
+      lines.push('*KPIs*');
+      lines.push(
+        `• Revenue (annual est.): ${metrics.revenueEstimate != null ? `$${(metrics.revenueEstimate / 1000000).toFixed(1)}M` : '—'}`
+      );
+      lines.push(`• Assets: ${metrics.activeAssets ?? '—'} active / ${metrics.totalAssets ?? '—'} total`);
+      lines.push(`• Avg utilization: ${metrics.avgUtilization != null ? `${metrics.avgUtilization}%` : '—'}`);
+      lines.push(`• Open work orders: ${metrics.openWorkOrders ?? '—'}`);
+      lines.push(`• Critical alerts: ${metrics.criticalAlerts ?? 0}`);
+      lines.push('');
+      lines.push(`*Open Exceptions (${exceptions.length})*`);
+      if (exceptions.length > 0) {
+        exceptions.forEach((ex) => {
+          lines.push(`• [${ex.severity}] ${ex.type} ${ex.reference} — ${ex.issue} (${ex.assignedTo}, ${ex.ageDays != null ? `${ex.ageDays}d` : '—'})`);
+        });
+      } else {
+        lines.push('• None — all clear :white_check_mark:');
+      }
+      lines.push('');
+      lines.push('*Top Upcoming Renewals*');
+      if (topRenewals.length > 0) {
+        topRenewals.forEach((r) => {
+          lines.push(`• ${r.customer || '—'} — ${r.assetName || '—'} — ${r.daysLeft}d remaining`);
+        });
+      } else {
+        lines.push('• No renewals in window');
+      }
+
+      await shareToSlack(lines.join('\n'));
+      showToast('success', `Daily briefing posted to #${OPS_SLACK_CHANNEL}`);
+    } catch (e) {
+      showToast('error', e.message || 'Failed to post briefing');
+    } finally {
+      setSharingBriefing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -167,7 +393,7 @@ export default function DashboardView() {
               : '--'}
           </span>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 flex-wrap justify-end">
           {[
             { label: 'ACTIVE', value: metrics.activeAssets ?? '--', color: '#10b981' },
             { label: 'ALERTS', value: metrics.criticalAlerts ?? 0, color: metrics.criticalAlerts > 0 ? '#f97316' : '#64748b' },
@@ -182,6 +408,39 @@ export default function DashboardView() {
               </div>
             </div>
           ))}
+
+          {/* Time-horizon toggle */}
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-card border border-surface-border">
+            {HORIZONS.map((h) => (
+              <button
+                key={h.key}
+                onClick={() => setHorizon(h.key)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                  horizon === h.key
+                    ? 'bg-siemens-teal text-white'
+                    : 'text-th-muted hover:text-th-secondary hover:bg-surface-card-hover'
+                }`}
+                title={h.key === 'QTD' ? 'Quarter to date' : `Next ${h.label}`}
+              >
+                {h.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Share Briefing to Slack */}
+          <button
+            onClick={handleShareBriefing}
+            disabled={sharingBriefing}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-siemens-teal/10 border border-siemens-teal/30 text-siemens-accent text-xs font-semibold hover:bg-siemens-teal/20 transition-colors disabled:opacity-60"
+            title={`Post the daily briefing to #${OPS_SLACK_CHANNEL}`}
+          >
+            {sharingBriefing ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
+            Share Briefing
+          </button>
         </div>
       </div>
 
@@ -212,13 +471,14 @@ export default function DashboardView() {
           label="Open Work Orders"
           value={metrics.openWorkOrders ?? '--'}
           color="#f59e0b"
+          to="/workorders"
         />
         <MetricCard
           icon={AlertTriangle}
           label="Critical Alerts"
           value={metrics.criticalAlerts ?? '--'}
-          changeType={metrics.criticalAlerts > 0 ? 'down' : undefined}
           color="#f97316"
+          to="/telemetry"
         />
         <MetricCard
           icon={DollarSign}
@@ -314,27 +574,50 @@ export default function DashboardView() {
                       <th>Status</th>
                       <th>Signal</th>
                       <th>Time</th>
+                      <th className="text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {alerts.slice(0, 8).map((alert, i) => (
-                      <tr key={i}>
-                        <td className="font-medium text-th-secondary whitespace-nowrap">
-                          {alert.assetName || '--'}
-                        </td>
-                        <td>
-                          <StatusBadge status={alert.status} />
-                        </td>
-                        <td className="text-th-muted max-w-xs truncate text-xs">
-                          {alert.message || '--'}
-                        </td>
-                        <td className="text-th-faint text-xs whitespace-nowrap font-mono">
-                          {alert.timestamp
-                            ? new Date(alert.timestamp).toLocaleTimeString()
-                            : '--'}
-                        </td>
-                      </tr>
-                    ))}
+                    {alerts.slice(0, 8).map((alert, i) => {
+                      const rowKey = `alert-${i}`;
+                      const actioned = actionedRows[rowKey];
+                      const busy = busyAction === rowKey + ':wo';
+                      return (
+                        <tr key={i}>
+                          <td className="font-medium text-th-secondary whitespace-nowrap">
+                            {alert.assetName || '--'}
+                          </td>
+                          <td>
+                            <StatusBadge status={alert.status} />
+                          </td>
+                          <td className="text-th-muted max-w-xs truncate text-xs">
+                            {alert.message || '--'}
+                          </td>
+                          <td className="text-th-faint text-xs whitespace-nowrap font-mono">
+                            {alert.timestamp
+                              ? new Date(alert.timestamp).toLocaleTimeString()
+                              : '--'}
+                          </td>
+                          <td className="text-right whitespace-nowrap">
+                            {actioned ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                                <CheckCircle2 size={12} /> {actioned}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleCreateWO(alert, rowKey)}
+                                disabled={busy || !alert.assetId}
+                                title={alert.assetId ? 'Open a work order from this signal' : 'No linked asset'}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {busy ? <Loader2 size={11} className="animate-spin" /> : <PlusCircle size={11} />}
+                                Create WO
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -422,7 +705,7 @@ export default function DashboardView() {
         </Link>
       </div>
 
-      {/* Exceptions & Escalations — surfaces problem records */}
+      {/* Exceptions & Escalations — live problem records with per-row actions */}
       <div className="section-card border-amber-500/20">
         <div className="section-card-header">
           <div className="flex items-center gap-2">
@@ -431,65 +714,146 @@ export default function DashboardView() {
               Exceptions & Escalations
             </h2>
           </div>
-          <span className="badge badge-yellow">
-            {2} Requires Attention
-          </span>
+          <div className="flex items-center gap-3">
+            {openAgentWithPrompt && (
+              <button
+                onClick={() =>
+                  openAgentWithPrompt(
+                    'hav',
+                    'Summarize the open operational exceptions and recommend next steps.'
+                  )
+                }
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors"
+                title="Ask the HAV agent to triage these exceptions"
+              >
+                <MessageSquare size={12} />
+                Ask Agent
+              </button>
+            )}
+            <span className="badge badge-yellow">
+              {exceptions.length} Requires Attention
+            </span>
+          </div>
         </div>
         <div className="section-card-body p-0">
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Reference</th>
-                  <th>Issue</th>
-                  <th>Assigned To</th>
-                  <th>Age</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="bg-orange-500/[0.03]">
-                  <td>
-                    <span className="inline-flex items-center gap-1.5 text-xs">
-                      <Wrench size={12} className="text-amber-400" />
-                      <span className="text-th-secondary">Work Order</span>
-                    </span>
-                  </td>
-                  <td className="font-medium text-th-secondary font-mono">WO-2024-0847</td>
-                  <td className="text-th-muted text-xs max-w-xs">
-                    Serial number mismatch — field asset SN VLX-7842 does not match CRM record SN VLX-7824. Board swap pending verification.
-                  </td>
-                  <td className="text-th-secondary text-xs">Ken Snyder</td>
-                  <td>
-                    <span className="text-orange-400 font-mono text-xs font-semibold">12d</span>
-                  </td>
-                  <td>
-                    <span className="badge badge-red">Escalated</span>
-                  </td>
-                </tr>
-                <tr className="bg-amber-500/[0.03]">
-                  <td>
-                    <span className="inline-flex items-center gap-1.5 text-xs">
-                      <Shield size={12} className="text-orange-400" />
-                      <span className="text-th-secondary">Order</span>
-                    </span>
-                  </td>
-                  <td className="font-medium text-th-secondary font-mono">ORD-2024-1203</td>
-                  <td className="text-th-muted text-xs max-w-xs">
-                    Compliance hold — end-user entity flagged for additional EAR screening. Awaiting export control review before shipment release.
-                  </td>
-                  <td className="text-th-secondary text-xs">Russell Forsyth</td>
-                  <td>
-                    <span className="text-amber-400 font-mono text-xs font-semibold">3d</span>
-                  </td>
-                  <td>
-                    <span className="badge badge-orange">On Hold</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {exceptionsLoading ? (
+            <div className="flex items-center justify-center h-32 text-sm text-th-faint">
+              <Loader2 size={16} className="animate-spin mr-2" /> Loading exceptions…
+            </div>
+          ) : exceptions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Reference</th>
+                    <th>Issue</th>
+                    <th>Assigned To</th>
+                    <th>Age</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exceptions.map((ex, i) => {
+                    const rowKey = `ex-${ex.refId || i}`;
+                    const actioned = actionedRows[rowKey];
+                    const isWO = ex.type === 'Work Order';
+                    const rowTint = ex.severity === 'Critical' ? 'bg-orange-500/[0.03]' : 'bg-amber-500/[0.03]';
+                    const ageColor = ex.ageDays != null && ex.ageDays > 7 ? 'text-orange-400' : 'text-amber-400';
+                    const statusBadge = ex.severity === 'Critical' ? 'badge-red' : 'badge-orange';
+                    return (
+                      <tr key={rowKey} className={rowTint}>
+                        <td>
+                          <span className="inline-flex items-center gap-1.5 text-xs">
+                            {isWO ? (
+                              <Wrench size={12} className="text-amber-400" />
+                            ) : (
+                              <Shield size={12} className="text-orange-400" />
+                            )}
+                            <span className="text-th-secondary">{ex.type}</span>
+                          </span>
+                        </td>
+                        <td className="font-medium text-th-secondary font-mono">{ex.reference}</td>
+                        <td className="text-th-muted text-xs max-w-xs">{ex.issue}</td>
+                        <td className="text-th-secondary text-xs">{ex.assignedTo}</td>
+                        <td>
+                          <span className={`${ageColor} font-mono text-xs font-semibold`}>
+                            {ex.ageDays != null ? `${ex.ageDays}d` : '--'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${statusBadge}`}>{ex.status}</span>
+                        </td>
+                        <td className="text-right whitespace-nowrap">
+                          {actioned ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                              <CheckCircle2 size={12} /> {actioned}
+                            </span>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5">
+                              <Link
+                                to={ex.link}
+                                className="p-1 rounded-md text-th-muted hover:text-siemens-accent hover:bg-siemens-teal/10 transition-colors"
+                                title="Open record"
+                              >
+                                <ArrowUpRight size={13} />
+                              </Link>
+                              <button
+                                onClick={() => handleShareException(ex, rowKey)}
+                                disabled={busyAction === rowKey + ':slack'}
+                                className="p-1 rounded-md text-th-muted hover:text-siemens-accent hover:bg-siemens-teal/10 transition-colors disabled:opacity-40"
+                                title={`Share to #${OPS_SLACK_CHANNEL}`}
+                              >
+                                {busyAction === rowKey + ':slack' ? (
+                                  <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                  <Share2 size={13} />
+                                )}
+                              </button>
+                              {isWO && (
+                                <button
+                                  onClick={() => handleEscalate(ex, rowKey)}
+                                  disabled={busyAction === rowKey + ':escalate'}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-orange-400 border border-orange-500/30 hover:bg-orange-500/10 transition-colors disabled:opacity-40"
+                                  title="Escalate to Critical"
+                                >
+                                  {busyAction === rowKey + ':escalate' ? (
+                                    <Loader2 size={11} className="animate-spin" />
+                                  ) : (
+                                    <ArrowUpCircle size={11} />
+                                  )}
+                                  Escalate
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleCreateTask(ex, rowKey)}
+                                disabled={busyAction === rowKey + ':task' || !ex.assetId}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                title={ex.assetId ? 'Create a follow-up task' : 'No linked asset'}
+                              >
+                                {busyAction === rowKey + ':task' ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : (
+                                  <PlusCircle size={11} />
+                                )}
+                                Task
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 text-center">
+              <CheckCircle2 size={20} className="text-emerald-400 mb-2" />
+              <span className="text-sm text-th-faint">No open exceptions — all clear.</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -498,16 +862,44 @@ export default function DashboardView() {
         <div className="section-card-header">
           <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
             Upcoming Contract Renewals
+            <span className="ml-2 text-th-faint normal-case tracking-normal">· next {horizon === 'QTD' ? 'quarter' : horizon}</span>
           </h2>
-          <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-siemens-accent" />
-            <span className="text-[10px] text-siemens-accent font-medium uppercase tracking-wider">
-              AI Monitored
-            </span>
+          <div className="flex items-center gap-3">
+            {openAgentWithPrompt && (
+              <button
+                onClick={() =>
+                  openAgentWithPrompt(
+                    'hav',
+                    `Draft renewal outreach for the contracts expiring in the next ${horizon === 'QTD' ? 'quarter' : horizon}.`
+                  )
+                }
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors"
+                title="Ask the HAV agent to draft renewal outreach"
+              >
+                <MessageSquare size={12} />
+                Ask Agent
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <Sparkles size={12} className="text-siemens-accent" />
+              <span className="text-[10px] text-siemens-accent font-medium uppercase tracking-wider">
+                AI Monitored
+              </span>
+            </div>
           </div>
         </div>
         <div className="section-card-body p-0">
-          {renewals.length > 0 ? (
+          {(() => {
+            const scopedRenewals = renewals
+              .map((r, i) => ({
+                r,
+                i,
+                daysLeft: r.contractEnd
+                  ? Math.ceil((new Date(r.contractEnd) - new Date()) / (1000 * 60 * 60 * 24))
+                  : null,
+              }))
+              .filter(({ daysLeft }) => daysLeft != null && daysLeft <= horizonDays);
+            return scopedRenewals.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
@@ -522,12 +914,7 @@ export default function DashboardView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {renewals.map((r, i) => {
-                    const daysLeft = r.contractEnd
-                      ? Math.ceil(
-                          (new Date(r.contractEnd) - new Date()) / (1000 * 60 * 60 * 24)
-                        )
-                      : null;
+                  {scopedRenewals.map(({ r, i, daysLeft }) => {
                     const isExpanded = expandedRenewal === i;
                     return (
                       <React.Fragment key={i}>
@@ -685,11 +1072,28 @@ export default function DashboardView() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-32 text-sm text-th-faint">
-              No upcoming renewals
+              No renewals in the next {horizon === 'QTD' ? 'quarter' : horizon}
             </div>
-          )}
+          );
+          })()}
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-2xl text-sm text-white ${
+            toast.type === 'success' ? 'bg-emerald-900/90 border border-emerald-500/40' : 'bg-red-900/90 border border-red-500/40'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 size={16} className="text-emerald-300" />
+          ) : (
+            <AlertTriangle size={16} className="text-red-300" />
+          )}
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
