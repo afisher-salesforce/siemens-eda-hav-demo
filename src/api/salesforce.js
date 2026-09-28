@@ -86,6 +86,15 @@ function transformDashboard(raw, telemetryRaw, assetsRaw) {
     };
   });
 
+  // Asset name → Id map (used to attach a real assetId to alerts/exceptions so
+  // Create-Case / Create-WorkOrder writes can target a record — no Apex change needed).
+  const assetIdByName = {};
+  if (assetsRaw && Array.isArray(assetsRaw)) {
+    assetsRaw.forEach((a) => {
+      if (a.Name && a.Id) assetIdByName[a.Name] = a.Id;
+    });
+  }
+
   // Build recentAlerts from telemetry data — show Error/Warning status entries
   const recentAlerts = [];
   if (telemetryRaw && Array.isArray(telemetryRaw)) {
@@ -95,6 +104,7 @@ function transformDashboard(raw, telemetryRaw, assetsRaw) {
       .forEach((t) => {
         recentAlerts.push({
           assetName: t.AssetName,
+          assetId: t.AssetId || assetIdByName[t.AssetName] || null,
           status: t.Status,
           message: t.Status === 'Error'
             ? `${t.ErrorCount || 0} errors — CPU ${t.CPUUtilization || 0}%, Temp ${t.TemperatureC || 0}°C`
@@ -495,6 +505,7 @@ function transformWorkOrders(raw) {
     subject: wo.Subject,
     status: wo.Status,
     priority: wo.Priority,
+    assetId: wo.AssetId || null,
     assetName: wo.AssetName,
     customer: wo.AccountName,
     rmaNumber: wo.RMANumber,
@@ -1059,6 +1070,102 @@ export async function createAssetRecord(params) {
   });
 }
 
+/**
+ * Get unified dashboard exceptions & escalations from live data.
+ * Combines flagged work orders (escalated / high-priority / RMA-bound) and
+ * flagged compliance records (not cleared/approved) into a single actionable list.
+ *
+ * @returns {Array} exceptions [{ type, reference, refId, assetId, assetName,
+ *          issue, assignedTo, ageDays, status, severity, link }]
+ */
+export async function getDashboardExceptions() {
+  const [workOrders, compliance, assets] = await Promise.all([
+    getWorkOrders().catch(() => []),
+    getComplianceData().catch(() => ({ complianceRecords: [] })),
+    getAssets().catch(() => []),
+  ]);
+
+  // The /hav/workorders list endpoint returns AssetName but not AssetId, so
+  // resolve the Salesforce Asset Id from the assets list to enable Create Task.
+  const assetIdByName = {};
+  (assets || []).forEach((a) => {
+    if (a?.name && a?.id) assetIdByName[a.name] = a.id;
+  });
+
+  const now = Date.now();
+  const ageInDays = (dateStr) => {
+    if (!dateStr) return null;
+    const t = new Date(dateStr).getTime();
+    if (Number.isNaN(t)) return null;
+    return Math.max(0, Math.round((now - t) / 86400000));
+  };
+
+  const exceptions = [];
+
+  // ── Work-order exceptions: escalated, high/critical priority, or RMA-bound ──
+  // Only OPEN work orders — a completed/closed/cancelled WO is not an open exception.
+  const TERMINAL_WO = ['completed', 'closed', 'cancelled', 'canceled'];
+  (workOrders || []).forEach((wo) => {
+    const priority = (wo.priority || '').toLowerCase();
+    const status = (wo.status || '').toLowerCase();
+    if (TERMINAL_WO.includes(status)) return;
+    const isEscalated = status === 'escalated';
+    const isHighPriority = priority === 'high' || priority === 'critical';
+    const hasRma = !!wo.rmaNumber;
+    if (!isEscalated && !isHighPriority && !hasRma) return;
+
+    const severity = isEscalated || priority === 'critical' ? 'Critical' : isHighPriority ? 'High' : 'Medium';
+    exceptions.push({
+      type: 'Work Order',
+      reference: wo.workOrderNumber || wo.id,
+      refId: wo.id,
+      assetId: wo.assetId || assetIdByName[wo.assetName] || null,
+      assetName: wo.assetName || null,
+      issue: wo.subject || (hasRma ? `RMA ${wo.rmaNumber} — vendor repair` : 'Escalated work order'),
+      assignedTo: wo.customer || wo.vendor || '—',
+      ageDays: ageInDays(wo.createdDate),
+      status: wo.status || 'Open',
+      severity,
+      link: '/workorders',
+    });
+  });
+
+  // ── Compliance exceptions: records not cleared/approved (flagged / hold) ──
+  (compliance?.complianceRecords || []).forEach((cr) => {
+    const cs = (cr.complianceStatus || '').toLowerCase();
+    const outcome = (cr.assessmentOutcome || '').toLowerCase();
+    const isClear = cs.includes('clear') || cs.includes('approv') || outcome.includes('clear') || outcome.includes('approv') || outcome.includes('pass');
+    if (isClear) return;
+
+    const isHold = cs.includes('hold') || cs.includes('block') || cs.includes('embarg') || outcome.includes('hold') || outcome.includes('block');
+    exceptions.push({
+      type: 'Compliance',
+      reference: cr.quote?.quoteNumber || cr.name || cr.id,
+      refId: cr.id,
+      assetId: null, // compliance records are not asset-linked
+      assetName: cr.account?.name || null,
+      issue: cr.assessmentOutcome
+        ? `${cr.complianceStatus || 'Flagged'} — ${cr.assessmentOutcome}`
+        : (cr.complianceStatus || 'Compliance review required'),
+      assignedTo: cr.account?.name || 'Trade Compliance',
+      ageDays: ageInDays(cr.createdDate),
+      status: cr.complianceStatus || 'Flagged',
+      severity: isHold ? 'Critical' : 'High',
+      link: '/orders/compliance',
+    });
+  });
+
+  // Sort by severity (Critical > High > Medium) then by age (oldest first)
+  const rank = { Critical: 0, High: 1, Medium: 2 };
+  exceptions.sort((a, b) => {
+    const s = (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3);
+    if (s !== 0) return s;
+    return (b.ageDays || 0) - (a.ageDays || 0);
+  });
+
+  return exceptions.slice(0, 6);
+}
+
 export default {
   getDashboardSummary,
   getAssets,
@@ -1078,4 +1185,5 @@ export default {
   updateWorkOrderStatus,
   getCases,
   createAssetRecord,
+  getDashboardExceptions,
 };
