@@ -19,6 +19,8 @@ import { getOrders } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
+import DemoContextPanel from './DemoContextPanel';
+import CONTEXT from './demoContextData';
 import { getSlackChannelName } from '../utils/slackChannel';
 
 // Workflow stages that replace the SharePoint/email traveler
@@ -317,27 +319,44 @@ function TravelerCard({ order, isExpanded, onToggle }) {
   );
 }
 
+// Map an order's stage count to one of the four summary buckets
+function getTravelerBucket(order) {
+  const stages = getTravelerProgress(order);
+  if (stages >= 6) return 'completed';
+  if (stages >= 4) return 'inTransit';
+  if (stages >= 2) return 'processing';
+  return 'screening';
+}
+
 export default function TravelerView() {
   const { data, loading, error, refetch } = useSalesforceData(getOrders);
   const [expandedTraveler, setExpandedTraveler] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null); // null = all; else a bucket key
 
   const orders = useMemo(() => {
     if (!data || !Array.isArray(data)) return [];
     return data.filter((o) => o.status !== 'Cancelled' && o.status !== 'Expired');
   }, [data]);
 
-  // Summary stats
+  // Summary stats — always reflect the full set, independent of the active filter
   const stats = useMemo(() => {
     let completed = 0, inTransit = 0, processing = 0, screening = 0;
     for (const o of orders) {
-      const stages = getTravelerProgress(o);
-      if (stages >= 6) completed++;
-      else if (stages >= 4) inTransit++;
-      else if (stages >= 2) processing++;
-      else screening++;
+      switch (getTravelerBucket(o)) {
+        case 'completed': completed++; break;
+        case 'inTransit': inTransit++; break;
+        case 'processing': processing++; break;
+        default: screening++;
+      }
     }
     return { completed, inTransit, processing, screening, total: orders.length };
   }, [orders]);
+
+  // Travelers narrowed by the active status-card filter
+  const visibleOrders = useMemo(
+    () => (statusFilter ? orders.filter((o) => getTravelerBucket(o) === statusFilter) : orders),
+    [orders, statusFilter]
+  );
 
   if (error) {
     return (
@@ -368,8 +387,19 @@ export default function TravelerView() {
     );
   }
 
+  // Metric-card definitions — "Total" clears the filter; the rest toggle a bucket
+  const metricCards = [
+    { key: null, label: 'Total', value: stats.total, color: 'text-th-primary' },
+    { key: 'screening', label: 'Screening', value: stats.screening, color: 'text-amber-400' },
+    { key: 'processing', label: 'Processing', value: stats.processing, color: 'text-siemens-accent' },
+    { key: 'inTransit', label: 'In Transit', value: stats.inTransit, color: 'text-blue-400' },
+    { key: 'completed', label: 'Completed', value: stats.completed, color: 'text-emerald-400' },
+  ];
+
   return (
     <div className="space-y-6">
+      <DemoContextPanel {...CONTEXT.traveler} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -383,28 +413,24 @@ export default function TravelerView() {
         </div>
       </div>
 
-      {/* Summary Metrics */}
+      {/* Summary Metrics — click a card to filter travelers by stage */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="metric-card">
-          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Total</div>
-          <div className="text-xl font-bold text-th-primary">{stats.total}</div>
-        </div>
-        <div className="metric-card">
-          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Screening</div>
-          <div className="text-xl font-bold text-amber-400">{stats.screening}</div>
-        </div>
-        <div className="metric-card">
-          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Processing</div>
-          <div className="text-xl font-bold text-siemens-accent">{stats.processing}</div>
-        </div>
-        <div className="metric-card">
-          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">In Transit</div>
-          <div className="text-xl font-bold text-blue-400">{stats.inTransit}</div>
-        </div>
-        <div className="metric-card">
-          <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Completed</div>
-          <div className="text-xl font-bold text-emerald-400">{stats.completed}</div>
-        </div>
+        {metricCards.map((card) => {
+          const isActive = statusFilter === card.key;
+          return (
+            <button
+              key={card.label}
+              onClick={() => setStatusFilter(card.key)}
+              aria-pressed={isActive}
+              className={`metric-card text-left transition-colors cursor-pointer hover:border-siemens-teal/40 ${
+                isActive ? 'ring-1 ring-siemens-teal/50 border-siemens-teal/40' : ''
+              }`}
+            >
+              <div className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">{card.label}</div>
+              <div className={`text-xl font-bold ${card.color}`}>{card.value}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Stage Legend */}
@@ -421,15 +447,25 @@ export default function TravelerView() {
             </span>
           </div>
         ))}
-        <div className="text-[10px] text-th-faint ml-auto">
-          Click a traveler to view stage detail
+        <div className="flex items-center gap-3 ml-auto">
+          {statusFilter && (
+            <button
+              onClick={() => setStatusFilter(null)}
+              className="text-[10px] text-siemens-accent hover:text-th-primary uppercase tracking-wider font-medium"
+            >
+              Clear filter ✕
+            </button>
+          )}
+          <span className="text-[10px] text-th-faint">
+            Click a traveler to view stage detail
+          </span>
         </div>
       </div>
 
       {/* Traveler Cards */}
-      {orders.length > 0 ? (
+      {visibleOrders.length > 0 ? (
         <div className="space-y-4">
-          {orders.map((order, i) => (
+          {visibleOrders.map((order, i) => (
             <TravelerCard
               key={order.id || i}
               order={order}
@@ -443,7 +479,9 @@ export default function TravelerView() {
       ) : (
         <div className="section-card">
           <div className="flex items-center justify-center py-16 text-sm text-th-faint">
-            No active order travelers
+            {orders.length > 0 && statusFilter
+              ? 'No travelers in this stage'
+              : 'No active order travelers'}
           </div>
         </div>
       )}
