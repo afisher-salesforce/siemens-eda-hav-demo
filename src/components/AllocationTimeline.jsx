@@ -110,7 +110,9 @@ export default function AllocationTimeline() {
 
     const byLocation = {};
     assets.forEach((asset) => {
-      const loc = asset.location || 'Unassigned';
+      // Assets with no colo mapping are customer-premise installs / loaners, not a
+      // data error — group them under "Customer Locations" rather than "Unassigned".
+      const loc = asset.location || 'Customer Locations';
       if (!byLocation[loc]) byLocation[loc] = {};
       const cust = asset.customer || 'Unallocated';
       if (!byLocation[loc][cust]) {
