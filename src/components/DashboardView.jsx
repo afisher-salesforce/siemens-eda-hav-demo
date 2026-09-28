@@ -710,19 +710,27 @@ export default function DashboardView() {
         <div className="section-card-header">
           <div className="flex items-center gap-2">
             <AlertTriangle size={14} className="text-amber-400" />
-            <h2 className="text-[11px] font-semibold text-amber-400 uppercase tracking-[0.1em]">
+            <h2 className="text-[11px] font-semibold text-th-secondary uppercase tracking-[0.1em]">
               Exceptions & Escalations
             </h2>
           </div>
           <div className="flex items-center gap-3">
             {openAgentWithPrompt && (
               <button
-                onClick={() =>
+                onClick={() => {
+                  const rows = exceptions.length
+                    ? exceptions
+                        .map(
+                          (ex) =>
+                            `- [${ex.severity}] ${ex.type} ${ex.reference} — ${ex.issue} — assigned to ${ex.assignedTo} — ${ex.status}${ex.ageDays != null ? ` — ${ex.ageDays}d old` : ''}`
+                        )
+                        .join('\n')
+                    : '- None — all clear.';
                   openAgentWithPrompt(
                     'hav',
-                    'Summarize the open operational exceptions and recommend next steps.'
-                  )
-                }
+                    `Here are the ${exceptions.length} open operational exception(s) currently on the HAV Operations dashboard:\n${rows}\n\nSummarize these exceptions and recommend prioritized next steps. Work from the list above — do not look them up.`
+                  );
+                }}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors"
                 title="Ask the HAV agent to triage these exceptions"
               >
@@ -867,12 +875,30 @@ export default function DashboardView() {
           <div className="flex items-center gap-3">
             {openAgentWithPrompt && (
               <button
-                onClick={() =>
+                onClick={() => {
+                  const windowLabel = horizon === 'QTD' ? 'quarter' : horizon;
+                  const scoped = renewals
+                    .map((r) => ({
+                      r,
+                      daysLeft: r.contractEnd
+                        ? Math.ceil((new Date(r.contractEnd) - new Date()) / (1000 * 60 * 60 * 24))
+                        : null,
+                    }))
+                    .filter(({ daysLeft }) => daysLeft != null && daysLeft <= horizonDays)
+                    .sort((a, b) => a.daysLeft - b.daysLeft);
+                  const rows = scoped.length
+                    ? scoped
+                        .map(
+                          ({ r, daysLeft }) =>
+                            `- ${r.customer || 'Unknown customer'} — ${r.assetName || 'asset n/a'} — ${r.leaseType || 'lease'} — ${r.monthlyValue != null ? `$${r.monthlyValue.toLocaleString()}/mo` : 'value n/a'} — expires ${r.contractEnd ? new Date(r.contractEnd).toLocaleDateString() : 'n/a'} (${daysLeft}d)`
+                        )
+                        .join('\n')
+                    : '- No contracts expiring in this window.';
                   openAgentWithPrompt(
                     'hav',
-                    `Draft renewal outreach for the contracts expiring in the next ${horizon === 'QTD' ? 'quarter' : horizon}.`
-                  )
-                }
+                    `Here are the contract(s) expiring in the next ${windowLabel} from the HAV Operations dashboard:\n${rows}\n\nDraft renewal outreach for these accounts, prioritizing the soonest expirations. Work from the list above — do not look them up.`
+                  );
+                }}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors"
                 title="Ask the HAV agent to draft renewal outreach"
               >
