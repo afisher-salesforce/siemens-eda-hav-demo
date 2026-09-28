@@ -15,12 +15,15 @@ global with sharing class HAV_FinancialService {
         try {
             Map<String, Object> summary = new Map<String, Object>();
 
-            // Total assets by lease type
+            // Total assets by lease type — scope to Blade-tier (the commercial
+            // units that actually carry a commercial arrangement). Facility, Rack,
+            // and spare-tower assets have no Lease_Type__c and would otherwise
+            // dominate the chart as a meaningless "Unspecified" bucket.
             Map<String, Integer> assetsByLeaseType = new Map<String, Integer>();
             for (AggregateResult ar : [
                 SELECT Lease_Type__c leaseType, COUNT(Id) cnt
                 FROM Asset
-                WHERE Product2.Family = 'Emulation Systems'
+                WHERE Product2.Family = 'Emulation Systems' AND Asset_Tier__c = 'Blade'
                 GROUP BY Lease_Type__c
             ]) {
                 String leaseType = (String) ar.get('leaseType');
