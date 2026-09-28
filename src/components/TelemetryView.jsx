@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import {
   Activity,
   AlertTriangle,
   Search,
-  MoreVertical,
   ShieldAlert,
   Wrench,
+  Share2,
+  MessageSquare,
   CheckCircle2,
   Loader2,
   X,
@@ -14,6 +15,20 @@ import { getTelemetry, getAssets, createAssetRecord } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { AgentChatContext } from './Layout';
+
+const SLACK_API = '/api/slack';
+const OPS_SLACK_CHANNEL = 'hav-operations';
+
+// Recency windows for the telemetry time filter. Anchored to the NEWEST reading
+// in the dataset (not wall-clock) so the demo's static seed data — which can be
+// days old — always yields non-empty slices. `ms: null` = show everything.
+const TIME_WINDOWS = [
+  { key: '1h', label: '1h', ms: 60 * 60 * 1000 },
+  { key: '24h', label: '24h', ms: 24 * 60 * 60 * 1000 },
+  { key: '7d', label: '7d', ms: 7 * 24 * 60 * 60 * 1000 },
+  { key: 'All', label: 'All', ms: null },
+];
 
 function StatusBadge({ status }) {
   const styles = {
@@ -44,44 +59,43 @@ function TempDisplay({ temp }) {
   );
 }
 
-function ActionDropdown({ reading, onAction }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
+// Inline per-row action bar — visible act-in-place buttons mirroring the
+// dashboard's row actions, reinforcing that virtualized (Data360) telemetry
+// can be actioned directly from within Salesforce.
+function RowActions({ reading, onAction, onShare, sharing, shared }) {
   return (
-    <div className="relative" ref={ref}>
+    <div className="flex items-center justify-end gap-1">
       <button
-        onClick={() => setOpen(!open)}
-        className="p-1 text-th-faint hover:text-th-secondary transition-colors rounded hover:bg-surface-card-hover"
+        onClick={() => onAction('WorkOrder', reading)}
+        className="p-1.5 text-th-faint hover:text-siemens-accent transition-colors rounded hover:bg-surface-card-hover"
+        title="Create Work Order"
       >
-        <MoreVertical size={14} />
+        <Wrench size={14} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-card border border-surface-border rounded-lg shadow-xl overflow-hidden">
-          <button
-            onClick={() => { setOpen(false); onAction('Case', reading); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-th-secondary hover:bg-surface-card-hover transition-colors"
-          >
-            <ShieldAlert size={13} className="text-amber-400" />
-            Create Case
-          </button>
-          <button
-            onClick={() => { setOpen(false); onAction('WorkOrder', reading); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-th-secondary hover:bg-surface-card-hover transition-colors"
-          >
-            <Wrench size={13} className="text-siemens-accent" />
-            Create Work Order
-          </button>
-        </div>
+      <button
+        onClick={() => onAction('Case', reading)}
+        className="p-1.5 text-th-faint hover:text-amber-400 transition-colors rounded hover:bg-surface-card-hover"
+        title="Create Case"
+      >
+        <ShieldAlert size={14} />
+      </button>
+      {shared ? (
+        <span
+          className="flex items-center gap-1 px-1.5 py-1 text-[10px] font-medium text-emerald-400"
+          title="Shared to Slack"
+        >
+          <CheckCircle2 size={13} />
+          Shared
+        </span>
+      ) : (
+        <button
+          onClick={() => onShare(reading)}
+          disabled={sharing}
+          className="p-1.5 text-th-faint hover:text-siemens-accent transition-colors rounded hover:bg-surface-card-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          title={`Share to #${OPS_SLACK_CHANNEL}`}
+        >
+          {sharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+        </button>
       )}
     </div>
   );
@@ -90,8 +104,10 @@ function ActionDropdown({ reading, onAction }) {
 export default function TelemetryView() {
   const { data, loading, error, refetch } = useSalesforceData(() => getTelemetry(null, 200));
   const { data: allAssets } = useSalesforceData(getAssets);
+  const openAgentWithPrompt = useContext(AgentChatContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [timeWindow, setTimeWindow] = useState('24h');
 
   // Action modal state
   const [actionModal, setActionModal] = useState(null); // { type: 'Case'|'WorkOrder', reading }
@@ -99,6 +115,70 @@ export default function TelemetryView() {
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [actionError, setActionError] = useState(null);
+
+  // Slack share + toast state
+  const [toast, setToast] = useState(null);
+  const [sharingKey, setSharingKey] = useState(null); // row key currently posting
+  const [sharedRows, setSharedRows] = useState({}); // { rowKey: true }
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // ── Slack share helper (resolve channel → fallback create → post) ──
+  const shareToSlack = async (text, channel = OPS_SLACK_CHANNEL) => {
+    let channelId;
+    try {
+      const resolveRes = await fetch(`${SLACK_API}/channel/${encodeURIComponent(channel)}`);
+      if (resolveRes.ok) {
+        const resolved = await resolveRes.json();
+        channelId = resolved.id || resolved.channelId;
+      }
+    } catch {
+      /* fall through to create */
+    }
+    if (!channelId) {
+      const createRes = await fetch(`${SLACK_API}/channels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: channel }),
+      });
+      if (!createRes.ok) throw new Error('Could not resolve or create Slack channel');
+      const created = await createRes.json();
+      channelId = created.id || created.channelId;
+    }
+    const postRes = await fetch(`${SLACK_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!postRes.ok) throw new Error('Failed to post message to Slack');
+    return true;
+  };
+
+  const handleShareReading = async (reading) => {
+    const rowKey = reading.assetId || reading.assetName;
+    setSharingKey(rowKey);
+    try {
+      const text = [
+        ':satellite: *Telemetry signal — HAV (Data360 virtualized)*',
+        `• *Asset:* ${reading.assetName || '—'}`,
+        `• *Status:* ${reading.status || '—'}`,
+        `• *CPU / Memory:* ${reading.cpuPercent ?? '--'}% / ${reading.memoryPercent ?? '--'}%`,
+        `• *Temperature:* ${reading.temperature != null ? reading.temperature.toFixed(1) + '°C' : '--'}`,
+        `• *Errors:* ${reading.errors ?? 0}  •  *Active jobs:* ${reading.jobs ?? '--'}`,
+        `• *Reading time:* ${reading.timestamp ? new Date(reading.timestamp).toLocaleString() : '--'}`,
+      ].join('\n');
+      await shareToSlack(text);
+      setSharedRows((prev) => ({ ...prev, [rowKey]: true }));
+      showToast('success', `Shared ${reading.assetName || 'reading'} to #${OPS_SLACK_CHANNEL}`);
+    } catch (e) {
+      showToast('error', e.message || 'Failed to share to Slack');
+    } finally {
+      setSharingKey(null);
+    }
+  };
 
   // Build asset name → ID map
   const assetIdMap = useMemo(() => {
@@ -178,9 +258,31 @@ export default function TelemetryView() {
 
   const readings = data || [];
 
+  // Anchor time windows to the newest reading in the dataset rather than the
+  // wall clock — the demo's seed telemetry can be days old, and a wall-clock
+  // window would render an empty table.
+  const referenceNow = useMemo(() => {
+    let max = 0;
+    for (const r of readings) {
+      if (r.timestamp) {
+        const t = new Date(r.timestamp).getTime();
+        if (!Number.isNaN(t) && t > max) max = t;
+      }
+    }
+    return max || Date.now();
+  }, [readings]);
+
   const filtered = useMemo(() => {
+    const windowMs = TIME_WINDOWS.find((w) => w.key === timeWindow)?.ms ?? null;
+    const cutoff = windowMs != null ? referenceNow - windowMs : null;
     return readings.filter((r) => {
       if (statusFilter && r.status !== statusFilter) return false;
+      // Time window: drop readings older than the window relative to the
+      // newest reading. Readings without a timestamp are always kept.
+      if (cutoff != null && r.timestamp) {
+        const t = new Date(r.timestamp).getTime();
+        if (!Number.isNaN(t) && t < cutoff) return false;
+      }
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         return (
@@ -190,7 +292,7 @@ export default function TelemetryView() {
       }
       return true;
     });
-  }, [readings, statusFilter, searchTerm]);
+  }, [readings, statusFilter, searchTerm, timeWindow, referenceNow]);
 
   const statuses = useMemo(
     () => [...new Set(readings.map((r) => r.status).filter(Boolean))].sort(),
@@ -238,6 +340,45 @@ export default function TelemetryView() {
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+
+        {/* Time-window filter — relative to the newest reading in the dataset */}
+        <div
+          className="flex items-center gap-1 p-0.5 rounded-lg bg-surface-card border border-surface-border"
+          title="Filter by reading time (windows are relative to the latest reading)"
+        >
+          {TIME_WINDOWS.map((w) => (
+            <button
+              key={w.key}
+              onClick={() => setTimeWindow(w.key)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                timeWindow === w.key
+                  ? 'bg-siemens-teal text-white'
+                  : 'text-th-muted hover:text-th-secondary hover:bg-surface-card-hover'
+              }`}
+              title={w.key === 'All' ? 'All readings' : `Last ${w.label} of readings`}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Ask Agent — hand the current telemetry to the HAV agent */}
+        {openAgentWithPrompt && (
+          <button
+            onClick={() =>
+              openAgentWithPrompt(
+                'hav',
+                'Review the current emulator telemetry and flag any assets that need attention.'
+              )
+            }
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-md text-[11px] font-medium text-siemens-accent border border-siemens-teal/30 hover:bg-siemens-teal/10 transition-colors"
+            title="Ask the HAV agent to review telemetry"
+          >
+            <MessageSquare size={12} />
+            Ask Agent
+          </button>
+        )}
+
         <div className="flex items-center gap-1 ml-auto text-xs text-th-muted">
           <Activity size={12} />
           <span>{loading ? 'Loading...' : `${filtered.length} readings`}</span>
@@ -265,7 +406,7 @@ export default function TelemetryView() {
                   <th>Status</th>
                   <th>Jobs</th>
                   <th>Errors</th>
-                  <th className="w-10"></th>
+                  <th className="text-right w-28">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,7 +485,13 @@ export default function TelemetryView() {
                         )}
                       </td>
                       <td>
-                        <ActionDropdown reading={r} onAction={openActionModal} />
+                        <RowActions
+                          reading={r}
+                          onAction={openActionModal}
+                          onShare={handleShareReading}
+                          sharing={sharingKey === (r.assetId || r.assetName)}
+                          shared={!!sharedRows[r.assetId || r.assetName]}
+                        />
                       </td>
                     </tr>
                   ))
@@ -484,6 +631,22 @@ export default function TelemetryView() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Toast — Slack share / action feedback */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-2xl text-sm text-white ${
+            toast.type === 'success' ? 'bg-emerald-900/90 border border-emerald-500/40' : 'bg-red-900/90 border border-red-500/40'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 size={16} className="text-emerald-300" />
+          ) : (
+            <AlertTriangle size={16} className="text-red-300" />
+          )}
+          {toast.message}
         </div>
       )}
     </div>
