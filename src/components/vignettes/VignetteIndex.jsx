@@ -86,7 +86,7 @@ export default function VignetteIndex() {
       <div className="section-card">
         <div className="px-8 py-8">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-xl font-bold text-th-primary mb-2">Solution Vignettes</h1>
+            <h1 className="text-xl font-bold text-th-primary mb-2">Solution Capabilities</h1>
             <PrintButton />
           </div>
           <p className="text-sm text-th-muted leading-relaxed max-w-2xl">

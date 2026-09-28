@@ -31,7 +31,7 @@ const navItems = [
   {
     to: '/vignettes',
     icon: BookOpen,
-    label: 'Vignettes',
+    label: 'Capabilities',
     children: [
       { to: '/vignettes/order-close', icon: ShoppingCart, label: 'Order Close' },
       { to: '/vignettes/capacity', icon: BarChart3, label: 'Capacity' },

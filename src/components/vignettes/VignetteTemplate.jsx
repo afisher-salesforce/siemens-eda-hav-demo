@@ -89,7 +89,7 @@ export default function VignetteTemplate({
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2 text-xs text-th-muted">
               <Link to="/vignettes" className="hover:text-siemens-accent transition-colors">
-                Vignettes
+                Capabilities
               </Link>
               <ChevronRight size={12} />
               <span className="text-th-muted">Story {number} of {VIGNETTES.length}</span>
@@ -275,7 +275,7 @@ export default function VignetteTemplate({
             to="/vignettes"
             className="flex items-center gap-2 text-sm text-th-muted hover:text-siemens-accent transition-colors"
           >
-            Back to all vignettes
+            Back to all capabilities
           </Link>
         )}
       </div>

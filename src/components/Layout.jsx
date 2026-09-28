@@ -29,7 +29,7 @@ const pageTitles = {
   '/capacity/allocations': 'Allocation Timeline',
   '/capacity/forecast': 'Capacity Forecast',
   '/financials/cogs': 'COGS Reconciliation',
-  '/vignettes': 'Solution Vignettes',
+  '/vignettes': 'Solution Capabilities',
   '/vignettes/order-close': 'The Order That Almost Didn\'t Close',
   '/vignettes/capacity': 'The Capacity Nobody Could See',
   '/vignettes/finance': 'The Spreadsheet That Owns the Quarter Close',
