@@ -71,7 +71,7 @@ const BANDS = [
     items: [
       { icon: Cable, label: 'MuleSoft', note: 'API-led integration to SAP & vendor systems' },
       { icon: Snowflake, label: 'Zero Copy — Snowflake', note: 'No-ETL data federation' },
-      { icon: Activity, label: 'Data 360 / Telemetry', note: 'Streaming + unstructured data, unified', to: '/telemetry' },
+      { icon: Activity, label: 'Data 360 / Telemetry', note: 'Streaming + unstructured data, unified — plus governed metric definitions (revenue, COGS)', to: '/telemetry' },
     ],
   },
   {

@@ -1,5 +1,6 @@
-import { DollarSign, Database, MessageSquare, Bot, FileX } from 'lucide-react';
+import { DollarSign, Database, MessageSquare, Bot, FileX, Ruler, Layers, GitMerge } from 'lucide-react';
 import VignetteTemplate from './VignetteTemplate';
+import FutureStateTag from '../FutureStateTag';
 
 export default function Vignette3() {
   return (
@@ -46,7 +47,71 @@ export default function Vignette3() {
         { name: "Revenue Intelligence", description: "AI-powered revenue forecasting combining pipeline data with historical booking patterns." },
         { name: "Enterprise Integration", description: "Bi-directional SAP synchronization ensuring financial data flows automatically between transaction and intelligence systems." },
         { name: "Data Harmonization", description: "Future-state automated transformation rules matching multi-level BOMs to sellable part numbers across regions — illustrative, dependent on a BOM-to-SAP data model not yet in place." },
+        { name: "Data 360 Semantic Layer (future state — illustrative)", description: "Revenue, COGS, and margin defined once as governed metric definitions (Calculated Insights) instead of per-report Excel formulas — so every surface that reads a metric computes the same number the same way. Illustrative: depends on the Data 360 model being stood up." },
         { name: "Account Management", description: "Complete customer financial history — contracts, orders, revenue, and margin — in a single account record." }
+      ]}
+      extraSections={[
+        {
+          icon: Ruler,
+          title: 'One Definition of Revenue & COGS — the Data 360 Semantic Layer',
+          content: (
+            <div>
+              <div style={{ marginBottom: '1rem' }}>
+                <FutureStateTag
+                  label="Future State"
+                  note="Illustrative. Requires the Data 360 semantic model (governed metric definitions / Calculated Insights) to be stood up over the harmonized CRM + SAP data. The single-source-of-truth revenue figure shown on the dashboards today is real; governing the definition centrally is the roadmap layer."
+                />
+              </div>
+              <p className="text-th-secondary" style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
+                When finance and operations quote two different revenue numbers, the problem usually
+                isn&apos;t stale data — it&apos;s that each team carries its own <em>definition</em> of the metric:
+                which bookings count, when revenue is recognized, how COGS rolls up. Today those rules
+                live in one analyst&apos;s spreadsheet formulas. <strong>Data 360</strong> moves the definition
+                itself into the platform: revenue, COGS, and margin are defined <em>once</em> as governed,
+                reusable metrics over the harmonized CRM + SAP data — so the number is standardized before
+                anyone charts it.
+              </p>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                <div className="section-card" style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <Ruler size={18} color="#f59e0b" />
+                    <strong className="text-th-primary">Standardized metric definitions</strong>
+                  </div>
+                  <p className="text-th-secondary" style={{ lineHeight: 1.6 }}>
+                    Revenue, COGS, and margin become governed metric definitions (Calculated Insights) — the
+                    formula, the filters, and the grain live in one place, versioned and owned by finance,
+                    not re-derived in a workbook every close. Change the definition once and it changes
+                    everywhere.
+                  </p>
+                </div>
+                <div className="section-card" style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <Layers size={18} color="#f59e0b" />
+                    <strong className="text-th-primary">Every surface reads the same number</strong>
+                  </div>
+                  <p className="text-th-secondary" style={{ lineHeight: 1.6 }}>
+                    The finance dashboard, the Agentforce agent, a Slack anomaly alert, and the Revenue
+                    Intelligence charts all resolve the <em>same</em> definition — so &ldquo;what was our Q3
+                    emulation revenue?&rdquo; returns one answer regardless of who asks or where. Finance and
+                    operations stop reconciling two different truths.
+                  </p>
+                </div>
+                <div className="section-card" style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <GitMerge size={18} color="#f59e0b" />
+                    <strong className="text-th-primary">Harmonized across sources</strong>
+                  </div>
+                  <p className="text-th-secondary" style={{ lineHeight: 1.6 }}>
+                    The metric spans systems: CRM pipeline and bookings, SAP actuals, and — via Zero Copy —
+                    data federated from Snowflake, all mapped to one data model. The definition computes
+                    across sources without a copy-and-ETL step, so the standardized number is also a
+                    connected one.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ),
+        },
       ]}
       agentPrompts={[
         { agent: 'hav', label: '"Give me a summary of revenue by product line."', prompt: 'Give me a summary of revenue by product line.' },
