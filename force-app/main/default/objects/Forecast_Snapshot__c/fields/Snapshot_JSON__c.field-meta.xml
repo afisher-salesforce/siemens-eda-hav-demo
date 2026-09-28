@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Snapshot_JSON__c</fullName>
+    <label>Snapshot JSON</label>
+    <description>Full serialized forecast: aggregate totals, per-facility waterfall segments, and drill-down activity lists (expiring agreements, pipeline rows, RMA work orders, spare pool). Lets a snapshot render identically later without recompute.</description>
+    <type>LongTextArea</type>
+    <length>131072</length>
+    <visibleLines>10</visibleLines>
+    <required>false</required>
+</CustomField>

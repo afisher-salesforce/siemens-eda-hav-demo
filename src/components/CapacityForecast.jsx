@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -14,16 +14,32 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Filter,
   Calendar,
   Shield,
   Clock,
   Loader2,
   BookOpen,
+  Camera,
+  History,
+  Share2,
+  GitCompareArrows,
+  Save,
+  FileText,
 } from 'lucide-react';
 // No Recharts — we use pure SVG for waterfall charts
-import { getCapacityEngine, updateWorkOrderStatus } from '../api/salesforce';
+import {
+  getCapacityEngine,
+  updateWorkOrderStatus,
+  saveForecastSnapshot,
+  listForecastSnapshots,
+} from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { useSlackChannels } from '../hooks/useSlackChannels';
+
+const CAPACITY_SLACK_CHANNEL = 'hav-capacity-planning';
+const SLACK_API = '/api/slack';
 // tooltipStyle no longer needed — waterfall uses pure SVG with custom tooltip
 
 // ── Pure SVG Waterfall Chart ──
@@ -512,6 +528,298 @@ function FacilityModal({ facility, workOrders, onClose, onCompleteRepair, comple
   );
 }
 
+// ── "What's behind this number" drill-down modal ──
+// Makes the waterfall auditable: lists the actual records driving each driver.
+function DrillDownModal({ driver, activity, pipelineConfidence, renewalRate, onClose }) {
+  if (!driver) return null;
+
+  const titles = {
+    pipeline: '+Pipeline — Weighted Sales Forecast',
+    expiring: '−Expiring — Contracts at Risk',
+    rmaOut: '−OEM Repair — Hardware at Manufacturer',
+    rmaIn: '+RMA Return — Spare Pool Inbound',
+  };
+  const subtitles = {
+    pipeline: `Projected demand above current base, weighted at ${pipelineConfidence}% win confidence.`,
+    expiring: `Agreements ending within the horizon; ${100 - renewalRate}% assumed non-renewal frees capacity.`,
+    rmaOut: 'Active work orders pulling emulation hardware out of service for repair.',
+    rmaIn: 'Available spare units eligible to return to the floor within the horizon.',
+  };
+
+  const fmtDate = (d) => {
+    if (!d) return '--';
+    try {
+      return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return String(d);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-border">
+          <div className="flex items-center gap-3">
+            <FileText size={16} className="text-siemens-accent" />
+            <div>
+              <h2 className="text-sm font-bold text-th-primary">{titles[driver]}</h2>
+              <p className="text-[10px] text-th-muted max-w-lg">{subtitles[driver]}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-[var(--skeleton-bg)] transition-colors">
+            <X size={16} className="text-th-muted" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-0">
+          {driver === 'expiring' && (
+            <table className="data-table">
+              <thead>
+                <tr><th>Agreement</th><th>Account</th><th>End Date</th><th>Days Left</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {activity.expiringAgreements.length > 0 ? activity.expiringAgreements.map((sa) => (
+                  <tr key={sa.id}>
+                    <td className="font-mono text-xs text-siemens-accent">{sa.name}</td>
+                    <td className="text-th-secondary">{sa.accountName || '--'}</td>
+                    <td className="text-th-muted">{fmtDate(sa.endDate)}</td>
+                    <td className="text-th-secondary font-mono text-center">
+                      {sa.daysUntilExpiry != null ? `${sa.daysUntilExpiry}d` : '--'}
+                    </td>
+                    <td><span className="badge badge-yellow">{sa.status || '--'}</span></td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={5} className="text-center py-8 text-th-faint">No agreements expiring within this horizon</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {driver === 'pipeline' && (
+            <table className="data-table">
+              <thead>
+                <tr><th>Facility</th><th>Location</th><th>Period</th><th>Projected Demand</th><th>Source</th></tr>
+              </thead>
+              <tbody>
+                {activity.pipelineForecasts.length > 0 ? activity.pipelineForecasts.map((fc) => (
+                  <tr key={fc.id}>
+                    <td className="font-mono text-xs text-siemens-accent">{fc.facilityCode || '--'}</td>
+                    <td className="text-th-secondary">{fc.locationName || '--'}</td>
+                    <td className="text-th-muted text-xs">{fmtDate(fc.periodStart)} – {fmtDate(fc.periodEnd)}</td>
+                    <td className="text-th-secondary font-mono text-center">{fc.projectedDemand != null ? fc.projectedDemand : '--'}</td>
+                    <td><span className="badge badge-gray">{fc.source || '--'}</span></td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={5} className="text-center py-8 text-th-faint">No pipeline forecast rows in scope</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {driver === 'rmaOut' && (
+            <table className="data-table">
+              <thead>
+                <tr><th>WO #</th><th>Asset</th><th>Facility</th><th>Vendor</th><th>RMA</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {activity.rmaWorkOrders.length > 0 ? activity.rmaWorkOrders.map((wo) => (
+                  <tr key={wo.id}>
+                    <td className="font-mono text-xs text-siemens-accent">{wo.workOrderNumber}</td>
+                    <td className="text-th-secondary text-sm">{wo.assetName || '--'}</td>
+                    <td className="text-th-muted">{wo.facilityName || wo.facilityCode || '--'}</td>
+                    <td className="text-th-muted">{wo.vendor || '--'}</td>
+                    <td className="text-th-muted font-mono text-xs">{wo.rmaNumber || '--'}</td>
+                    <td>
+                      <span className={`badge ${wo.status === 'In Progress' ? 'badge-blue' : wo.status === 'New' ? 'badge-yellow' : 'badge-gray'}`}>
+                        {wo.status}
+                      </span>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={6} className="text-center py-8 text-th-faint">No active repair work orders</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {driver === 'rmaIn' && (
+            <table className="data-table">
+              <thead>
+                <tr><th>Spare Unit</th><th>Serial</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {activity.sparePool.length > 0 ? activity.sparePool.map((sp) => (
+                  <tr key={sp.id}>
+                    <td className="font-medium text-th-secondary">{sp.name}</td>
+                    <td className="text-th-muted font-mono text-xs">{sp.serialNumber || '--'}</td>
+                    <td><span className="badge badge-green">{sp.status || '--'}</span></td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={3} className="text-center py-8 text-th-faint">No spare units available</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Save Snapshot dialog ──
+function SaveSnapshotDialog({ agg, horizon, scope, onSave, onClose, saving }) {
+  const [label, setLabel] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-border">
+          <div className="flex items-center gap-2.5">
+            <Camera size={16} className="text-siemens-accent" />
+            <h2 className="text-sm font-bold text-th-primary">Save Forecast Snapshot</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-[var(--skeleton-bg)] transition-colors">
+            <X size={16} className="text-th-muted" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">Snapshot Label</label>
+            <input
+              type="text"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="e.g. Q3 Close — base case"
+              autoFocus
+              className="mt-1.5 w-full text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-bg text-th-primary focus:outline-none focus:ring-1 focus:ring-siemens-teal/40"
+            />
+          </div>
+          <div className="bg-surface-bg border border-surface-border rounded-lg p-3 text-xs space-y-1.5">
+            <div className="flex justify-between"><span className="text-th-muted">Horizon</span><span className="text-th-secondary font-mono">{horizonLabel(horizon)}</span></div>
+            <div className="flex justify-between"><span className="text-th-muted">Scope</span><span className="text-th-secondary">{scope.regionFilter === 'all' ? 'All regions' : scope.regionFilter} · {scope.accountFilter === 'all' ? 'All accounts' : scope.accountFilter}</span></div>
+            <div className="flex justify-between"><span className="text-th-muted">Projected</span><span className="text-th-secondary font-mono">{agg.projected} / {agg.totalCapacity} racks</span></div>
+            <div className="flex justify-between">
+              <span className="text-th-muted">Headroom</span>
+              <span className={`font-mono ${agg.headroom < 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{agg.headroom >= 0 ? '+' : ''}{agg.headroom}</span>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button onClick={onClose} className="px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-bg transition-colors">
+              Cancel
+            </button>
+            <button
+              onClick={() => onSave(label.trim() || 'Untitled snapshot')}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-siemens-teal text-white hover:bg-siemens-dark transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              Save Snapshot
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Compare two snapshots — side-by-side delta table ──
+function CompareModal({ pair, onClose }) {
+  if (!pair || pair.length !== 2) return null;
+  const [a, b] = pair;
+
+  const metricRows = [
+    { key: 'baseRacks', label: 'Base' },
+    { key: 'projectedRacks', label: 'Projected' },
+    { key: 'totalCapacity', label: 'Total Capacity' },
+    { key: 'headroom', label: 'Headroom' },
+  ];
+  const inputRows = [
+    { key: 'pipelineConfidence', label: 'Pipeline Confidence', unit: '%' },
+    { key: 'renewalRate', label: 'Renewal Rate', unit: '%' },
+    { key: 'oemRepairLag', label: 'OEM Repair Lag', unit: 'd' },
+    { key: 'decomBuffer', label: 'Decom Buffer', unit: 'd' },
+  ];
+
+  const delta = (x, y) => {
+    const dx = Number(x) || 0;
+    const dy = Number(y) || 0;
+    const d = dy - dx;
+    return d;
+  };
+  const deltaCell = (x, y, unit = '') => {
+    const d = delta(x, y);
+    const cls = d > 0 ? 'text-emerald-400' : d < 0 ? 'text-orange-400' : 'text-th-faint';
+    return <span className={`font-mono ${cls}`}>{d > 0 ? '+' : ''}{d}{unit}</span>;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-surface-card border border-surface-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-border">
+          <div className="flex items-center gap-2.5">
+            <GitCompareArrows size={16} className="text-siemens-accent" />
+            <h2 className="text-sm font-bold text-th-primary">Compare Snapshots</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-[var(--skeleton-bg)] transition-colors">
+            <X size={16} className="text-th-muted" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-5 space-y-5">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th className="text-left">{a.label || a.name}</th>
+                <th className="text-left">{b.label || b.name}</th>
+                <th className="text-left">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="text-[10px] uppercase tracking-wider text-th-faint font-semibold pt-3" colSpan={4}>Results (racks)</td>
+              </tr>
+              {metricRows.map((row) => (
+                <tr key={row.key}>
+                  <td className="text-th-muted">{row.label}</td>
+                  <td className="text-th-secondary font-mono">{a[row.key] != null ? a[row.key] : '--'}</td>
+                  <td className="text-th-secondary font-mono">{b[row.key] != null ? b[row.key] : '--'}</td>
+                  <td>{deltaCell(a[row.key], b[row.key])}</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="text-[10px] uppercase tracking-wider text-th-faint font-semibold pt-3" colSpan={4}>Scenario Inputs</td>
+              </tr>
+              {inputRows.map((row) => (
+                <tr key={row.key}>
+                  <td className="text-th-muted">{row.label}</td>
+                  <td className="text-th-secondary font-mono">{a[row.key] != null ? `${a[row.key]}${row.unit}` : '--'}</td>
+                  <td className="text-th-secondary font-mono">{b[row.key] != null ? `${b[row.key]}${row.unit}` : '--'}</td>
+                  <td>{deltaCell(a[row.key], b[row.key], row.unit)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[10px] text-th-faint italic">
+            Δ is {b.label || b.name} minus {a.label || a.name}. Positive rack deltas are shown green, reductions orange.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Projection Formula Rationale ──
 function ProjectionFormula() {
   return (
@@ -677,21 +985,59 @@ export default function CapacityForecast() {
   const [completingId, setCompletingId] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Snapshot / drill-down / share state
+  const [drillDriver, setDrillDriver] = useState(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
+  const [snapshots, setSnapshots] = useState([]);
+  const [snapshotsLoading, setSnapshotsLoading] = useState(false);
+  const [compareSelection, setCompareSelection] = useState([]);
+  const [comparePair, setComparePair] = useState(null);
+  const [sharing, setSharing] = useState(false);
+
+  const { hasChannel } = useSlackChannels([CAPACITY_SLACK_CHANNEL]);
+  const capacityChannelActive = hasChannel.has(CAPACITY_SLACK_CHANNEL);
+
+  const showToast = useCallback((type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
   // Bilateral write-back: complete a repair
   const handleCompleteRepair = useCallback(async (workOrderId) => {
     setCompletingId(workOrderId);
     try {
       await updateWorkOrderStatus(workOrderId, { status: 'Completed' });
-      setToast({ type: 'success', message: 'Repair completed — capacity restored' });
-      setTimeout(() => setToast(null), 4000);
+      showToast('success', 'Repair completed — capacity restored');
       refetch();
     } catch (err) {
-      setToast({ type: 'error', message: `Failed: ${err.message}` });
-      setTimeout(() => setToast(null), 4000);
+      showToast('error', `Failed: ${err.message}`);
     } finally {
       setCompletingId(null);
     }
-  }, [refetch]);
+  }, [refetch, showToast]);
+
+  // Load saved snapshots from Salesforce
+  const loadSnapshots = useCallback(async () => {
+    setSnapshotsLoading(true);
+    try {
+      const rows = await listForecastSnapshots();
+      setSnapshots(rows);
+    } catch (err) {
+      showToast('error', `Failed to load snapshots: ${err.message}`);
+    } finally {
+      setSnapshotsLoading(false);
+    }
+  }, [showToast]);
+
+  // Lazily load snapshots the first time the panel is opened
+  useEffect(() => {
+    if (snapshotsOpen && snapshots.length === 0 && !snapshotsLoading) {
+      loadSnapshots();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotsOpen]);
 
   // Derive unique accounts and regions from data
   const { allAccounts, allRegions } = useMemo(() => {
@@ -787,6 +1133,7 @@ export default function CapacityForecast() {
         pipelineWeighted,
         capacityFreed,
         expiringAgreements,
+        pipelineForecasts: facForecasts,
         rmaOut: { count: rmaOutCount, workOrders: facilityWOs },
         rmaIn: { count: rmaInCount },
         projected,
@@ -808,6 +1155,42 @@ export default function CapacityForecast() {
       aggBase, aggPipeline, aggExpiring, aggRmaOut, aggRmaIn, aggCapacity
     );
 
+    // Aggregate drill-down activity — the records BEHIND each number, deduped.
+    const seenAgreements = new Set();
+    const allExpiringAgreements = [];
+    facilityResults.forEach((r) => {
+      r.expiringAgreements.forEach((sa) => {
+        if (!seenAgreements.has(sa.id)) {
+          seenAgreements.add(sa.id);
+          allExpiringAgreements.push(sa);
+        }
+      });
+    });
+
+    const seenForecasts = new Set();
+    const allPipelineForecasts = [];
+    facilityResults.forEach((r) => {
+      r.pipelineForecasts.forEach((fc) => {
+        if (!seenForecasts.has(fc.id)) {
+          seenForecasts.add(fc.id);
+          allPipelineForecasts.push({ ...fc, facilityCode: r.facility.code });
+        }
+      });
+    });
+
+    const seenWOs = new Set();
+    const allRmaWorkOrders = [];
+    facilityResults.forEach((r) => {
+      r.rmaOut.workOrders.forEach((wo) => {
+        if (!seenWOs.has(wo.id)) {
+          seenWOs.add(wo.id);
+          allRmaWorkOrders.push(wo);
+        }
+      });
+    });
+
+    const sparePool = engineData.sparePool || [];
+
     return {
       facilities: facilityResults,
       aggregate: {
@@ -821,8 +1204,206 @@ export default function CapacityForecast() {
         headroom: aggCapacity - aggProjected,
         segments: aggSegments,
       },
+      activity: {
+        expiringAgreements: allExpiringAgreements,
+        pipelineForecasts: allPipelineForecasts,
+        rmaWorkOrders: allRmaWorkOrders,
+        sparePool,
+      },
     };
   }, [engineData, timeHorizon, accountFilter, regionFilter, pipelineConfidence, renewalRate, oemRepairLag, decomBuffer]);
+
+  // Serialize the current live scenario into a snapshot payload for persistence.
+  const buildSnapshotPayload = useCallback((label) => {
+    const a = scenarioResults?.aggregate;
+    if (!a) return null;
+    const snapshotData = {
+      capturedAt: new Date().toISOString(),
+      horizon: horizonLabel(timeHorizon),
+      inputs: { timeHorizon, regionFilter, accountFilter, pipelineConfidence, renewalRate, oemRepairLag, decomBuffer },
+      aggregate: a,
+      facilities: (scenarioResults?.facilities || []).map((r) => ({
+        code: r.facility.code,
+        name: r.facility.name,
+        region: r.facility.region,
+        cBase: r.cBase,
+        pipelineWeighted: r.pipelineWeighted,
+        capacityFreed: r.capacityFreed,
+        rmaOut: r.rmaOut.count,
+        rmaIn: r.rmaIn.count,
+        projected: r.projected,
+        totalCapacity: r.totalCapacity,
+        headroom: r.headroom,
+        status: r.status,
+        segments: r.segments,
+      })),
+      activity: scenarioResults?.activity || {},
+    };
+    return {
+      label,
+      horizon: horizonLabel(timeHorizon),
+      regionFilter,
+      accountFilter,
+      capturedBy: 'HAV Console',
+      pipelineConfidence,
+      renewalRate,
+      oemRepairLag,
+      decomBuffer,
+      projectedRacks: a.projected,
+      baseRacks: a.cBase,
+      totalCapacity: a.totalCapacity,
+      headroom: a.headroom,
+      snapshotJson: JSON.stringify(snapshotData),
+    };
+  }, [scenarioResults, timeHorizon, regionFilter, accountFilter, pipelineConfidence, renewalRate, oemRepairLag, decomBuffer]);
+
+  const handleSaveSnapshot = useCallback(async (label) => {
+    const payload = buildSnapshotPayload(label);
+    if (!payload) return;
+    setSaving(true);
+    try {
+      await saveForecastSnapshot(payload);
+      setSaveOpen(false);
+      showToast('success', `Snapshot "${label}" saved`);
+      // Refresh the list if the panel is (or gets) opened
+      setSnapshotsOpen(true);
+      loadSnapshots();
+    } catch (err) {
+      showToast('error', `Save failed: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [buildSnapshotPayload, showToast, loadSnapshots]);
+
+  // Repopulate sliders/filters from a saved snapshot
+  const handleLoadSnapshot = useCallback((snap) => {
+    const inputs = snap.data?.inputs || {};
+    if (inputs.timeHorizon !== undefined) setTimeHorizon(inputs.timeHorizon);
+    if (inputs.regionFilter !== undefined) setRegionFilter(inputs.regionFilter);
+    if (inputs.accountFilter !== undefined) setAccountFilter(inputs.accountFilter);
+    if (inputs.pipelineConfidence !== undefined) setPipelineConfidence(inputs.pipelineConfidence);
+    if (inputs.renewalRate !== undefined) setRenewalRate(inputs.renewalRate);
+    if (inputs.oemRepairLag !== undefined) setOemRepairLag(inputs.oemRepairLag);
+    if (inputs.decomBuffer !== undefined) setDecomBuffer(inputs.decomBuffer);
+    showToast('success', `Loaded "${snap.label || snap.name}"`);
+  }, [showToast]);
+
+  // Toggle a snapshot into the compare selection (max 2)
+  const toggleCompare = useCallback((id) => {
+    setCompareSelection((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  }, []);
+
+  const openCompare = useCallback(() => {
+    if (compareSelection.length !== 2) return;
+    const pair = compareSelection.map((id) => snapshots.find((s) => s.id === id)).filter(Boolean);
+    if (pair.length === 2) setComparePair(pair);
+  }, [compareSelection, snapshots]);
+
+  // Format and post a forecast summary to the Slack capacity channel
+  const shareToSlack = useCallback(async (source) => {
+    const a = source.aggregate || source;
+    setSharing(true);
+    try {
+      // Resolve (or create) the capacity channel
+      let channelId = null;
+      const res = await fetch(`${SLACK_API}/channel/${encodeURIComponent(CAPACITY_SLACK_CHANNEL)}`);
+      if (res.ok) {
+        const json = await res.json();
+        channelId = json.id || json.channelId || (json.channel && json.channel.id);
+      }
+      if (!channelId) {
+        const createRes = await fetch(`${SLACK_API}/channels`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: CAPACITY_SLACK_CHANNEL }),
+        });
+        if (createRes.ok) {
+          const cj = await createRes.json();
+          channelId = cj.id || cj.channelId || (cj.channel && cj.channel.id);
+        }
+      }
+      if (!channelId) throw new Error('Could not resolve capacity channel');
+
+      const overCap = (source.facilities || [])
+        .filter((f) => f.status === 'over')
+        .map((f) => f.code);
+      const scope = source.scopeLabel
+        || `${source.regionFilter && source.regionFilter !== 'all' ? source.regionFilter : 'All regions'} · ${source.accountFilter && source.accountFilter !== 'all' ? source.accountFilter : 'All accounts'}`;
+
+      const lines = [
+        `:bar_chart: *Capacity Forecast — ${source.label || 'Live scenario'}*`,
+        `Horizon: *${source.horizon || horizonLabel(timeHorizon)}*  |  Scope: ${scope}`,
+        '',
+        `• Base deployed: *${a.cBase}* racks`,
+        `• +Pipeline (weighted): *+${a.pipeline}*`,
+        `• −Expiring: *−${a.expiring}*`,
+        `• −OEM repair out: *−${a.rmaOut}*  |  +RMA return: *+${a.rmaIn}*`,
+        `• *Projected: ${a.projected} / ${a.totalCapacity} racks*  (headroom ${a.headroom >= 0 ? '+' : ''}${a.headroom})`,
+      ];
+      if (overCap.length > 0) {
+        lines.push('', `:warning: Over capacity: *${overCap.join(', ')}*`);
+      }
+
+      const postRes = await fetch(`${SLACK_API}/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: lines.join('\n') }),
+      });
+      if (!postRes.ok) throw new Error(`Slack post failed: ${postRes.status}`);
+      showToast('success', `Shared to #${CAPACITY_SLACK_CHANNEL}`);
+    } catch (err) {
+      showToast('error', `Share failed: ${err.message}`);
+    } finally {
+      setSharing(false);
+    }
+  }, [showToast, timeHorizon]);
+
+  // Share the current live scenario
+  const shareCurrentScenario = useCallback(() => {
+    const a = scenarioResults?.aggregate;
+    if (!a) return;
+    shareToSlack({
+      aggregate: a,
+      // Flatten to the same shape the snapshot path uses so the formatter can
+      // read f.code / f.status directly (raw results nest these under f.facility).
+      facilities: (scenarioResults.facilities || []).map((r) => ({
+        code: r.facility.code,
+        name: r.facility.name,
+        status: r.status,
+      })),
+      horizon: horizonLabel(timeHorizon),
+      regionFilter,
+      accountFilter,
+      label: 'Live scenario',
+    });
+  }, [scenarioResults, shareToSlack, timeHorizon, regionFilter, accountFilter]);
+
+  // Share a saved snapshot (reconstruct the aggregate shape the formatter expects)
+  const shareSnapshot = useCallback((snap) => {
+    const d = snap.data || {};
+    const a = d.aggregate || {
+      cBase: snap.baseRacks,
+      pipeline: null,
+      expiring: null,
+      rmaOut: null,
+      rmaIn: null,
+      projected: snap.projectedRacks,
+      totalCapacity: snap.totalCapacity,
+      headroom: snap.headroom,
+    };
+    shareToSlack({
+      aggregate: a,
+      facilities: d.facilities || [],
+      horizon: snap.horizon,
+      regionFilter: snap.regionFilter,
+      accountFilter: snap.accountFilter,
+      label: snap.label || snap.name,
+    });
+  }, [shareToSlack]);
 
   // ── Render ──
   if (error) {
@@ -877,9 +1458,34 @@ export default function CapacityForecast() {
             </p>
           </div>
         </div>
-        <button onClick={refetch} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-card transition-colors">
-          <RefreshCw size={12} /> Refresh
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setSaveOpen(true)}
+            disabled={!agg}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-siemens-accent border border-siemens-teal/40 rounded-md hover:bg-siemens-teal/10 transition-colors disabled:opacity-50"
+          >
+            <Camera size={12} /> Save Snapshot
+          </button>
+          <button
+            onClick={() => setSnapshotsOpen((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-card transition-colors"
+          >
+            <History size={12} /> Snapshots
+          </button>
+          <button
+            onClick={shareCurrentScenario}
+            disabled={!agg || sharing}
+            title={capacityChannelActive ? `Post to #${CAPACITY_SLACK_CHANNEL}` : `Create & post to #${CAPACITY_SLACK_CHANNEL}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-card transition-colors disabled:opacity-50"
+          >
+            {sharing ? <Loader2 size={12} className="animate-spin" /> : <Share2 size={12} />}
+            Share to Slack
+            {capacityChannelActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Channel active" />}
+          </button>
+          <button onClick={refetch} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-th-muted border border-surface-border rounded-md hover:bg-surface-card transition-colors">
+            <RefreshCw size={12} /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Projection Formula Rationale */}
@@ -1022,42 +1628,66 @@ export default function CapacityForecast() {
               <div className="text-[9px] text-th-faint">deployed racks</div>
             </div>
           </div>
-          <div className="metric-card relative overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setDrillDriver('pipeline')}
+            className="metric-card relative overflow-hidden text-left cursor-pointer hover:border-emerald-500/40 transition-colors group"
+          >
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
             <div className="relative">
-              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">+Pipeline</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold flex items-center gap-1">
+                +Pipeline <ChevronRight size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </span>
               <div className="text-xl font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
                 +{agg.pipeline} <ArrowUpRight size={14} />
               </div>
               <div className="text-[9px] text-th-faint">{pipelineConfidence}% confidence</div>
             </div>
-          </div>
-          <div className="metric-card relative overflow-hidden">
+          </button>
+          <button
+            type="button"
+            onClick={() => setDrillDriver('expiring')}
+            className="metric-card relative overflow-hidden text-left cursor-pointer hover:border-orange-500/40 transition-colors group"
+          >
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-orange-500" />
             <div className="relative">
-              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">−Expiring</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold flex items-center gap-1">
+                −Expiring <ChevronRight size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </span>
               <div className="text-xl font-bold text-orange-400 mt-0.5 flex items-center gap-1">
                 −{agg.expiring} <ArrowDownRight size={14} />
               </div>
               <div className="text-[9px] text-th-faint">{renewalRate}% renew</div>
             </div>
-          </div>
-          <div className="metric-card relative overflow-hidden">
+          </button>
+          <button
+            type="button"
+            onClick={() => setDrillDriver('rmaOut')}
+            className="metric-card relative overflow-hidden text-left cursor-pointer hover:border-red-500/40 transition-colors group"
+          >
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-red-500" />
             <div className="relative">
-              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">−OEM Repair</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold flex items-center gap-1">
+                −OEM Repair <ChevronRight size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </span>
               <div className="text-xl font-bold text-red-400 mt-0.5">−{agg.rmaOut}</div>
               <div className="text-[9px] text-th-faint">at manufacturer</div>
             </div>
-          </div>
-          <div className="metric-card relative overflow-hidden">
+          </button>
+          <button
+            type="button"
+            onClick={() => setDrillDriver('rmaIn')}
+            className="metric-card relative overflow-hidden text-left cursor-pointer hover:border-emerald-500/40 transition-colors group"
+          >
             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl bg-emerald-500" />
             <div className="relative">
-              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold">+RMA Return</span>
+              <span className="text-[10px] text-th-muted uppercase tracking-wider font-semibold flex items-center gap-1">
+                +RMA Return <ChevronRight size={9} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+              </span>
               <div className="text-xl font-bold text-emerald-400 mt-0.5">+{agg.rmaIn}</div>
               <div className="text-[9px] text-th-faint">spare pool</div>
             </div>
-          </div>
+          </button>
           <div className="metric-card relative overflow-hidden">
             <div className={`absolute -top-6 -right-6 w-16 h-16 rounded-full opacity-20 blur-2xl ${agg.headroom < 0 ? 'bg-amber-500' : 'bg-indigo-500'}`} />
             <div className="relative">
@@ -1069,6 +1699,109 @@ export default function CapacityForecast() {
                 {agg.headroom >= 0 ? '+' : ''}{agg.headroom} headroom
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Snapshots Panel (history & compare) */}
+      {snapshotsOpen && (
+        <div className="section-card">
+          <div className="section-card-header">
+            <div className="flex items-center gap-2">
+              <History size={14} className="text-siemens-accent" />
+              <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
+                Saved Snapshots
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={openCompare}
+                disabled={compareSelection.length !== 2}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-md border border-surface-border text-th-muted hover:bg-surface-bg transition-colors disabled:opacity-40"
+              >
+                <GitCompareArrows size={11} /> Compare ({compareSelection.length}/2)
+              </button>
+              <button
+                onClick={loadSnapshots}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] text-th-muted border border-surface-border rounded-md hover:bg-surface-bg transition-colors"
+              >
+                <RefreshCw size={11} /> Reload
+              </button>
+            </div>
+          </div>
+          <div className="section-card-body pt-0">
+            {snapshotsLoading ? (
+              <div className="flex items-center justify-center py-8 text-th-faint text-xs gap-2">
+                <Loader2 size={14} className="animate-spin" /> Loading snapshots…
+              </div>
+            ) : snapshots.length === 0 ? (
+              <div className="text-center py-8 text-th-faint text-xs">
+                No snapshots yet. Use <span className="text-siemens-accent">Save Snapshot</span> to freeze the current forecast.
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th className="w-8"></th>
+                    <th>Label</th>
+                    <th>Horizon</th>
+                    <th>Scope</th>
+                    <th>Projected</th>
+                    <th>Headroom</th>
+                    <th>Captured</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {snapshots.map((snap) => (
+                    <tr key={snap.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={compareSelection.includes(snap.id)}
+                          onChange={() => toggleCompare(snap.id)}
+                          className="accent-siemens-teal cursor-pointer"
+                        />
+                      </td>
+                      <td className="font-medium text-th-secondary">{snap.label || snap.name}</td>
+                      <td className="text-th-muted font-mono text-xs">{snap.horizon || '--'}</td>
+                      <td className="text-th-muted text-xs">
+                        {(snap.regionFilter && snap.regionFilter !== 'all') ? snap.regionFilter : 'All'}
+                        {' · '}
+                        {(snap.accountFilter && snap.accountFilter !== 'all') ? snap.accountFilter : 'All'}
+                      </td>
+                      <td className="text-th-secondary font-mono">{snap.projectedRacks != null ? snap.projectedRacks : '--'}<span className="text-th-faint">/{snap.totalCapacity != null ? snap.totalCapacity : '--'}</span></td>
+                      <td>
+                        <span className={`font-mono ${(snap.headroom || 0) < 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {snap.headroom >= 0 ? '+' : ''}{snap.headroom != null ? snap.headroom : '--'}
+                        </span>
+                      </td>
+                      <td className="text-th-muted text-xs">
+                        {snap.createdDate ? new Date(snap.createdDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--'}
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleLoadSnapshot(snap)}
+                            className="px-2 py-1 text-[10px] font-medium rounded-md border border-surface-border text-th-muted hover:bg-surface-bg transition-colors"
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => shareSnapshot(snap)}
+                            disabled={sharing}
+                            title={`Share to #${CAPACITY_SLACK_CHANNEL}`}
+                            className="p-1 rounded-md border border-surface-border text-th-muted hover:bg-surface-bg transition-colors disabled:opacity-50"
+                          >
+                            <Share2 size={11} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
@@ -1197,6 +1930,34 @@ export default function CapacityForecast() {
           onCompleteRepair={handleCompleteRepair}
           completingId={completingId}
         />
+      )}
+
+      {/* Drill-down: "What's behind this number" */}
+      {drillDriver && (
+        <DrillDownModal
+          driver={drillDriver}
+          activity={scenarioResults?.activity || {}}
+          pipelineConfidence={pipelineConfidence}
+          renewalRate={renewalRate}
+          onClose={() => setDrillDriver(null)}
+        />
+      )}
+
+      {/* Save Snapshot dialog */}
+      {saveOpen && (
+        <SaveSnapshotDialog
+          agg={agg}
+          horizon={timeHorizon}
+          scope={{ regionFilter, accountFilter }}
+          onSave={handleSaveSnapshot}
+          onClose={() => setSaveOpen(false)}
+          saving={saving}
+        />
+      )}
+
+      {/* Compare two snapshots */}
+      {comparePair && (
+        <CompareModal pair={comparePair} onClose={() => setComparePair(null)} />
       )}
     </div>
   );
