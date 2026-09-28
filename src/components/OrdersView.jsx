@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { Search, ShoppingCart, AlertTriangle, Filter } from 'lucide-react';
 import { getOrders } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
@@ -33,8 +33,14 @@ function formatCurrency(value) {
 export default function OrdersView() {
   const { data, loading, error, refetch } = useSalesforceData(getOrders);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const orders = data || [];
+
+  const statuses = useMemo(
+    () => [...new Set(orders.map((o) => o.status).filter(Boolean))].sort(),
+    [orders]
+  );
 
   // Derive Slack channel names for all orders
   const slackChannelNames = useMemo(
@@ -44,16 +50,20 @@ export default function OrdersView() {
   const { hasChannel: slackChannels } = useSlackChannels(slackChannelNames);
 
   const filtered = useMemo(() => {
-    if (!searchTerm) return orders;
-    const term = searchTerm.toLowerCase();
-    return orders.filter(
-      (o) =>
-        (o.orderNumber && o.orderNumber.toLowerCase().includes(term)) ||
-        (o.customer && o.customer.toLowerCase().includes(term)) ||
-        (o.product && o.product.toLowerCase().includes(term)) ||
-        (o.agreementName && o.agreementName.toLowerCase().includes(term))
-    );
-  }, [orders, searchTerm]);
+    return orders.filter((o) => {
+      if (filterStatus && o.status !== filterStatus) return false;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        return (
+          (o.orderNumber && o.orderNumber.toLowerCase().includes(term)) ||
+          (o.customer && o.customer.toLowerCase().includes(term)) ||
+          (o.product && o.product.toLowerCase().includes(term)) ||
+          (o.agreementName && o.agreementName.toLowerCase().includes(term))
+        );
+      }
+      return true;
+    });
+  }, [orders, searchTerm, filterStatus]);
 
   if (error) {
     return (
@@ -85,6 +95,19 @@ export default function OrdersView() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-surface-border rounded-md bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50 placeholder:text-th-faint"
           />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter size={14} className="text-th-muted" />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="text-sm border border-surface-border rounded-md px-3 py-2 bg-surface-card text-th-secondary focus:outline-none focus:ring-2 focus:ring-siemens-teal/30 focus:border-siemens-teal/50"
+          >
+            <option value="">All Statuses</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
         <div className="flex items-center gap-1 ml-auto text-xs text-th-muted">
           <ShoppingCart size={12} />
@@ -166,7 +189,7 @@ export default function OrdersView() {
                 ) : (
                   <tr>
                     <td colSpan={10} className="text-center py-12 text-th-faint">
-                      No orders match the current search
+                      No orders match the current filters
                     </td>
                   </tr>
                 )}

@@ -94,6 +94,22 @@ const CONTEXT = {
     handoffs: 'Sales → Compliance → Operations → Logistics → Finance → Customer',
   },
 
+  traveler: {
+    personas: [PERSONAS.russell],
+    painQuote: 'The traveler traveled by email — and got lost at step three.',
+    painPoints: [
+      'Order travelers live in SharePoint and email — re-keyed and forwarded at every handoff',
+      'No live view of where an order sits in the fulfillment pipeline',
+      'A missed step or stale attachment stalls the shipment and hides the delay',
+    ],
+    outcomes: [
+      'Structured, automated workflow replaces the SharePoint/email traveler sheet',
+      'Every stage carries an owner, timestamp, and note — visible to all stakeholders in real time',
+      'Slack collaboration on each order keeps the conversation attached to the record',
+    ],
+    handoffs: 'Order Received → Export Compliance → Logistics → Shipped → Goods Receipt → Install Verified',
+  },
+
   workorders: {
     personas: [PERSONAS.ken],
     painQuote: 'Arena tracks RMAs, SAP tracks costs, email tracks everything else — nothing talks.',
