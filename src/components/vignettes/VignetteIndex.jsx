@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import LeadToCashMap from './LeadToCashMap';
+import { PrintButton } from './VignetteTemplate';
 
 const vignettes = [
   {
@@ -84,7 +85,10 @@ export default function VignetteIndex() {
       {/* Header */}
       <div className="section-card">
         <div className="px-8 py-8">
-          <h1 className="text-xl font-bold text-th-primary mb-2">Solution Vignettes</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-xl font-bold text-th-primary mb-2">Solution Vignettes</h1>
+            <PrintButton />
+          </div>
           <p className="text-sm text-th-muted leading-relaxed max-w-2xl">
             Seven stories illustrating how Siemens EDA's Hardware-Assisted Verification business
             transforms from spreadsheet-driven coordination to connected, intelligent operations

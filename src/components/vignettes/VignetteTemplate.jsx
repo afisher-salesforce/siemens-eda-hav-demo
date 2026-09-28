@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ChevronRight, Sparkles, Shield, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronRight, Sparkles, Shield, Zap, Printer } from 'lucide-react';
 import { AgentChatContext } from '../Layout';
 
 const VIGNETTES = [
@@ -37,6 +37,26 @@ function CapabilityTag({ name, description }) {
   );
 }
 
+/**
+ * PrintButton — opens the browser's print dialog (which offers "Save as PDF")
+ * on the current page. The @media print stylesheet in index.css strips the app
+ * chrome and reflows the page onto clean white paper. Tagged .no-print so the
+ * button itself never appears in the exported document.
+ */
+export function PrintButton({ className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      title="Open the print dialog — choose “Save as PDF” to export this page"
+      className={`no-print inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-siemens-teal/20 text-siemens-accent/80 bg-siemens-teal/5 hover:bg-siemens-teal/15 hover:border-siemens-teal/40 transition-all cursor-pointer ${className}`}
+    >
+      <Printer size={13} className="shrink-0" />
+      <span>Save as PDF</span>
+    </button>
+  );
+}
+
 export default function VignetteTemplate({
   number,
   title,
@@ -66,12 +86,15 @@ export default function VignetteTemplate({
           }}
         />
         <div className="relative px-8 py-10">
-          <div className="flex items-center gap-2 text-xs text-th-muted mb-4">
-            <Link to="/vignettes" className="hover:text-siemens-accent transition-colors">
-              Vignettes
-            </Link>
-            <ChevronRight size={12} />
-            <span className="text-th-muted">Story {number} of {VIGNETTES.length}</span>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 text-xs text-th-muted">
+              <Link to="/vignettes" className="hover:text-siemens-accent transition-colors">
+                Vignettes
+              </Link>
+              <ChevronRight size={12} />
+              <span className="text-th-muted">Story {number} of {VIGNETTES.length}</span>
+            </div>
+            <PrintButton />
           </div>
           <div className="flex items-start gap-5">
             <div
@@ -185,7 +208,7 @@ export default function VignetteTemplate({
 
       {/* Try It With the Agent */}
       {agentPrompts && agentPrompts.length > 0 && openAgentChat && (
-        <div className="section-card overflow-hidden">
+        <div className="section-card overflow-hidden no-print">
           <div className="section-card-header">
             <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">
               Try It With the Agent
@@ -227,7 +250,7 @@ export default function VignetteTemplate({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between py-4">
+      <div className="flex items-center justify-between py-4 no-print">
         {prev ? (
           <Link
             to={prev.path}

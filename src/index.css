@@ -305,3 +305,81 @@ select option {
   @apply bg-surface-card;
   color: var(--text-secondary);
 }
+
+/* ─── Print / Save-as-PDF ─────────────────────────────────────────────── */
+/*
+ * Triggered by the "Save as PDF" button on vignette pages (window.print()).
+ * Strips the app chrome — sidebar, sticky header, agent-chat panels, global
+ * search — and anything tagged .no-print, then reflows the page body onto
+ * clean white paper so the browser's "Save as PDF" produces a faithful,
+ * text-selectable document. Forces light tokens so a dark-mode session still
+ * prints on white with legible ink.
+ */
+@media print {
+  /* App chrome that never belongs on paper */
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Any fixed overlay (agent chat, trade chat, global search) if open */
+  .fixed {
+    display: none !important;
+  }
+
+  /* Drop the sidebar-driven left margin so content spans the page */
+  .ml-16,
+  .ml-56 {
+    margin-left: 0 !important;
+  }
+
+  /* Print on white with light-mode ink regardless of the on-screen theme */
+  :root {
+    --surface-bg: #ffffff;
+    --surface-card: #ffffff;
+    --surface-card-hover: #ffffff;
+    --surface-border: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #1e293b;
+    --text-muted: #334155;
+    --text-faint: #475569;
+    --table-header-bg: #ffffff;
+    --siemens-accent: #006B75;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* Widen the centered content wrappers to use the full printable width */
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl {
+    max-width: none !important;
+  }
+
+  /* Flatten card shadows/blur — they render as muddy gray boxes on paper */
+  .section-card,
+  .metric-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Keep each vignette section together on a page where possible */
+  .section-card {
+    page-break-inside: avoid;
+  }
+
+  /* Decorative radial/blur glows add nothing to a printout */
+  .blur-2xl {
+    display: none !important;
+  }
+
+  /* Print backgrounds and colors as authored, not stripped by the browser */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
