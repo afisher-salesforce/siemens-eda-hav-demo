@@ -1,8 +1,6 @@
 import React from 'react';
 import { DollarSign, AlertTriangle, TrendingUp, BarChart3, Database, Clock } from 'lucide-react';
 import {
-  PieChart,
-  Pie,
   Cell,
   ResponsiveContainer,
   Tooltip,
@@ -12,6 +10,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  LabelList,
   AreaChart,
   Area,
   ComposedChart,
@@ -101,6 +100,26 @@ export default function FinancialsView() {
   const productBreakdown = data?.productBreakdown || [];
   const leaseBreakdown = data?.leaseBreakdown || [];
   const repairCosts = data?.repairCosts || {};
+
+  // Lease-type mix as a horizontal bar chart: sorted descending by share so the
+  // ranking reads top-down, each bar labeled with its % (and count). Replaces a
+  // donut whose small-slice labels ("Sale 3%", "R&D 3%") collided and overlapped.
+  // "Unspecified" is a data-quality bucket, not a real lease type, so it keeps
+  // its true (largest) rank but is drawn in neutral gray to read as uncategorized.
+  const leaseChartData = React.useMemo(() => {
+    const total = leaseBreakdown.reduce((sum, d) => sum + (d.count || 0), 0);
+    return [...leaseBreakdown]
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .map((d) => {
+        const isUnspecified = /unspecified|unknown|none|n\/a/i.test(d.leaseType || '');
+        return {
+          ...d,
+          percent: total > 0 ? (d.count || 0) / total : 0,
+          isUnspecified,
+        };
+      });
+  }, [leaseBreakdown]);
+  const LEASE_MUTED = 'var(--text-faint)';
 
   return (
     <div className="space-y-6">
@@ -214,34 +233,73 @@ export default function FinancialsView() {
             <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Assets by Lease Type</h2>
           </div>
           <div className="section-card-body">
-            {leaseBreakdown.length > 0 ? (
+            {leaseChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={leaseBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={3}
-                    dataKey="count"
-                    nameKey="leaseType"
-                    label={({ leaseType, percent }) =>
-                      `${leaseType} (${(percent * 100).toFixed(0)}%)`
-                    }
-                    labelLine={{ stroke: '#475569' }}
-                  >
-                    {leaseBreakdown.map((_, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart
+                  data={leaseChartData}
+                  layout="vertical"
+                  margin={{ top: 5, right: 64, left: 8, bottom: 5 }}
+                >
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--surface-border)" />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="leaseType"
+                    width={90}
+                    tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                    axisLine={{ stroke: '#1e293b' }}
+                    tickLine={false}
+                  />
                   <Tooltip
+                    cursor={{ fill: 'var(--surface-card-hover)' }}
                     content={renderChartTooltip({
-                      valueFormatter: (v) => `${v} asset${v === 1 ? '' : 's'}`,
+                      valueFormatter: (v, entry) => {
+                        const pct = entry?.payload?.percent;
+                        const pctStr = pct != null ? ` (${(pct * 100).toFixed(0)}%)` : '';
+                        return `${v} asset${v === 1 ? '' : 's'}${pctStr}`;
+                      },
                       labelForName: () => 'Count',
                     })}
                   />
-                </PieChart>
+                  <Bar dataKey="count" name="Count" radius={[0, 4, 4, 0]} maxBarSize={34}>
+                    {leaseChartData.map((entry, index) => {
+                      // Palette colors track descending rank; the Unspecified
+                      // data-quality bucket is drawn muted so it reads as
+                      // uncategorized rather than a peer lease type.
+                      const paletteIdx = leaseChartData
+                        .slice(0, index)
+                        .filter((d) => !d.isUnspecified).length;
+                      return (
+                        <Cell
+                          key={index}
+                          fill={entry.isUnspecified ? LEASE_MUTED : COLORS[paletteIdx % COLORS.length]}
+                        />
+                      );
+                    })}
+                    <LabelList
+                      dataKey="percent"
+                      position="right"
+                      content={({ x, y, width, height, value, index }) => {
+                        const row = leaseChartData[index];
+                        if (!row) return null;
+                        const pct = `${(value * 100).toFixed(0)}%`;
+                        return (
+                          <text
+                            x={x + width + 8}
+                            y={y + height / 2}
+                            dominantBaseline="central"
+                            fontSize={12}
+                            fontWeight={600}
+                            fill="var(--text-secondary)"
+                          >
+                            {pct}
+                            <tspan fill="var(--text-faint)" fontWeight={400}>{` · ${row.count}`}</tspan>
+                          </text>
+                        );
+                      }}
+                    />
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-64 text-sm text-th-faint">
