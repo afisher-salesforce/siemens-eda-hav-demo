@@ -106,6 +106,95 @@
     </div>
   </section>
 
+  <!-- THE LEAD-TO-CASH MOTION -->
+  <section class="max-w-6xl mx-auto px-8 py-4">
+    <h2 class="text-xl font-bold text-siemens-dark mb-1">The Lead-to-Cash Motion</h2>
+    <p class="text-sm text-slate-500 mb-4 max-w-4xl">
+      Before the individual stories, one graphic grounds the whole motion. This solution <strong>extends the sales-CRM investment EDA already runs in Salesforce</strong> — Lead through Quote and Contract are live in their org today — into the downstream fulfillment, provisioning, and service layers, and wires the whole thing into one connected system. <strong>Data flows automatically in and out of Salesforce and Slack, so no one hunts across systems.</strong>
+    </p>
+
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600 bg-slate-100 border border-slate-300 rounded-full px-2 py-0.5">Existing Salesforce</span>
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-siemens-petrol bg-siemens-teal/10 border border-siemens-teal/40 rounded-full px-2 py-0.5">This Solution</span>
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-100 border border-indigo-300 rounded-full px-2 py-0.5">Connected · External</span>
+    </div>
+
+    <!-- Three-phase staged pipeline -->
+    <div class="grid md:grid-cols-3 gap-4">
+      <!-- Phase 1: Demand -> Sell (existing CRM) -->
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-teal">Demand → Sell</div>
+        <div class="text-[11px] text-slate-500 mb-3">Your existing Salesforce CRM</div>
+        <ol class="text-xs text-slate-700 space-y-1.5">
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">1</span><span>Lead</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">2</span><span>Lead Qualification</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">3</span><span>Lead-to-Account Conversion</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">4</span><span>Account Management</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">5</span><span>Opportunity Management</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">6</span><span>Quote Management</span></li>
+          <li class="flex gap-2"><span class="text-slate-400 font-semibold">7</span><span>Contract Management <span class="text-slate-400">(incl. Entitlements)</span></span></li>
+        </ol>
+        <div class="mt-3"><span class="inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-600 bg-slate-100 border border-slate-300 rounded-full px-2 py-0.5">Existing Salesforce</span></div>
+      </div>
+
+      <!-- Phase 2: Fulfill -> Provision (this solution + cash step) -->
+      <div class="rounded-xl border border-siemens-teal/40 bg-siemens-light/60 p-4">
+        <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-teal">Fulfill → Provision</div>
+        <div class="text-[11px] text-slate-500 mb-3">This solution</div>
+        <ol class="text-xs text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-siemens-petrol font-semibold">8</span><span>Order Management <span class="text-slate-500">— order decomposition → asset mapping</span></span></li>
+          <li class="flex gap-2"><span class="text-siemens-petrol font-semibold">9</span><span>Asset Management <span class="text-slate-500">— linked to Accounts, Contracts, Orders, Quotes, Opps, Cases, Work Orders</span></span></li>
+          <li class="flex gap-2"><span class="text-indigo-500 font-semibold">↦</span><span><strong>SAP — Billing & Invoicing</strong> <span class="text-slate-500">— revenue + COGS, the cash step</span></span></li>
+        </ol>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-siemens-petrol bg-siemens-teal/10 border border-siemens-teal/40 rounded-full px-2 py-0.5">This Solution</span>
+          <span class="inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-100 border border-indigo-300 rounded-full px-2 py-0.5">Connected · External</span>
+        </div>
+      </div>
+
+      <!-- Phase 3: Operate -> Serve (this solution) -->
+      <div class="rounded-xl border border-siemens-teal/40 bg-siemens-light/60 p-4">
+        <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-teal">Operate → Serve</div>
+        <div class="text-[11px] text-slate-500 mb-3">This solution</div>
+        <ol class="text-xs text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-siemens-petrol font-semibold">10</span><span>Work Order Management <span class="text-slate-500">— deployment + failure management</span></span></li>
+        </ol>
+        <div class="mt-3"><span class="inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-siemens-petrol bg-siemens-teal/10 border border-siemens-teal/40 rounded-full px-2 py-0.5">This Solution</span></div>
+      </div>
+    </div>
+
+    <!-- Cross-cutting fabric bands -->
+    <div class="mt-4 space-y-3">
+      <div class="rounded-lg border border-siemens-teal/20 bg-siemens-teal/[0.04] px-4 py-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-[0.12em] text-siemens-petrol">Data & Integration Fabric</div>
+            <div class="text-[10px] text-slate-500">Data flows in and out automatically — no manual lookup, no re-keying.</div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">MuleSoft</span>
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">Zero Copy — Snowflake</span>
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">Data 360 / Telemetry</span>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-lg border border-siemens-teal/20 bg-siemens-teal/[0.04] px-4 py-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-[0.12em] text-siemens-petrol">Intelligence & Collaboration</div>
+            <div class="text-[10px] text-slate-500">Insight and action on the same connected data — in Salesforce and in Slack.</div>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">Analytics — Capacity Forecasting</span>
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">Slack + Slack Connect</span>
+            <span class="text-[10px] bg-white border border-slate-200 text-slate-700 rounded-full px-2 py-0.5">Agentforce — Ops + Trade Compliance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- DEMO STRUCTURE: 7 VIGNETTES -->
   <section class="max-w-6xl mx-auto px-8 py-4">
     <h2 class="text-xl font-bold text-siemens-dark mb-1">Demo Flow — Seven Vignettes</h2>
@@ -217,11 +306,12 @@
         <h3 class="font-bold text-sm text-indigo-900 uppercase tracking-wide">What's Live vs. What's Illustrative</h3>
       </div>
       <p class="text-sm text-slate-700 leading-relaxed mb-3">
-        Every screen runs on <strong>live Salesforce data</strong> — orders, capacity, telemetry, work orders, financials, and compliance are real records queried in real time. Two surfaces show a <strong>future-state capability</strong> that depends on data integrations not yet in place; the app tags these in-line as <span class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-100 border border-indigo-300 rounded-full px-2 py-0.5">Illustrative</span> so we never present them as today's reality:
+        Every screen runs on <strong>live Salesforce data</strong> — orders, capacity, telemetry, work orders, financials, and compliance are real records queried in real time. A few surfaces show a <strong>future-state capability</strong> that depends on data integrations or roadmap work not yet in place; the app tags these in-line as <span class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-100 border border-indigo-300 rounded-full px-2 py-0.5">Illustrative</span> so we never present them as today's reality:
       </p>
       <ul class="text-sm text-slate-700 space-y-2">
         <li class="flex gap-2"><span class="text-indigo-500 mt-0.5">•</span><span><strong>BOM match rate</strong> (COGS Reconciliation) — automated multi-level BOM-to-sellable-part matching depends on a data model not yet in place; Lighthouse does not currently reconcile to SAP. Shown to illustrate what closed-loop reconciliation makes possible.</span></li>
         <li class="flex gap-2"><span class="text-indigo-500 mt-0.5">•</span><span><strong>Parts vs. labor cost split</strong> (Contract Manufacturer Portal) — today the contract manufacturer bills against a blanket PO, so there is no itemized parts/labor breakdown. This becomes available once the PO is structured to break them out.</span></li>
+        <li class="flex gap-2"><span class="text-indigo-500 mt-0.5">•</span><span><strong>Proactive spares &amp; vendor orchestration</strong> (Vignette 7) — the reactive closed loop (failure → work order → spare → dispatch → cost → SAP) runs on live data, and the below-minimum reorder signal is on-screen today. What's illustrative roadmap: <em>predictive</em> replenishment from failure-rate forecasts, Slack Connect channels shared with the contract manufacturer, and autonomous outreach to a third-party repair service (e.g. PagerDuty via Slack, Agentforce + Apex, or MuleSoft). Shown to illustrate the move from reactive to ahead-of-failure.</span></li>
       </ul>
       <p class="text-xs text-slate-500 italic mt-3">
         Framing these honestly is deliberate: the customer knows their own data is messier than a clean demo, and calling out the future-state work builds credibility rather than eroding it.
