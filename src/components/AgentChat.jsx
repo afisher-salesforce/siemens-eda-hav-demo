@@ -23,6 +23,7 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const lastPrefillRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,13 +39,19 @@ export default function AgentChat({ open, onClose, prefill, onPrefillConsumed })
     }
   }, [open]);
 
-  // Handle pre-fill from vignette "Try It" buttons
+  // Handle pre-fill from vignette "Try It" and dashboard "Ask Agent" buttons.
+  // Send whenever a NEW prefill arrives while the panel is open — not only into an
+  // empty conversation. Guarding on messages.length===0 broke every Ask Agent click
+  // after the first, since the panel keeps the prior conversation open. We track the
+  // last-consumed prefill by ref so an identical string re-sends only if it changed,
+  // while a genuinely new question always fires even mid-conversation.
   useEffect(() => {
-    if (open && prefill && !loading && messages.length === 0) {
+    if (open && prefill && !loading && prefill !== lastPrefillRef.current) {
+      lastPrefillRef.current = prefill;
       sendMessage(prefill);
       if (onPrefillConsumed) onPrefillConsumed();
     }
-  }, [open, prefill]);
+  }, [open, prefill, loading]);
 
   // Create a new agent session
   const createSession = useCallback(async () => {
