@@ -581,7 +581,7 @@ function ProjectionFormula() {
       {/* Cross-reference to vignette */}
       <p className="text-xs text-th-muted italic">
         For the full business context behind this model, see the{' '}
-        <Link to="/vignettes/capacity" className="text-siemens-accent hover:underline font-medium not-italic">
+        <Link to="/capabilities/capacity" className="text-siemens-accent hover:underline font-medium not-italic">
           Capacity capability
         </Link>.
       </p>

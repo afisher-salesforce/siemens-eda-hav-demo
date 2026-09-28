@@ -16,7 +16,7 @@ import { PrintButton } from './VignetteTemplate';
 const vignettes = [
   {
     number: 1,
-    path: '/vignettes/order-close',
+    path: '/capabilities/order-close',
     title: 'The Order That Almost Didn\'t Close',
     description:
       'Manual loan-to-sale conversion requiring coordination across five teams via email, SharePoint, and SAP. Quarter-end fire drills risk deals slipping.',
@@ -25,7 +25,7 @@ const vignettes = [
   },
   {
     number: 2,
-    path: '/vignettes/capacity',
+    path: '/capabilities/capacity',
     title: 'The Capacity Nobody Could See',
     description:
       'Monster spreadsheet for colo capacity tracking with no connection between the opportunity pipeline and physical hardware availability.',
@@ -34,7 +34,7 @@ const vignettes = [
   },
   {
     number: 3,
-    path: '/vignettes/finance',
+    path: '/capabilities/finance',
     title: 'The Spreadsheet That Owns the Quarter Close',
     description:
       'Monthly manual reconciliation of revenue vs. COGS — pulling SAP reports, matching multi-level BOMs, assembling Excel packages for auditors.',
@@ -43,7 +43,7 @@ const vignettes = [
   },
   {
     number: 4,
-    path: '/vignettes/traveler',
+    path: '/capabilities/traveler',
     title: 'The Traveler That Traveled by Email',
     description:
       'SharePoint Excel traveler emailed between operations, MED, logistics, vendor, and compliance. One missed update breaks the entire order chain.',
@@ -52,7 +52,7 @@ const vignettes = [
   },
   {
     number: 5,
-    path: '/vignettes/platform',
+    path: '/capabilities/platform',
     title: 'The Platform That Connects It All',
     description:
       'Every stakeholder works from a different system or spreadsheet. Overlapping data, conflicting versions, no shared source of truth.',
@@ -61,7 +61,7 @@ const vignettes = [
   },
   {
     number: 6,
-    path: '/vignettes/accounts',
+    path: '/capabilities/accounts',
     title: 'The Renewal That Nobody Saw Coming',
     description:
       'Renewal dates, utilization, support, and margin scattered across four systems. Expiring EaaS agreements and idle-capacity upsell surface too late — or only after the customer raises them.',
@@ -70,7 +70,7 @@ const vignettes = [
   },
   {
     number: 7,
-    path: '/vignettes/automation',
+    path: '/capabilities/automation',
     title: 'From Heroic Manual Efforts to Closed-Loop Automation',
     description:
       'A blade fails in a colocation facility. Today the resolution journey spans disconnected systems, manual data entry, and days of coordination.',

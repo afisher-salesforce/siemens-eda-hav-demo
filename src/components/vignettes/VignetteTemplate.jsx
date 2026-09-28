@@ -4,13 +4,13 @@ import { ArrowLeft, ArrowRight, ChevronRight, Sparkles, Shield, Zap, Printer } f
 import { AgentChatContext } from '../Layout';
 
 const VIGNETTES = [
-  { path: '/vignettes/order-close', title: 'The Order That Almost Didn\'t Close' },
-  { path: '/vignettes/capacity', title: 'The Capacity Nobody Could See' },
-  { path: '/vignettes/finance', title: 'The Spreadsheet That Owns the Quarter Close' },
-  { path: '/vignettes/traveler', title: 'The Traveler That Traveled by Email' },
-  { path: '/vignettes/platform', title: 'The Platform That Connects It All' },
-  { path: '/vignettes/accounts', title: 'The Renewal That Nobody Saw Coming' },
-  { path: '/vignettes/automation', title: 'From Heroic Manual Efforts to Closed-Loop Automation' },
+  { path: '/capabilities/order-close', title: 'The Order That Almost Didn\'t Close' },
+  { path: '/capabilities/capacity', title: 'The Capacity Nobody Could See' },
+  { path: '/capabilities/finance', title: 'The Spreadsheet That Owns the Quarter Close' },
+  { path: '/capabilities/traveler', title: 'The Traveler That Traveled by Email' },
+  { path: '/capabilities/platform', title: 'The Platform That Connects It All' },
+  { path: '/capabilities/accounts', title: 'The Renewal That Nobody Saw Coming' },
+  { path: '/capabilities/automation', title: 'From Heroic Manual Efforts to Closed-Loop Automation' },
 ];
 
 function OutcomeCard({ metric, label, color }) {
@@ -88,7 +88,7 @@ export default function VignetteTemplate({
         <div className="relative px-8 py-10">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2 text-xs text-th-muted">
-              <Link to="/vignettes" className="hover:text-siemens-accent transition-colors">
+              <Link to="/capabilities" className="hover:text-siemens-accent transition-colors">
                 Capabilities
               </Link>
               <ChevronRight size={12} />
@@ -272,7 +272,7 @@ export default function VignetteTemplate({
           </Link>
         ) : (
           <Link
-            to="/vignettes"
+            to="/capabilities"
             className="flex items-center gap-2 text-sm text-th-muted hover:text-siemens-accent transition-colors"
           >
             Back to all capabilities

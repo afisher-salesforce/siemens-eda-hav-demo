@@ -50,8 +50,8 @@ const STAGES = [
   { n: 1, label: 'Lead', icon: UserPlus, phase: 'sell', status: 'existing' },
   { n: 2, label: 'Lead Qualification', icon: Filter, phase: 'sell', status: 'existing' },
   { n: 3, label: 'Lead-to-Account Conversion', icon: UserCheck, phase: 'sell', status: 'existing' },
-  { n: 4, label: 'Account Management', icon: Building2, phase: 'sell', status: 'existing', to: '/vignettes/accounts' },
-  { n: 5, label: 'Opportunity Management', icon: Target, phase: 'sell', status: 'existing', to: '/vignettes/capacity' },
+  { n: 4, label: 'Account Management', icon: Building2, phase: 'sell', status: 'existing', to: '/capabilities/accounts' },
+  { n: 5, label: 'Opportunity Management', icon: Target, phase: 'sell', status: 'existing', to: '/capabilities/capacity' },
   { n: 6, label: 'Quote Management', icon: FileText, phase: 'sell', status: 'existing' },
   { n: 7, label: 'Contract Management', icon: FileSignature, phase: 'sell', status: 'existing', note: 'incl. Entitlements' },
   // Fulfill → Provision (this solution + the cash step)
@@ -80,8 +80,8 @@ const BANDS = [
     caption: 'Insight and action on the same connected data — in Salesforce and in Slack.',
     items: [
       { icon: BarChart3, label: 'Analytics', note: 'e.g. Capacity Forecasting', to: '/capacity/forecast' },
-      { icon: MessagesSquare, label: 'Slack + Slack Connect', note: 'Internal swarming + cross-company channels', to: '/vignettes/automation' },
-      { icon: Bot, label: 'Agentforce', note: 'HAV Ops Agent + Trade Compliance Agent', to: '/vignettes/automation' },
+      { icon: MessagesSquare, label: 'Slack + Slack Connect', note: 'Internal swarming + cross-company channels', to: '/capabilities/automation' },
+      { icon: Bot, label: 'Agentforce', note: 'HAV Ops Agent + Trade Compliance Agent', to: '/capabilities/automation' },
     ],
   },
 ];

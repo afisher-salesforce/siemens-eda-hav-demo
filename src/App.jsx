@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import DashboardView from './components/DashboardView';
@@ -30,12 +30,21 @@ import Vignette5 from './components/vignettes/Vignette5';
 import Vignette6 from './components/vignettes/Vignette6';
 import Vignette7 from './components/vignettes/Vignette7';
 
+// Redirect legacy /vignettes(/sub-path) links to their new /capabilities
+// equivalent, preserving whatever sub-path followed so old bookmarks and
+// external links keep working after the URL rename.
+function VignettesRedirect() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace(/^\/vignettes/, '/capabilities') + search + hash;
+  return <Navigate to={target} replace />;
+}
+
 export default function App() {
   return (
     <Layout>
       <ErrorBoundary>
       <Routes>
-        <Route path="/" element={<Navigate to="/vignettes" replace />} />
+        <Route path="/" element={<Navigate to="/capabilities" replace />} />
         <Route path="/dashboard" element={<DashboardView />} />
         <Route path="/assets" element={<AssetsView />} />
         <Route path="/assets/loaners" element={<LoanerConversionView />} />
@@ -55,15 +64,17 @@ export default function App() {
         <Route path="/orders/travelers" element={<TravelerView />} />
         <Route path="/orders/compliance" element={<ComplianceChecklist />} />
         <Route path="/orders/:orderId" element={<OrderDetail />} />
-        <Route path="/vignettes" element={<VignetteIndex />} />
-        <Route path="/vignettes/order-close" element={<Vignette1 />} />
-        <Route path="/vignettes/capacity" element={<Vignette2 />} />
-        <Route path="/vignettes/finance" element={<Vignette3 />} />
-        <Route path="/vignettes/traveler" element={<Vignette4 />} />
-        <Route path="/vignettes/platform" element={<Vignette5 />} />
-        <Route path="/vignettes/accounts" element={<Vignette6 />} />
-        <Route path="/vignettes/automation" element={<Vignette7 />} />
-        <Route path="*" element={<Navigate to="/vignettes" replace />} />
+        <Route path="/capabilities" element={<VignetteIndex />} />
+        <Route path="/capabilities/order-close" element={<Vignette1 />} />
+        <Route path="/capabilities/capacity" element={<Vignette2 />} />
+        <Route path="/capabilities/finance" element={<Vignette3 />} />
+        <Route path="/capabilities/traveler" element={<Vignette4 />} />
+        <Route path="/capabilities/platform" element={<Vignette5 />} />
+        <Route path="/capabilities/accounts" element={<Vignette6 />} />
+        <Route path="/capabilities/automation" element={<Vignette7 />} />
+        {/* Legacy URL redirects — keep old /vignettes links working */}
+        <Route path="/vignettes/*" element={<VignettesRedirect />} />
+        <Route path="*" element={<Navigate to="/capabilities" replace />} />
       </Routes>
       </ErrorBoundary>
     </Layout>

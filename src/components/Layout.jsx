@@ -29,14 +29,14 @@ const pageTitles = {
   '/capacity/allocations': 'Allocation Timeline',
   '/capacity/forecast': 'Capacity Forecast',
   '/financials/cogs': 'COGS Reconciliation',
-  '/vignettes': 'Solution Capabilities',
-  '/vignettes/order-close': 'The Order That Almost Didn\'t Close',
-  '/vignettes/capacity': 'The Capacity Nobody Could See',
-  '/vignettes/finance': 'The Spreadsheet That Owns the Quarter Close',
-  '/vignettes/traveler': 'The Traveler That Traveled by Email',
-  '/vignettes/platform': 'The Platform That Connects It All',
-  '/vignettes/accounts': 'The Renewal That Nobody Saw Coming',
-  '/vignettes/automation': 'From Heroic Manual Efforts to Closed-Loop Automation',
+  '/capabilities': 'Solution Capabilities',
+  '/capabilities/order-close': 'The Order That Almost Didn\'t Close',
+  '/capabilities/capacity': 'The Capacity Nobody Could See',
+  '/capabilities/finance': 'The Spreadsheet That Owns the Quarter Close',
+  '/capabilities/traveler': 'The Traveler That Traveled by Email',
+  '/capabilities/platform': 'The Platform That Connects It All',
+  '/capabilities/accounts': 'The Renewal That Nobody Saw Coming',
+  '/capabilities/automation': 'From Heroic Manual Efforts to Closed-Loop Automation',
 };
 
 export default function Layout({ children }) {

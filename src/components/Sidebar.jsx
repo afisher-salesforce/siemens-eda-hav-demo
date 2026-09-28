@@ -29,17 +29,17 @@ import {
 
 const navItems = [
   {
-    to: '/vignettes',
+    to: '/capabilities',
     icon: BookOpen,
     label: 'Capabilities',
     children: [
-      { to: '/vignettes/order-close', icon: ShoppingCart, label: 'Order Close' },
-      { to: '/vignettes/capacity', icon: BarChart3, label: 'Capacity' },
-      { to: '/vignettes/finance', icon: DollarSign, label: 'Finance' },
-      { to: '/vignettes/traveler', icon: FileText, label: 'Traveler' },
-      { to: '/vignettes/platform', icon: Layers, label: 'Platform' },
-      { to: '/vignettes/accounts', icon: HeartHandshake, label: 'Accounts' },
-      { to: '/vignettes/automation', icon: Zap, label: 'Automation' },
+      { to: '/capabilities/order-close', icon: ShoppingCart, label: 'Order Close' },
+      { to: '/capabilities/capacity', icon: BarChart3, label: 'Capacity' },
+      { to: '/capabilities/finance', icon: DollarSign, label: 'Finance' },
+      { to: '/capabilities/traveler', icon: FileText, label: 'Traveler' },
+      { to: '/capabilities/platform', icon: Layers, label: 'Platform' },
+      { to: '/capabilities/accounts', icon: HeartHandshake, label: 'Accounts' },
+      { to: '/capabilities/automation', icon: Zap, label: 'Automation' },
     ],
   },
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', persona: 'All' },
