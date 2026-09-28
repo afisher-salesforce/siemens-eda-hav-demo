@@ -84,9 +84,9 @@ export default function Vignette2() {
         "The blind spot extends to hardware that isn't deployed at all. A HAV tower sits Available in the Munich spare pool — three more wait across San Jose, Austin, and Hsinchu — and proFPGA units sit on the shelf: deployable capacity and idle capital that never appear on the same page as the racks they could fill. So a customer waits for a build-out while the asset that would satisfy them sits uncounted in a spare-pool spreadsheet nobody cross-references."
       ]}
       outcomes={[
-        { metric: "Real-Time", label: "Capacity utilization visibility" },
         { metric: "What-If", label: "6-segment waterfall with 4 interactive scenario levers" },
-        { metric: "Months Earlier", label: "Expansion decision lead time" },
+        { metric: "Frozen & Audited", label: "Snapshot any forecast to Salesforce; compare month-over-month" },
+        { metric: "One Click", label: "Share the forecast to Slack — no exported file" },
         { metric: "Auto-Surfaced", label: "OEM repair lifecycle, spare pool, and idle capital" }
       ]}
       whySalesforce={[
@@ -98,7 +98,7 @@ export default function Vignette2() {
         {
           icon: MessageSquare,
           title: "Collaborate in Slack",
-          description: "When capacity hits a threshold, alerts notify operations and sales leadership in Slack — no more discovering shortages after the customer is committed."
+          description: "Share any forecast — live scenario or saved snapshot — straight to the #hav-capacity-planning channel with one click. Operations and sales leadership see projected racks, headroom, and over-capacity facility warnings in Slack, no exported file to chase or version to reconcile."
         },
         {
           icon: Bot,
@@ -108,11 +108,13 @@ export default function Vignette2() {
         {
           icon: FileX,
           title: "End the Spreadsheet Era",
-          description: "The master capacity spreadsheet is replaced by a live scenario-planning engine with a 6-segment waterfall chart, four interactive levers (pipeline confidence, renewal rate, OEM repair lag, decommission buffer), facility drill-down modals, and bilateral write-back — all connected to actual asset records, contract dates, work orders, and pipeline signals."
+          description: "The master capacity spreadsheet is replaced by a live scenario-planning engine — a 6-segment waterfall, four interactive levers (pipeline confidence, renewal rate, OEM repair lag, decommission buffer), facility drill-down, and bilateral write-back. The two things the spreadsheet did that a chart alone can't — freeze a version and compare against history — now live in Salesforce: snapshot any scenario as a Forecast_Snapshot__c record and compare this month's forecast against last, all connected to actual asset records, contract dates, work orders, and pipeline signals."
         }
       ]}
       capabilities={[
-        { name: "Demand Planning", description: "Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance. A 6-segment waterfall (Base → +Pipeline → −Expiring → −OEM Repair Out → +RMA Return → Projected) with four interactive levers — pipeline confidence, renewal rate, OEM repair lag, and decommission buffer — lets planners model any scenario in real time. Time-horizon selection and account/region filters narrow the view." },
+        { name: "Demand Planning", description: "Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance. A 6-segment waterfall (Base → +Pipeline → −Expiring → −OEM Repair Out → +RMA Return → Projected) with four interactive levers — pipeline confidence, renewal rate, OEM repair lag, and decommission buffer — lets planners model any scenario in real time. Time-horizon selection and account/region filters narrow the view, and any scenario can be frozen as a snapshot for later comparison." },
+        { name: "Snapshot & Compare", description: "Freeze a forecast the way Excel users save a dated workbook — but into Salesforce, not a shared drive. Each snapshot captures the four lever settings, scope filters, and full per-facility results as a Forecast_Snapshot__c record, so history is org-wide and auditable. Load any past snapshot to repopulate the engine, or compare two side-by-side to see exactly which drivers moved the projection between planning cycles." },
+        { name: "Forecast Auditability", description: "Every number in the waterfall is drillable. Click a driver — +Pipeline, −Expiring, −OEM Repair, +RMA Return — to open a \"what's behind this number\" view listing the actual records: the weighted pipeline deals, the expiring agreements with days-to-expiry, the RMA work orders by vendor and status, and the spare-pool units. The forecast stops being a chart to trust and becomes a number you can defend." },
         { name: "Asset Lifecycle Management", description: "Every emulator tracked in a physical hierarchy — Facility → Rack → Blade — with serial number, customer allocation, and contract dates. Drill from a colocation facility down to individual blades via the facility drill-down modal, which also shows active work orders with bilateral write-back to complete repairs and return blades to the rack." },
         { name: "Proactive Insights", description: "Automated analysis surfacing capacity trends, utilization patterns, and expansion timing recommendations." },
         { name: "Unified Customer Profile", description: "Customer commitment history, usage patterns, and renewal timelines in a single view." },
