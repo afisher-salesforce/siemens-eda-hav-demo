@@ -19,10 +19,15 @@
 **Navigate to:** `/telemetry`
 
 **Talk track:**
-- Filter by **Critical** signals.
-- "Every signal has the asset, the location, the customer, and the severity."
-- Point to the temperature and utilization columns: "The system isn't just reporting the failure — it's showing the context. CPU was at 95%, temperature was elevated. This wasn't a random failure — the system was under stress."
-- "Today, Ken would have to log into each system individually to see this. Here it's aggregated."
+- "First, notice what this data *is*. Telemetry — CPU, memory, temperature, jobs, errors — is not native Salesforce data. It's streaming off the emulators. We're surfacing it through **Data 360 as virtualized data**, so it lives right here alongside the assets, accounts, and work orders without ever being copied into the CRM."
+- Use the **time-window filter** at the top (**1h / 24h / 7d / All**): "Filter by time — the last hour, day, or week. The windows anchor to the most recent reading, so you're always looking at the freshest slice of the fleet." Start on **24h**, then narrow to **1h** to show the reading count re-scope to the tightest recent cluster.
+- Use the **status filter and search** to narrow to the assets under stress. Point to the temperature and utilization columns: "The system isn't just reporting the failure — it's showing the context. CPU was elevated, temperature was climbing. This wasn't a random failure — the asset was under stress."
+- **This is the key beat — act on the data in place.** Point to the inline action buttons on a high-stress row:
+  - **Create Work Order** (wrench) — "I can spin up the RMA right here, from a telemetry reading. No re-keying into another system."
+  - **Create Case** (shield) — "Or open a support case against the same asset."
+  - **Share to Slack** (share) — one click posts the signal to `#hav-operations`: "The whole ops channel sees the reading — asset, status, CPU/temp, errors — instantly."
+- Click **Ask Agent**: "And the agent reads the same virtualized telemetry — it'll flag the assets that need attention without me hunting through the table."
+- **The point:** "Today, Ken logs into each monitoring tool individually and then re-enters everything into a work order by hand. Here, non-native data is surfaced through Data 360 *and made actionable* — detect, create a work order, swarm in Slack, ask the agent — all without leaving Salesforce and without the data ever being a copy."
 
 ### Step 3: Failure Timeline (3 min)
 **Navigate to:** `/workorders/failures`
