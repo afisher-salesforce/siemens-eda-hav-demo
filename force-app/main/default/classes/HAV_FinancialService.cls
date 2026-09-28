@@ -2,9 +2,9 @@
 global with sharing class HAV_FinancialService {
 
     private static final Map<String, Decimal> PRICE_TIERS = new Map<String, Decimal>{
-        'Veloce Strato' => 150000,
-        'Veloce Primo' => 90000,
-        'proFPGA' => 45000
+        'Veloce Strato' => 200000,
+        'Primo' => 100000,
+        'proFPGA' => 60000
     };
 
     @HttpGet
