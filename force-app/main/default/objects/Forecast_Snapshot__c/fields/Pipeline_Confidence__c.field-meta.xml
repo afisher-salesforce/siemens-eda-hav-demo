@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pipeline_Confidence__c</fullName>
+    <label>Pipeline Confidence</label>
+    <description>Pipeline win-probability slider value (percent) at capture time.</description>
+    <type>Number</type>
+    <precision>5</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <externalId>false</externalId>
+    <unique>false</unique>
+</CustomField>

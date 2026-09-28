@@ -695,6 +695,59 @@ export async function getCapacityEngine() {
 }
 
 /**
+ * Persist (freeze) a capacity forecast snapshot to Salesforce.
+ * @param {Object} payload - { label, horizon, regionFilter, accountFilter,
+ *   capturedBy, pipelineConfidence, renewalRate, oemRepairLag, decomBuffer,
+ *   projectedRacks, baseRacks, totalCapacity, headroom, snapshotJson }
+ * @returns {Object} { id, name, createdDate }
+ */
+export async function saveForecastSnapshot(payload) {
+  return request('/forecast-snapshots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * List recent capacity forecast snapshots (most-recent first).
+ * Parses the stored Snapshot_JSON__c so callers get the full scenario back.
+ * @returns {Array} snapshots with a parsed `data` object attached
+ */
+export async function listForecastSnapshots() {
+  const raw = await request('/forecast-snapshots');
+  const rows = (raw && raw.snapshots) || [];
+  return rows.map((s) => {
+    let data = null;
+    if (s.SnapshotJSON) {
+      try {
+        data = JSON.parse(s.SnapshotJSON);
+      } catch {
+        data = null;
+      }
+    }
+    return {
+      id: s.Id,
+      name: s.Name,
+      label: s.Label,
+      horizon: s.Horizon,
+      regionFilter: s.RegionFilter,
+      accountFilter: s.AccountFilter,
+      capturedBy: s.CapturedBy,
+      pipelineConfidence: s.PipelineConfidence,
+      renewalRate: s.RenewalRate,
+      oemRepairLag: s.OemRepairLag,
+      decomBuffer: s.DecomBuffer,
+      projectedRacks: s.ProjectedRacks,
+      baseRacks: s.BaseRacks,
+      totalCapacity: s.TotalCapacity,
+      headroom: s.Headroom,
+      createdDate: s.CreatedDate,
+      data,
+    };
+  });
+}
+
+/**
  * Get telemetry readings for an asset
  * @param {string} [assetId] - Optional asset ID
  * @param {number} [limit] - Number of records to return
@@ -1011,6 +1064,8 @@ export default {
   getAssets,
   getCapacity,
   getCapacityEngine,
+  saveForecastSnapshot,
+  listForecastSnapshots,
   getTelemetry,
   getFinancials,
   getWorkOrders,
