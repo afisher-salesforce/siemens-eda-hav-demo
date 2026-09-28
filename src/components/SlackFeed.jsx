@@ -121,7 +121,7 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
   const [workspaceUrl, setWorkspaceUrl] = useState('');
-  const feedEndRef = useRef(null);
+  const feedScrollRef = useRef(null);
 
   // Seed messages per record type
   const SEED_MESSAGES = {
@@ -220,9 +220,13 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll the feed to its newest message. Set scrollTop on the feed's own
+  // scroll container rather than calling scrollIntoView on the sentinel —
+  // scrollIntoView also scrolls every scrollable ancestor (i.e. the whole page),
+  // which would yank the detail page down to the feed on mount.
   useEffect(() => {
-    feedEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = feedScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   // Post a message
@@ -362,13 +366,12 @@ export default function SlackFeed({ channelName, recordLabel, recordType }) {
         {/* Messages */}
         {!loading && !notFound && !error && (
           <>
-            <div className="px-4 py-2 max-h-80 overflow-y-auto scrollbar-thin">
+            <div ref={feedScrollRef} className="px-4 py-2 max-h-80 overflow-y-auto scrollbar-thin">
               {messages.length > 0 ? (
                 <>
                   {messages.map((msg) => (
                     <MessageBubble key={msg.ts} message={msg} />
                   ))}
-                  <div ref={feedEndRef} />
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
