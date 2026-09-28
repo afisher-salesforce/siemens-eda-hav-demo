@@ -6,65 +6,64 @@
 
 ## Click Path
 
-### Step 1: Capacity Overview (3 min)
+### Step 1: Capacity Overview (2 min)
 **Navigate to:** `/capacity`
 
 **Talk track:**
-- "Here's every colocation facility at a glance."
+- "Here's every colocation facility at a glance — the picture Russell rebuilds by hand every two weeks."
 - Walk through **2-3 Location Cards**:
-  - **Rack Occupancy** — "Wilsonville is at 87% — that's near capacity, flagged in red."
+  - **Rack Occupancy** — "Wilsonville is at 87% — near capacity, flagged in red."
   - **Power Capacity** — "Austin has plenty of racks but is constrained on power."
-  - **PUE** — "Chandler's PUE of 1.65 is above target — potential cooling efficiency issue."
-- "Russell, instead of opening three spreadsheets, you see occupancy, power, and efficiency in one view."
+  - **PUE** — "Chandler's PUE of 1.65 is above target — a cooling efficiency signal."
+- "Occupancy, power, and efficiency in one view. But the question sales asked was about *next quarter* — so let's forecast."
 
-### Step 2: Capacity Forecast Table (3 min)
-**Scroll down on:** `/capacity`
-
-**Talk track:**
-- Point to the **Capacity Forecast** table.
-- "This is the Q3/Q4 projection — current racks, projected demand, available capacity."
-- Highlight the **Delta column**:
-  - Green positive = room to grow
-  - Red negative = over capacity projected
-  - Yellow ≤3 = tight
-- "So when sales asks 'Can we add 8 racks at Santa Clara?' — the answer is visible immediately."
-- "And it's not just a snapshot — it's connected to the pipeline, so demand forecasts update as deals move."
-
-### Step 3: Allocation Timeline (4 min)
-**Navigate to:** `/capacity/allocations`
+### Step 2: The Capacity Forecast Engine (5 min)
+**Navigate to:** `/capacity/forecast`
 
 **Talk track:**
-- "Now let's go deeper. When do current allocations end? Where will capacity free up?"
-- Show the **summary cards**: Active Allocations, Expiring in 90 Days, Total Assets Allocated.
-- Click to **expand** a location (e.g., Siemens Santa Clara Colo).
-- "This is a 12-month view — each customer's allocation shown as a timeline bar."
-- Point to bars approaching the end: "See this? Arm's contract ends in 45 days. That capacity will free up — unless we renew."
-- Point to the amber/red indicators: "Contracts ending within 30 days are red, 90 days amber."
-- "Ken, this is the view you've been asking for — when does capacity become available, and who has committed vs. uncommitted?"
+- "This is what replaces the spreadsheet. It's a live scenario-planning engine, not a static table."
+- Point to the **waterfall**: "Six segments — we start from **Base** deployed capacity, add **+Pipeline** (weighted new deals), subtract **−Expiring** agreements that won't renew, subtract **−OEM Repair** for hardware out at the manufacturer, add back **+RMA Return** as it comes home, and land on **Projected**."
+- Grab the **four levers** and move them live:
+  - **Pipeline Confidence** — "How much of the weighted pipeline do we believe? Drag it to 60%."
+  - **Renewal Rate** — "How many expiring contracts renew? Set it to 80%."
+  - **OEM Repair Lag** and **Decom Buffer** — "These tune when repaired hardware returns and how early we flag expirations."
+- "Watch the waterfall and the per-facility projections recompute instantly. When sales asks 'Can we add 8 racks at Santa Clara?' — I answer in the meeting, not in 48 hours."
+- Use the **time-horizon selector** and **region/account filters** to narrow the view: "Scope it to the Americas, or to one account, and the projection follows."
 
-### Step 4: Capacity Analytics (2 min)
-**Scroll down on:** `/capacity`
+### Step 3: What's Behind the Number (3 min)
+**Still on:** `/capacity/forecast`
 
 **Talk track:**
-- Point to the **Capacity Analytics** section.
-- "For deeper analysis — occupied vs. total racks by data center, projected demand trends — the analytics are built right into the dashboard."
-- "Same data, deeper analysis, no tool-switching."
+- "In a spreadsheet, a projected number is a number you have to trust. Here it's a number you can *defend*."
+- Click the **+Pipeline** driver: "This is the **'What's behind this number'** view — the actual weighted pipeline deals feeding the forecast, not a rolled-up total."
+- Click **−Expiring**: "The specific agreements expiring — account, end date, days to expiry. Ken, this is the 'who has committed vs. uncommitted' view you've been asking for."
+- Click **−OEM Repair**: "The RMA work orders by vendor and status — the blades that will free up when repairs return."
+- "Every segment of the waterfall drills to the records underneath it. Nothing is a black box."
 
-### Step 5: Agent Assist (3 min)
+### Step 4: Freeze It, Share It, Compare It (4 min)
+**Still on:** `/capacity/forecast`
+
+**Talk track:**
+- **Save Snapshot** — "In Excel this was 'Save As Forecast_Q3_v2.xlsx' on a shared drive. Here I click **Save Snapshot**, name it 'Q3 Close – base case,' and it's stored in Salesforce as a record — org-wide, auditable, not a file on someone's laptop."
+- **Share to Slack** — "Click **Share to Slack** and the forecast posts straight to **#hav-capacity-planning** — projected racks, headroom, and any over-capacity facility warnings. Sales leadership sees it in the channel; no exported file, no version to reconcile."
+- **Snapshots panel + Compare** — "Open the **Snapshots** panel — every frozen forecast with its date, projected racks, and headroom. **Load** any past snapshot to repopulate the engine, or pick two and **Compare** side-by-side to see exactly which drivers moved between planning cycles."
+- "That's the whole spreadsheet workflow — freeze, share, compare history — except it's live, connected, and in one system."
+
+### Step 5: Agent Assist (1 min)
 **Open:** Agent Chat
 
 **Talk track:**
-- Click suggested prompt: **"Show me the capacity forecast for the next quarter."**
-- "The agent can pull capacity data instantly."
-- Follow up by typing: **"What capacity is available at Santa Clara?"**
-- "This replaces the 48-hour spreadsheet lookup with a 5-second answer."
+- Click suggested prompt: **"What is the rack utilization at Santa Clara HSC1?"**
+- Follow up: **"Run a scenario: 60% pipeline confidence, 80% renewal rate — what capacity do we need?"**
+- "The agent reads the same connected data — a 5-second answer instead of a 48-hour spreadsheet lookup."
 
 ## Key Messages
-- Real-time capacity visibility — no stale spreadsheets
-- Power, racks, and PUE in one view per location
-- Forward-looking forecasts tied to pipeline demand
-- Contract timelines show when capacity will free up
-- Agent can answer capacity questions instantly
+- The spreadsheet is replaced by a live scenario-planning engine — waterfall + four interactive levers
+- Every number drills to the records behind it — the forecast is auditable, not a black box
+- Snapshots freeze a forecast into Salesforce: org-wide history, not a file on a shared drive
+- One-click Slack sharing to #hav-capacity-planning — no exported file, no version drift
+- Compare forecasts across planning cycles to see what actually moved
+- The agent answers capacity questions instantly against the same connected data
 
 ## Transition to V3
-> "So we can see capacity. But the bigger question Shari keeps asking: What does it cost? Let's look at the quarter-close spreadsheet problem."
+> "So we can see capacity, forecast it, and defend every number. But the bigger question Shari keeps asking: What does it cost? Let's look at the quarter-close spreadsheet problem."
