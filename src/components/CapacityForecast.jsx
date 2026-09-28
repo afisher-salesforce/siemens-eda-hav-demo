@@ -1368,7 +1368,13 @@ export default function CapacityForecast() {
     if (!a) return;
     shareToSlack({
       aggregate: a,
-      facilities: scenarioResults.facilities,
+      // Flatten to the same shape the snapshot path uses so the formatter can
+      // read f.code / f.status directly (raw results nest these under f.facility).
+      facilities: (scenarioResults.facilities || []).map((r) => ({
+        code: r.facility.code,
+        name: r.facility.name,
+        status: r.status,
+      })),
       horizon: horizonLabel(timeHorizon),
       regionFilter,
       accountFilter,
