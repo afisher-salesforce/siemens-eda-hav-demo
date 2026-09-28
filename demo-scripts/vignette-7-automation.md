@@ -12,8 +12,8 @@
 **Talk track:**
 - Point to the **Critical Alerts** count in the hero banner. "This number is live. Right now, we have active alerts."
 - Scroll to the **Telemetry Signals** table.
-- Point to a **Critical** severity row: "This is a blade failure — the system detected it automatically through telemetry."
-- "In the current process, Ken might not know about this for hours. He'd find out when the customer calls. Here, the system detected it in real time."
+- Point to an **Error** status row — the **Signal** column shows the context (e.g. "3 errors — CPU 95%, Temp 78°C"): "This is a blade in trouble — the system flagged it automatically through telemetry, with the error count and the conditions right there."
+- "In the current process, Ken might not know about this for hours. He'd find out when the customer calls. Here, the system detected it in real time — and there's a **Create WO** action right on the row to act on it."
 
 ### Step 2: Telemetry Deep Dive (3 min)
 **Navigate to:** `/telemetry`
