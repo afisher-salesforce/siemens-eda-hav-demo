@@ -52,6 +52,29 @@ function formatCurrency(value) {
 export default function FinancialsView() {
   const { data, loading, error, refetch } = useSalesforceData(getFinancials);
 
+  // Lease-type mix as a horizontal bar chart: sorted descending by share so the
+  // ranking reads top-down, each bar labeled with its % (and count). Replaces a
+  // donut whose small-slice labels ("Sale 3%", "R&D 3%") collided and overlapped.
+  // "Unspecified" is a data-quality bucket, not a real lease type, so it keeps
+  // its true (largest) rank but is drawn in neutral gray to read as uncategorized.
+  // NOTE: this hook must run before any early return below, or the hook count
+  // changes between the loading and loaded renders (React error #310).
+  const leaseChartData = React.useMemo(() => {
+    const breakdown = data?.leaseBreakdown || [];
+    const total = breakdown.reduce((sum, d) => sum + (d.count || 0), 0);
+    return [...breakdown]
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .map((d) => {
+        const isUnspecified = /unspecified|unknown|none|n\/a/i.test(d.leaseType || '');
+        return {
+          ...d,
+          percent: total > 0 ? (d.count || 0) / total : 0,
+          isUnspecified,
+        };
+      });
+  }, [data]);
+  const LEASE_MUTED = 'var(--text-faint)';
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -98,28 +121,7 @@ export default function FinancialsView() {
 
   const revenue = data?.revenue || {};
   const productBreakdown = data?.productBreakdown || [];
-  const leaseBreakdown = data?.leaseBreakdown || [];
   const repairCosts = data?.repairCosts || {};
-
-  // Lease-type mix as a horizontal bar chart: sorted descending by share so the
-  // ranking reads top-down, each bar labeled with its % (and count). Replaces a
-  // donut whose small-slice labels ("Sale 3%", "R&D 3%") collided and overlapped.
-  // "Unspecified" is a data-quality bucket, not a real lease type, so it keeps
-  // its true (largest) rank but is drawn in neutral gray to read as uncategorized.
-  const leaseChartData = React.useMemo(() => {
-    const total = leaseBreakdown.reduce((sum, d) => sum + (d.count || 0), 0);
-    return [...leaseBreakdown]
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .map((d) => {
-        const isUnspecified = /unspecified|unknown|none|n\/a/i.test(d.leaseType || '');
-        return {
-          ...d,
-          percent: total > 0 ? (d.count || 0) / total : 0,
-          isUnspecified,
-        };
-      });
-  }, [leaseBreakdown]);
-  const LEASE_MUTED = 'var(--text-faint)';
 
   return (
     <div className="space-y-6">
