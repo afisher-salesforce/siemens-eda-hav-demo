@@ -6,11 +6,11 @@ const TRADE_AGENT_API = '/api/trade-agent';
 const SUGGESTED_PROMPTS = [
   { label: 'Screen Quote', prompt: 'Screen quote Q-00001 for trade compliance — shipping to South Korea for Samsung.' },
   { label: 'Embargo Check', prompt: 'Check if North Korea (KP) is an embargoed destination.' },
-  { label: 'ECCN Classify', prompt: 'Classify the dual-use products on the latest Veloce quote.' },
+  { label: 'ECCN Classify', prompt: 'Classify the dual-use products on quote Q-00001.' },
   { label: 'Tariff Lookup', prompt: 'What is the import tariff for HS 8542.31 from US to China?' },
   { label: 'Reg Monitor', prompt: 'Run a regulatory monitoring check for any embargo changes.' },
-  { label: 'India Shipment', prompt: 'Screen a shipment of Calibre software to India.' },
-  { label: 'Restricted Party', prompt: 'Is Rostec Corporation on any restricted party list?' },
+  { label: 'India Shipment', prompt: 'Screen quote Q-00001 for a shipment of Calibre software to India.' },
+  { label: 'Restricted Party', prompt: 'Screen quote Q-00001 shipping to Russia (RU) for end-user Rostec Corporation.' },
   { label: 'Syria Embargo', prompt: 'What happens if we try to ship to Syria?' },
 ];
 

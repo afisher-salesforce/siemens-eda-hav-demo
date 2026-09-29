@@ -7,11 +7,11 @@ const SUGGESTED_PROMPTS = [
   { label: 'Fleet Status', prompt: 'What is the current status of our emulator fleet?' },
   { label: 'Capacity Forecast', prompt: 'Show me the capacity forecast for the next quarter.' },
   { label: 'Open Alerts', prompt: 'Are there any critical alerts or errors across the fleet?' },
-  { label: 'Revenue Summary', prompt: 'Give me a summary of revenue by product line.' },
+  { label: 'Revenue Summary', prompt: 'Give me a summary of revenue by lease type.' },
   { label: 'Error Rates', prompt: 'Which assets have the highest error rates in the last 24 hours?' },
-  { label: 'Work Orders', prompt: 'Show me all work orders currently in progress.' },
-  { label: 'HSC1 Utilization', prompt: 'What is the rack utilization at Santa Clara HSC1?' },
-  { label: 'Expiring Contracts', prompt: 'List all contract renewals expiring in the next 30 days.' },
+  { label: 'Asset Health', prompt: 'Are there any critical alerts for asset VS-SEL1-001?' },
+  { label: 'Hsinchu Utilization', prompt: 'What is the rack utilization at Hsinchu?' },
+  { label: 'Revenue Exposure', prompt: 'Give me a fleet-wide revenue summary by lease type.' },
 ];
 
 export default function AgentChat({ open, onClose, prefill, onPrefillConsumed }) {
