@@ -44,7 +44,7 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Type: **"What's the status of the loan-to-sale for NVIDIA?"**
+- Type: **"What's the status of the loan-to-sale for Qualcomm?"**
 - "The agent can tell you the exact stage of any order's traveler — without navigating to the page."
 - "For Kendrick in ops, this means he can check order status from his phone while on the floor."
 

@@ -68,8 +68,8 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Click: **"Give me a summary of revenue by product line."**
-- "The agent can pull financial summaries on demand — no waiting for a report run."
+- Click: **"Give me a summary of revenue by lease type."**
+- "The agent can pull financial summaries on demand — revenue and repair-cost exposure broken out by Lease, EaaS, and Loan — no waiting for a report run."
 
 ## Key Messages
 - Live today: revenue, COGS, and gross margin in one system, anchored to a single source of truth
