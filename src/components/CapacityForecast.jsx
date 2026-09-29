@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 // No Recharts — we use pure SVG for waterfall charts
 import {
-  getCapacityEngine,
+  getCapacityForecastData,
   updateWorkOrderStatus,
   saveForecastSnapshot,
   listForecastSnapshots,
@@ -967,7 +967,7 @@ function buildWaterfallSegments(cBase, pipeline, expiring, rmaOut, rmaIn, totalC
 
 // ── Main Component ──
 export default function CapacityForecast() {
-  const { data: engineData, loading, error, refetch } = useSalesforceData(getCapacityEngine);
+  const { data: engineData, loading, error, refetch } = useSalesforceData(getCapacityForecastData);
 
   // Scenario variables
   const [timeHorizon, setTimeHorizon] = useState(90);
@@ -1119,7 +1119,10 @@ export default function CapacityForecast() {
 
       // C_projected
       const projected = cBase + pipelineWeighted - capacityFreed - rmaOutCount + rmaInCount;
-      const totalCapacity = facility.totalRacks;
+      // Compare against the facility's real physical rack ceiling
+      // (Location.Total_Rack_Capacity__c, surfaced as maxRackCapacity), not the
+      // installed-rack count — otherwise every facility reads "over" capacity.
+      const totalCapacity = facility.maxRackCapacity ?? facility.totalRacks;
       const headroom = totalCapacity - projected;
 
       // Build waterfall segments
