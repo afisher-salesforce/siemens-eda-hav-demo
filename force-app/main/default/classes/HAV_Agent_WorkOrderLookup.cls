@@ -37,14 +37,19 @@ public with sharing class HAV_Agent_WorkOrderLookup {
                 query += 'AND Asset.Name LIKE :term ';
             }
             if (String.isNotBlank(inp.priorityFilter)) {
-                query += 'AND Priority = :inp.priorityFilter ';
+                // Bind must be a simple local variable — ':inp.priorityFilter'
+                // (a field/property path) is not a valid SOQL bind expression.
+                String priority = inp.priorityFilter.trim();
+                query += 'AND Priority = :priority ';
             }
-            query += 'ORDER BY CASE WHEN Status = \'New\' THEN 0 '
-                + 'WHEN Status = \'In Progress\' THEN 1 '
-                + 'WHEN Status = \'On Hold\' THEN 2 '
-                + 'ELSE 3 END, CreatedDate DESC LIMIT 15';
+            // SOQL does not support 'CASE WHEN ... THEN ... END' in ORDER BY
+            // (that is SQL, not SOQL) — it throws unexpected token: 'WHEN' on
+            // every call. Order by CreatedDate here and apply the New >
+            // In Progress > On Hold > other status ranking in Apex below.
+            query += 'ORDER BY CreatedDate DESC LIMIT 15';
 
             List<WorkOrder> wos = Database.query(query);
+            wos = sortByStatusRank(wos);
 
             if (wos.isEmpty()) {
                 out.result = 'No work orders found'
@@ -101,5 +106,31 @@ public with sharing class HAV_Agent_WorkOrderLookup {
             out.result = 'Error searching work orders: ' + e.getMessage();
         }
         return new List<Output>{ out };
+    }
+
+    /**
+     * Rank work orders New > In Progress > On Hold > everything else, preserving
+     * the CreatedDate-desc order the query already applied within each rank.
+     * Replaces the unsupported SOQL 'ORDER BY CASE WHEN ...' the query used to do.
+     */
+    private static List<WorkOrder> sortByStatusRank(List<WorkOrder> wos) {
+        Map<String, Integer> rank = new Map<String, Integer>{
+            'New' => 0,
+            'In Progress' => 1,
+            'On Hold' => 2
+        };
+        List<WorkOrder> ordered = new List<WorkOrder>();
+        // Buckets 0..3 keep the query's within-bucket CreatedDate DESC ordering.
+        for (Integer r = 0; r <= 3; r++) {
+            for (WorkOrder wo : wos) {
+                Integer woRank = (wo.Status != null && rank.containsKey(wo.Status))
+                    ? rank.get(wo.Status)
+                    : 3;
+                if (woRank == r) {
+                    ordered.add(wo);
+                }
+            }
+        }
+        return ordered;
     }
 }
