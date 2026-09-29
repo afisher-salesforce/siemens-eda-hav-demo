@@ -301,7 +301,7 @@ function extractFacilityCode(name) {
   return match ? match[1].toUpperCase() : name;
 }
 
-function transformCapacityEngine(raw) {
+function transformCapacityEngine(raw, ceilingByCode = {}) {
   if (!raw) return null;
 
   const rawFacilities = raw.facilities || [];
@@ -357,6 +357,11 @@ function transformCapacityEngine(raw) {
       region,
       status: f.Status,
       totalRacks: facilityRacks.length,
+      // Physical rack ceiling from the Location object (Total_Rack_Capacity__c),
+      // matched by facility code. Falls back to the installed-rack count when a
+      // Location has no matching ceiling. This is the number the forecast compares
+      // projected demand against — NOT the installed footprint.
+      maxRackCapacity: ceilingByCode[code] ?? facilityRacks.length,
       activeRacks: facilityRacks.filter((r) => r.status === 'Active' || r.status === 'Installed').length,
       racks: facilityRacks,
       bladeCount: facilityRacks.reduce((sum, r) => sum + r.bladeCount, 0),
@@ -703,6 +708,31 @@ export async function getCapacity(locationId) {
 export async function getCapacityEngine() {
   const raw = await request('/capacity-engine');
   return transformCapacityEngine(raw);
+}
+
+/**
+ * Get capacity-engine data enriched with each facility's real rack ceiling.
+ *
+ * The /capacity-engine payload carries only Asset-tier facilities/racks/blades
+ * (no physical ceiling), while the /capacity payload carries the Location
+ * object's Total_Rack_Capacity__c. This loader fetches both, joins them by
+ * facility code (extractFacilityCode resolves both name formats to e.g. "AUS1"),
+ * and surfaces the ceiling as facility.maxRackCapacity so the Capacity Forecast
+ * page compares projected demand against the true physical ceiling instead of
+ * the installed-rack count.
+ * @returns {Object} capacity-engine data with maxRackCapacity on each facility
+ */
+export async function getCapacityForecastData() {
+  const [engineRaw, capacity] = await Promise.all([
+    request('/capacity-engine'),
+    getCapacity(),
+  ]);
+  const ceilingByCode = {};
+  for (const loc of capacity?.locations || []) {
+    const code = extractFacilityCode(loc.name);
+    if (code && loc.totalRacks) ceilingByCode[code] = loc.totalRacks;
+  }
+  return transformCapacityEngine(engineRaw, ceilingByCode);
 }
 
 /**
