@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siemens EDA HAV — Solution Capabilities &amp; Vignettes</title>
+  <script src="https://assets.meshmesh.io/system/tailwindcss-browser-4.js"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-siemens-teal: #009999;
+      --color-siemens-accent: #007a7a;
+      --color-siemens-dark: #0C2340;
+      --color-siemens-light: #E6F7F7;
+      --color-siemens-petrol: #006B75;
+      --color-accent-amber: #F59E0B;
+      --color-accent-red: #EF4444;
+      --color-accent-green: #10B981;
+      --color-accent-indigo: #6366F1;
+      --color-accent-violet: #8B5CF6;
+      --color-accent-sky: #0EA5E9;
+      --color-slate-50: #F8FAFC;
+      --color-slate-100: #F1F5F9;
+      --color-slate-200: #E2E8F0;
+      --color-slate-300: #CBD5E1;
+      --color-slate-400: #94A3B8;
+      --color-slate-500: #64748B;
+      --color-slate-600: #475569;
+      --color-slate-700: #334155;
+      --color-slate-800: #1E293B;
+      --color-slate-900: #0F172A;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      a { text-decoration: none !important; color: inherit !important; }
+    }
+    html { scroll-behavior: smooth; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    /* offset anchor targets so the sticky nav doesn't hide headings */
+    section[id] { scroll-margin-top: 5rem; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="bg-siemens-dark text-white">
+    <div class="max-w-6xl mx-auto px-6 py-12">
+      <div class="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-siemens-teal font-semibold mb-4">
+        <span class="inline-block w-8 h-px bg-siemens-teal"></span>
+        Siemens EDA · Hardware-Assisted Verification
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight mb-3">Solution Capabilities</h1>
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
+        Seven stories illustrating how Siemens EDA's Hardware-Assisted Verification business
+        transforms from spreadsheet-driven coordination to connected, intelligent operations —
+        all on a platform already within the Siemens Enterprise License Agreement.
+      </p>
+    </div>
+  </header>
+
+  <!-- ============================ STICKY NAV ============================ -->
+  <nav class="no-print sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex items-center gap-1 overflow-x-auto py-2 text-xs">
+        <a href="#motion" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">Lead-to-Cash</a>
+        <span class="text-slate-300">·</span>
+        <a href="#story-1" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">1 · Order Close</a>
+        <a href="#story-2" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">2 · Capacity</a>
+        <a href="#story-3" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">3 · Finance</a>
+        <a href="#story-4" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">4 · Traveler</a>
+        <a href="#story-5" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">5 · Platform</a>
+        <a href="#story-6" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">6 · Renewal</a>
+        <a href="#story-7" class="shrink-0 px-3 py-1.5 rounded-md text-slate-600 hover:text-siemens-accent hover:bg-slate-100 font-medium transition-colors">7 · Automation</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-6 py-10 space-y-10">
+
+    <!-- ============================ LEAD-TO-CASH MOTION ============================ -->
+    <section id="motion" class="bg-white rounded-xl border border-slate-200 shadow-sm px-6 sm:px-8 py-8">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">The Lead-to-Cash Motion</h2>
+          <p class="text-xs text-slate-500 leading-relaxed max-w-2xl mt-1">
+            One connected process — this solution <strong>extends</strong> Siemens EDA's existing
+            Salesforce sales CRM into fulfillment, provisioning, and service, and wires it into a
+            single system where data flows automatically in and out of Salesforce and Slack. No one
+            hunts across systems.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <span class="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 text-slate-500 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider">Existing Salesforce</span>
+          <span class="inline-flex items-center rounded-full border border-siemens-teal/30 bg-siemens-teal/10 text-siemens-accent px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider">HAV Solution</span>
+          <span class="inline-flex items-center rounded-full border border-sky-300 bg-sky-50 text-sky-700 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider">Connected · External</span>
+        </div>
+      </div>
+
+      <!-- Three-phase pipeline -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Phase: Sell -->
+        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+          <div class="mb-3">
+            <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-accent">Demand → Sell</div>
+            <div class="text-[10px] text-slate-400">Your existing Salesforce CRM</div>
+          </div>
+          <div class="space-y-1.5 text-xs text-slate-700">
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">1</span> Lead</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">2</span> Lead Qualification</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">3</span> Lead-to-Account Conversion</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">4</span> Account Management</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">5</span> Opportunity Management</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">6</span> Quote Management</div>
+            <div class="flex items-center gap-2"><span class="w-5 text-slate-400 text-[10px] font-mono">7</span> Contract Management <span class="text-slate-400">· incl. Entitlements</span></div>
+          </div>
+        </div>
+        <!-- Phase: Fulfill -->
+        <div class="rounded-lg border border-siemens-teal/25 bg-siemens-teal/[0.04] p-4">
+          <div class="mb-3">
+            <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-accent">Fulfill → Provision</div>
+            <div class="text-[10px] text-slate-400">This solution</div>
+          </div>
+          <div class="space-y-2 text-xs text-slate-700">
+            <div>
+              <div class="flex items-center gap-2 font-medium"><span class="w-5 text-siemens-accent text-[10px] font-mono">8</span> Order Management</div>
+              <div class="pl-7 text-[11px] text-slate-500">Order decomposition → asset mapping</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 font-medium"><span class="w-5 text-siemens-accent text-[10px] font-mono">9</span> Asset Management</div>
+              <div class="pl-7 text-[11px] text-slate-500">Linked to Accounts, Contracts, Orders, Quotes, Opps, Cases, Work Orders</div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 font-medium text-sky-700"><span class="w-5 text-sky-500 text-[10px] font-mono">SAP</span> Billing &amp; Invoicing</div>
+              <div class="pl-7 text-[11px] text-slate-500">Revenue + COGS — the cash step</div>
+            </div>
+          </div>
+        </div>
+        <!-- Phase: Serve -->
+        <div class="rounded-lg border border-siemens-teal/25 bg-siemens-teal/[0.04] p-4">
+          <div class="mb-3">
+            <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-siemens-accent">Operate → Serve</div>
+            <div class="text-[10px] text-slate-400">This solution</div>
+          </div>
+          <div class="space-y-2 text-xs text-slate-700">
+            <div>
+              <div class="flex items-center gap-2 font-medium"><span class="w-5 text-siemens-accent text-[10px] font-mono">11</span> Work Order Management</div>
+              <div class="pl-7 text-[11px] text-slate-500">Deployment + failure management</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cross-cutting fabric bands -->
+      <div class="space-y-3 mt-4">
+        <div class="rounded-lg border border-siemens-teal/20 bg-siemens-teal/[0.04] px-4 py-3">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-[0.12em] text-siemens-accent">Data &amp; Integration Fabric</div>
+              <div class="text-[10px] text-slate-500">Data flows in and out automatically — no manual lookup, no re-keying.</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="API-led integration to SAP &amp; vendor systems">MuleSoft</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="No-ETL data federation">Zero Copy — Snowflake</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="Streaming + unstructured data, unified — plus governed metric definitions">Data 360 / Telemetry</span>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-lg border border-siemens-teal/20 bg-siemens-teal/[0.04] px-4 py-3">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-[0.12em] text-siemens-accent">Intelligence &amp; Collaboration</div>
+              <div class="text-[10px] text-slate-500">Insight and action on the same connected data — in Salesforce and in Slack.</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="e.g. Capacity Forecasting">Analytics</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="Internal swarming + cross-company channels">Slack + Slack Connect</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-700" title="HAV Ops Agent + Trade Compliance Agent">Agentforce</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY CARDS GRID (jump index) ============================ -->
+    <section class="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <a href="#story-1" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-emerald-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 1</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Order That Almost Didn't Close</div></a>
+      <a href="#story-2" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-indigo-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 2</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Capacity Nobody Could See</div></a>
+      <a href="#story-3" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-amber-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 3</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Spreadsheet That Owns the Quarter Close</div></a>
+      <a href="#story-4" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-red-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 4</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Traveler That Traveled by Email</div></a>
+      <a href="#story-5" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-siemens-teal/50 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 5</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Platform That Connects It All</div></a>
+      <a href="#story-6" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-sky-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 6</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">The Renewal That Nobody Saw Coming</div></a>
+      <a href="#story-7" class="group block rounded-lg border border-slate-200 bg-white p-4 hover:border-violet-500/40 hover:shadow-md transition-all"><div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Story 7</div><div class="text-sm font-semibold text-slate-800 group-hover:text-slate-900">From Heroic Manual Efforts to Closed-Loop Automation</div></a>
+    </section>
+
+    <!-- ============================ STORY 1 ============================ -->
+    <section id="story-1" class="page-break">
+      <div class="rounded-xl border-t-4 border-emerald-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 1 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Order That Almost Didn't Close</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How automated loan-to-sale conversion replaces quarter-end scrambles with predictable, system-driven deal closure.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>Last week of the quarter. A loan-to-sale conversion for a major semiconductor customer is in motion. The sales coordinator is chasing serial number confirmations across email threads, updating a SharePoint traveler, waiting on export compliance approval, and manually entering data into SAP — simultaneously, under time pressure.</p>
+              <p>The risk: One wrong serial number, one missed email, one missed export ticket, and the deal doesn't book in time. The revenue slips to next quarter. The customer relationship suffers. The sales team scrambles.</p>
+              <p>This is not an edge case — it is the standard operating procedure. Every loan-to-sale conversion follows this manual coordination pattern, with the same risks multiplied across every deal in the pipeline.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-emerald-600 mb-1">Hours → Minutes</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Coordination time per conversion</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-emerald-600 mb-1">Zero</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Serial number mismatches</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-emerald-600 mb-1">100%</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Automated audit trail coverage</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">Every quote, approval, serial number, and compliance check lives in a single record — no more chasing across email, SharePoint, and SAP.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">When a deal needs attention, the right people are instantly looped in through Slack channels — replacing the email chains that delay quarter-end closings.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">Compliance checks, serial number validation, and logistics notifications happen automatically — an AI agent handles the coordination that used to require five teams.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">SharePoint travelers and Excel trackers are replaced by structured, automated workflows with built-in approvals and real-time status.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Order Orchestration</div><div class="text-[13px] text-slate-500 leading-relaxed">Automated end-to-end order workflows from quote creation through fulfillment, replacing manual handoffs.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Quote Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Centralized quote lifecycle with product configuration, pricing, and approval routing.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Contract Lifecycle Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Manage contract terms, renewals, and conversions with full audit history.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Agentforce Autonomous Agents</div><div class="text-[13px] text-slate-500 leading-relaxed">AI agents that autonomously execute compliance checks, validate serial numbers, and trigger notifications.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Slack Team Collaboration</div><div class="text-[13px] text-slate-500 leading-relaxed">Real-time deal rooms connecting sales, operations, compliance, and logistics.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Asset Lifecycle Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Track every asset from loan deployment through sale conversion with complete serial number lineage.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "List all contract renewals expiring in the next 30 days."</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-violet-500/25 bg-violet-500/5 text-violet-700">Trade · "Screen quote Q-00001 for trade compliance — shipping to South Korea."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 2 ============================ -->
+    <section id="story-2" class="page-break">
+      <div class="rounded-xl border-t-4 border-indigo-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 2 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Capacity Nobody Could See</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How connected asset intelligence and pipeline signals replace the monster spreadsheet with real-time capacity planning.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>The operations team manages colocation facilities filled with emulation hardware worth millions. Which rack positions are allocated to which customers? When does a commitment end? What capacity becomes available next month? The answers live in a master spreadsheet — manually updated, version-controlled by heroics, and disconnected from the sales pipeline.</p>
+              <p>When a sales rep wins a new emulation-as-a-service deal, operations has no advance signal. They discover demand when it arrives. If capacity isn't available, the customer goes to Cadence Palladium. If too much sits idle, the investment doesn't earn its return.</p>
+              <p>Physical inventory counts take two days of barcode scanning per colocation facility. The spreadsheet is already out of date by the time it's complete. Every capacity decision is made on stale data.</p>
+              <p>The blind spot extends to hardware that isn't deployed at all. A HAV tower sits Available in the Munich spare pool — three more wait across San Jose, Austin, and Hsinchu — and proFPGA units sit on the shelf: deployable capacity and idle capital that never appear on the same page as the racks they could fill. So a customer waits for a build-out while the asset that would satisfy them sits uncounted in a spare-pool spreadsheet nobody cross-references.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-indigo-600 mb-1">What-If</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">6-segment waterfall with 4 interactive scenario levers</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-indigo-600 mb-1">Frozen &amp; Audited</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Snapshot any forecast to Salesforce; compare month-over-month</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-indigo-600 mb-1">One Click</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Share the forecast to Slack — no exported file</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-indigo-600 mb-1">Auto-Surfaced</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">OEM repair lifecycle, spare pool, and idle capital</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">The opportunity pipeline feeds directly into capacity planning — when a deal moves through the funnel, the system already knows whether hardware exists to fulfill it.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">Share any forecast — live scenario or saved snapshot — straight to the #hav-capacity-planning channel with one click. Operations and sales leadership see projected racks, headroom, and over-capacity facility warnings in Slack, no exported file to chase or version to reconcile.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">An AI agent continuously monitors capacity utilization and proactively alerts when action is needed — idle hardware, approaching limits, or mismatched demand.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">The master capacity spreadsheet is replaced by a live scenario-planning engine — a 6-segment waterfall, four interactive levers (pipeline confidence, renewal rate, OEM repair lag, decommission buffer), facility drill-down, and bilateral write-back. The two things the spreadsheet did that a chart alone can't — freeze a version and compare against history — now live in Salesforce: snapshot any scenario as a Forecast_Snapshot__c record and compare this month's forecast against last, all connected to actual asset records, contract dates, work orders, and pipeline signals.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Demand Planning</div><div class="text-[13px] text-slate-500 leading-relaxed">Match pipeline demand signals against physical capacity to forecast gaps and surplus months in advance. A 6-segment waterfall (Base → +Pipeline → −Expiring → −OEM Repair Out → +RMA Return → Projected) with four interactive levers — pipeline confidence, renewal rate, OEM repair lag, and decommission buffer — lets planners model any scenario in real time. Time-horizon selection and account/region filters narrow the view, and any scenario can be frozen as a snapshot for later comparison.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Snapshot &amp; Compare</div><div class="text-[13px] text-slate-500 leading-relaxed">Freeze a forecast the way Excel users save a dated workbook — but into Salesforce, not a shared drive. Each snapshot captures the four lever settings, scope filters, and full per-facility results as a Forecast_Snapshot__c record, so history is org-wide and auditable. Load any past snapshot to repopulate the engine, or compare two side-by-side to see exactly which drivers moved the projection between planning cycles.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Forecast Auditability</div><div class="text-[13px] text-slate-500 leading-relaxed">Every number in the waterfall is drillable. Click a driver — +Pipeline, −Expiring, −OEM Repair, +RMA Return — to open a "what's behind this number" view listing the actual records: the weighted pipeline deals, the expiring agreements with days-to-expiry, the RMA work orders by vendor and status, and the spare-pool units. The forecast stops being a chart to trust and becomes a number you can defend.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Asset Lifecycle Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Every emulator tracked in a physical hierarchy — Facility → Rack → Blade — with serial number, customer allocation, and contract dates. Drill from a colocation facility down to individual blades via the facility drill-down modal, which also shows active work orders with bilateral write-back to complete repairs and return blades to the rack.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Proactive Insights</div><div class="text-[13px] text-slate-500 leading-relaxed">Automated analysis surfacing capacity trends, utilization patterns, and expansion timing recommendations.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Unified Customer Profile</div><div class="text-[13px] text-slate-500 leading-relaxed">Customer commitment history, usage patterns, and renewal timelines in a single view.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Predictive AI Scoring</div><div class="text-[13px] text-slate-500 leading-relaxed">Machine learning models predicting future capacity demand based on pipeline, seasonality, and customer growth.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Spare Pool &amp; Inventory Visibility</div><div class="text-[13px] text-slate-500 leading-relaxed">Not-yet-deployed hardware — Available spares, Shipped and Purchased units, OEM/RMA blades — tracked in the same connected asset model as deployed racks. Idle capital and deployable spares surface alongside live capacity, so a spare in the pool is one query away from the customer it could serve rather than buried in a separate inventory sheet.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Projection Formula</h3>
+            <div class="rounded-lg border border-slate-200 bg-slate-50/60 px-5 py-4 overflow-x-auto mb-4">
+              <p class="text-xs text-slate-500 mb-2">The core projection equation for any given time bucket <span class="italic">t</span> is calculated as:</p>
+              <div class="text-center py-2 text-base text-slate-800 italic tracking-wide" style="font-family: Georgia, 'Times New Roman', serif;">
+                C<sub class="text-[10px] not-italic">projected</sub>(t) = C<sub class="text-[10px] not-italic">base</sub> + Σ(S<sub class="text-[10px] not-italic">pipeline</sub> · P<sub class="text-[10px] not-italic">win</sub>) − Σ(A<sub class="text-[10px] not-italic">expiring</sub> · (1 − P<sub class="text-[10px] not-italic">renew</sub>)) − ΣRMA<sub class="text-[10px] not-italic">out</sub>(t) + ΣRMA<sub class="text-[10px] not-italic">in</sub>(t)
+              </div>
+            </div>
+            <div class="space-y-2 text-[13px] text-slate-500 leading-relaxed pl-1 mb-4">
+              <div class="flex gap-3 items-start"><span class="italic text-slate-700 shrink-0 w-40" style="font-family: Georgia, serif;">C<sub class="text-[9px] not-italic">base</sub></span><span>= Current active deployed capacity.</span></div>
+              <div class="flex gap-3 items-start"><span class="italic text-slate-700 shrink-0 w-40" style="font-family: Georgia, serif;">S<sub class="text-[9px] not-italic">pipeline</sub> · P<sub class="text-[9px] not-italic">win</sub></span><span>= New sales weighted pipeline capacity additions.</span></div>
+              <div class="flex gap-3 items-start"><span class="italic text-slate-700 shrink-0 w-40" style="font-family: Georgia, serif;">A<sub class="text-[9px] not-italic">expiring</sub> · (1 − P<sub class="text-[9px] not-italic">renew</sub>)</span><span>= Non-renewed expiring asset capacity freed up.</span></div>
+              <div class="flex gap-3 items-start"><span class="italic text-slate-700 shrink-0 w-40" style="font-family: Georgia, serif;">RMA<sub class="text-[9px] not-italic">out</sub>(t)</span><span>= Capacity temporarily lost due to hardware sent to manufacturer for repair.</span></div>
+              <div class="flex gap-3 items-start"><span class="italic text-slate-700 shrink-0 w-40" style="font-family: Georgia, serif;">RMA<sub class="text-[9px] not-italic">in</sub>(t)</span><span>= Capacity restored as repaired hardware returns from the OEM.</span></div>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+              <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-2.5">Interactive Levers → Formula Variables</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[13px] text-slate-500">
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span><span><strong class="text-slate-700">Pipeline Confidence</strong> controls P<sub class="italic text-[9px]">win</sub></span></div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span><span><strong class="text-slate-700">Renewal Rate</strong> controls P<sub class="italic text-[9px]">renew</sub></span></div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><span><strong class="text-slate-700">OEM Repair Lag</strong> scales RMA<sub class="italic text-[9px]">in</sub>(t) recovery</span></div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span><span><strong class="text-slate-700">Decom Buffer</strong> extends expiry detection window</span></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "What is the rack utilization at Santa Clara HSC1?"</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Run a scenario: 60% pipeline confidence, 80% renewal rate — what capacity do we need?"</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Which facilities have OEM repair work orders that will free up blades this quarter?"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 3 ============================ -->
+    <section id="story-3" class="page-break">
+      <div class="rounded-xl border-t-4 border-amber-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 3 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Spreadsheet That Owns the Quarter Close</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How unified financial intelligence replaces manual COGS reconciliation and gives finance a live, trusted revenue picture.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>Every month, the finance team runs a manual process to reconcile revenue and cost of goods sold. They pull SAP reports, match multi-level bills of materials to sellable part numbers, correct regional quantity anomalies, and assemble the result in Excel. Weekly reporting. Monthly close. Quarter-end packages. Audit preparation. Each cycle takes hours and produces data that's already stale.</p>
+              <p>A single emulation system ships as dozens of subcomponents with different part numbers in different regions. Matching "what shipped" to "what was sold" requires deep institutional knowledge. When that knowledge lives in one person's head and their spreadsheet, the business has a single point of failure.</p>
+              <p>Auditors require documented COGS reconciliation every quarter. The manual assembly process creates compounding compliance risk — each quarter's documentation is a fresh exercise built from scratch, not an automated record.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-amber-600 mb-1">Days → Click</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Audit preparation time</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-amber-600 mb-1">Live</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Revenue forecast vs. actuals — single source of truth across all views</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-amber-600 mb-1">Future State</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Automated BOM-to-part-number matching (illustrative — depends on Lighthouse reconciling to SAP, not yet in place)</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">Revenue, COGS, and margin are live metrics on a unified dashboard — anchored to a single authoritative revenue source so totals match across every view. No more mismatched numbers between finance and operations reports.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">Finance anomalies trigger Slack alerts to the controller and operations team, enabling real-time resolution instead of discovery during month-end close.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">In the future state — once BOM data reconciles to SAP — an AI agent monitors BOM matching accuracy and flags reconciliation discrepancies automatically, turning the monthly assembly into a continuous, auditable process.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">The 3-4 Excel workbooks combining CRM exports and SAP data are replaced by a single financial intelligence dashboard with automated data transformation.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Embedded BI &amp; Dashboards</div><div class="text-[13px] text-slate-500 leading-relaxed">Live financial dashboards replacing manual Excel reporting with automated actuals-vs-plan visualization. Revenue figures are anchored to one source of truth — Financials and COGS reconciliation always agree.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Revenue Intelligence</div><div class="text-[13px] text-slate-500 leading-relaxed">AI-powered revenue forecasting combining pipeline data with historical booking patterns.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Enterprise Integration</div><div class="text-[13px] text-slate-500 leading-relaxed">Bi-directional SAP synchronization ensuring financial data flows automatically between transaction and intelligence systems.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Data Harmonization</div><div class="text-[13px] text-slate-500 leading-relaxed">Future-state automated transformation rules matching multi-level BOMs to sellable part numbers across regions — illustrative, dependent on a BOM-to-SAP data model not yet in place.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Data 360 Semantic Layer (future state — illustrative)</div><div class="text-[13px] text-slate-500 leading-relaxed">Revenue, COGS, and margin defined once as governed metric definitions (Calculated Insights) instead of per-report Excel formulas — so every surface that reads a metric computes the same number the same way. Illustrative: depends on the Data 360 model being stood up.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Account Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Complete customer financial history — contracts, orders, revenue, and margin — in a single account record.</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em]">One Definition of Revenue &amp; COGS — the Data 360 Semantic Layer</h3>
+            </div>
+            <div class="mb-4">
+              <span class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-500/10 border border-indigo-500/25 rounded-full px-2 py-0.5" title="Illustrative. Requires the Data 360 semantic model (governed metric definitions / Calculated Insights) to be stood up over the harmonized CRM + SAP data. The single-source-of-truth revenue figure shown on the dashboards today is real; governing the definition centrally is the roadmap layer.">⚗ Future State</span>
+            </div>
+            <p class="text-[13px] text-slate-700 leading-relaxed mb-4">When finance and operations quote two different revenue numbers, the problem usually isn't stale data — it's that each team carries its own <em>definition</em> of the metric: which bookings count, when revenue is recognized, how COGS rolls up. Today those rules live in one analyst's spreadsheet formulas. <strong>Data 360</strong> moves the definition itself into the platform: revenue, COGS, and margin are defined <em>once</em> as governed, reusable metrics over the harmonized CRM + SAP data — so the number is standardized before anyone charts it.</p>
+            <div class="grid gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Standardized metric definitions</div><p class="text-[13px] text-slate-500 leading-relaxed">Revenue, COGS, and margin become governed metric definitions (Calculated Insights) — the formula, the filters, and the grain live in one place, versioned and owned by finance, not re-derived in a workbook every close. Change the definition once and it changes everywhere.</p></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Every surface reads the same number</div><p class="text-[13px] text-slate-500 leading-relaxed">The finance dashboard, the Agentforce agent, a Slack anomaly alert, and the Revenue Intelligence charts all resolve the <em>same</em> definition — so "what was our Q3 emulation revenue?" returns one answer regardless of who asks or where. Finance and operations stop reconciling two different truths.</p></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Harmonized across sources</div><p class="text-[13px] text-slate-500 leading-relaxed">The metric spans systems: CRM pipeline and bookings, SAP actuals, and — via Zero Copy — data federated from Snowflake, all mapped to one data model. The definition computes across sources without a copy-and-ETL step, so the standardized number is also a connected one.</p></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Give me a summary of revenue by product line."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 4 ============================ -->
+    <section id="story-4" class="page-break">
+      <div class="rounded-xl border-t-4 border-red-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 4 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Traveler That Traveled by Email</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How automated order workflows replace SharePoint travelers and email chains with structured, real-time orchestration.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>A customer order for hardware — loan, lease, or sale — kicks off a multi-team relay race. A SharePoint Excel traveler is created, emailed to operations, updated by MED, forwarded to logistics, amended by the vendor, and eventually completed by customer operations. At each step, someone copies data from one place and enters it somewhere else.</p>
+              <p>This is the "Traveler" — a SharePoint-based Excel document that is the de facto order management system. Emails from the process literally arrive during meetings. One missed update, one overlooked attachment, one transposition error anywhere in the chain can delay the entire order or produce incorrect shipments.</p>
+              <p>The operations team has already articulated their goal — move away from Travelers entirely and shift to direct transaction automation. They know the current process doesn't scale. The question isn't whether to change, but how quickly they can.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-red-600 mb-1">50%+</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Order cycle time reduction</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-red-600 mb-1">Zero</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Manual data re-entry errors</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-red-600 mb-1">Real-Time</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Order status for all stakeholders</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">Every order step — compliance, MED confirmation, SAP creation, logistics, delivery — becomes a structured task with an owner, a deadline, and an automated handoff.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">Order status updates, exception alerts, and handoff notifications flow through Slack channels — replacing the email relay that loses context and creates delays.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">Routine order steps — export screening, SAP entry validation, logistics notifications — are handled by AI agents, freeing teams for exception management.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">The SharePoint Traveler is retired. Every order has a live record with complete history, every handoff is tracked, and no step requires manual data re-entry.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Order Management</div><div class="text-[13px] text-slate-500 leading-relaxed">End-to-end order lifecycle from creation through fulfillment with automated step sequencing and exception handling.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Work Order Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Structured task assignment and tracking for every operational step in the order fulfillment chain.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Field Service Mobility</div><div class="text-[13px] text-slate-500 leading-relaxed">Mobile-enabled logistics and delivery confirmation replacing paper-based acknowledgment processes.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Enterprise Platform Connectors</div><div class="text-[13px] text-slate-500 leading-relaxed">Pre-built integrations connecting Salesforce order workflows with SAP, logistics providers, and vendor systems.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Agentforce in Slack</div><div class="text-[13px] text-slate-500 leading-relaxed">AI-assisted order management with natural language queries and automated status updates in team channels.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Show me all work orders currently in progress."</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-violet-500/25 bg-violet-500/5 text-violet-700">Trade · "Screen a shipment of Calibre software to India."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 5 ============================ -->
+    <section id="story-5" class="page-break">
+      <div class="rounded-xl border-t-4 border-siemens-teal bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 5 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Platform That Connects It All</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How a unified data model replaces siloed systems and spreadsheet intermediaries with one connected view for every stakeholder.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>A sales rep, a finance controller, a logistics coordinator, an export compliance officer, and a customer success manager each work from a different system. The sales team uses CRM. Finance uses SAP and Excel. Logistics uses email and the Traveler. Compliance checks a separate database. Customer success pieces together information from all of the above.</p>
+              <p>Every cross-functional decision requires a meeting — not to decide, but to agree on the facts. "What's the actual status of this order?" requires consulting three systems. "What's our margin on this customer?" requires assembling data from five sources. The business pays a hidden tax in time, accuracy, and opportunity cost.</p>
+              <p>This coordination overhead worked when the business was smaller. As EDA's emulation-as-a-service portfolio grows and complexity increases, the manual effort doesn't scale. Adding people doesn't solve a systems problem. The constraint isn't talent — it's the architecture.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-siemens-accent mb-1">Days → Minutes</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Cross-functional decision assembly</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-siemens-accent mb-1">Zero</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Duplicate data entry across systems</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-siemens-accent mb-1">Scale Ready</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Grow without growing manual effort</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">The sales rep's opportunity feeds the capacity planner's view. The order workflow feeds the finance dashboard. The asset lifecycle feeds service operations. One data model, every stakeholder connected.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">Cross-functional collaboration happens in context — deal rooms, incident channels, and finance alerts all flow through Slack with full record context.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">AI agents bridge the gaps between functions — automatically routing information, triggering dependent processes, and surfacing exceptions across teams.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">When every system feeds the same platform, there's no need for spreadsheet intermediaries. The reconciliation meeting becomes obsolete because everyone already sees the same truth.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Unified Customer Profile</div><div class="text-[13px] text-slate-500 leading-relaxed">A single, authoritative customer record spanning sales, service, finance, and operations.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Enterprise Integration</div><div class="text-[13px] text-slate-500 leading-relaxed">Bi-directional data flows between Salesforce, SAP, and operational systems — eliminating manual re-entry.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Data Harmonization</div><div class="text-[13px] text-slate-500 leading-relaxed">Automated resolution of conflicting data across source systems into a trusted, unified view.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Physical Asset Hierarchy</div><div class="text-[13px] text-slate-500 leading-relaxed">Assets organized in a Facility → Rack → Blade hierarchy with breadcrumb navigation and drill-down — replacing flat spreadsheet rows with a connected physical model.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Account Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Complete customer lifecycle from first contact through revenue recognition in one record.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Opportunity Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Pipeline visibility that directly informs capacity planning, financial forecasting, and resource allocation.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Embedded BI &amp; Dashboards</div><div class="text-[13px] text-slate-500 leading-relaxed">Role-specific views of shared data — every stakeholder sees what they need without building separate reports.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "What is the current status of our emulator fleet?"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 6 ============================ -->
+    <section id="story-6" class="page-break">
+      <div class="rounded-xl border-t-4 border-sky-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 6 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">The Renewal That Nobody Saw Coming</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How a connected account 360 turns renewal risk and idle-capacity upsell into proactive moves the account team makes months ahead — instead of surprises the customer discovers first.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>Emulation-as-a-Service is a relationship business. The revenue isn't the sale — it's the renewal, the expansion, and the multi-year commitment. Yet the signals that protect that revenue are scattered. Contract dates live in one system, utilization in the capacity spreadsheet, support history in cases, and margin in finance's month-end reconciliation. No one owns the whole picture of an account.</p>
+              <p>So the Pinnacle Chip Design EaaS agreement drifts toward its expiration date, and the account team learns it's at risk when Pinnacle mentions they're evaluating alternatives — not months earlier when a proactive conversation could have secured the renewal and shaped an expansion.</p>
+              <p>The mirror image hurts just as much. Accounts running well below the capacity they're paying for are prime expansion candidates — or churn risks if they conclude they're over-provisioned. But under-utilization only shows up if someone manually cross-references usage against contract terms, account by account. The expansion that was sitting in plain sight goes unsold; the churn risk goes unseen until it's a lost deal.</p>
+              <p>Every account review is a fire drill of pulling reports from four systems into a slide the day before the meeting. The account team spends its time assembling the picture instead of acting on it.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-sky-600 mb-1">Months Earlier</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Renewal risk surfaced before the customer raises it</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-sky-600 mb-1">Proactive</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Expansion signals from idle capacity, not manual cross-referencing</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-sky-600 mb-1">One View</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Usage, contract, support, and margin per account</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">Contracts, assets, utilization, cases, and margin roll up to a single account record. The renewal date, the capacity a customer actually uses, and the profitability of the relationship live in one place — the account team acts on one picture, not four exports.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">When an account crosses a renewal-risk or expansion-opportunity threshold, the account executive, ops lead, and finance partner are pulled into a Slack channel with the context attached — the save happens as a conversation, not a quarterly report.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">An AI agent watches every account continuously — flagging renewals approaching expiration, accounts running below contracted capacity, and margin drift — and drafts the account team's next move before anyone opens a spreadsheet.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">The pre-meeting scramble to assemble an account picture from four systems is gone. The account 360 is always current, so the review starts from insight instead of from data assembly.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Unified Customer Profile</div><div class="text-[13px] text-slate-500 leading-relaxed">One account view spanning contracts, deployed and spare assets, utilization, support cases, and margin — the full EaaS relationship for NVIDIA, Samsung, Apex, Pinnacle, and every account in one record.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Revenue Intelligence</div><div class="text-[13px] text-slate-500 leading-relaxed">Renewal and expansion forecasting that connects contract expiration dates to actual usage and profitability, so recurring-revenue risk and upside are quantified per account, not estimated at quarter close.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Proactive Insights</div><div class="text-[13px] text-slate-500 leading-relaxed">Agentforce continuously scores accounts for renewal risk and idle-capacity-to-upsell, surfacing the Pinnacle-style expiring agreement and the under-utilized fleet as actions on a dashboard rather than discoveries in a hallway.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Account &amp; Opportunity Management</div><div class="text-[13px] text-slate-500 leading-relaxed">Renewal and expansion opportunities generated from the same signals that raised the flag, with the account team's next steps, owners, and close dates tracked against the relationship — not a disconnected note.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Slack-First Account Swarming</div><div class="text-[13px] text-slate-500 leading-relaxed">Cross-functional saves and expansions run in real-time Slack channels — AE, operations, and finance on the same thread with the account context attached.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "List all contract renewals expiring in the next 30 days."</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Which customers have the lowest utilization on their installed fleet?"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STORY 7 ============================ -->
+    <section id="story-7" class="page-break">
+      <div class="rounded-xl border-t-4 border-violet-500 bg-white shadow-sm overflow-hidden">
+        <div class="px-6 sm:px-8 py-7 border-b border-slate-100">
+          <div class="text-[10px] uppercase tracking-[0.15em] text-slate-400 mb-2">Story 7 of 7</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">From Heroic Manual Efforts to Closed-Loop Automation</h2>
+          <p class="text-sm text-slate-500 leading-relaxed max-w-3xl">How real-time telemetry, automated field service, and closed-loop financial tracking replace the "hear about it days later" operating model.</p>
+        </div>
+        <div class="px-6 sm:px-8 py-7 space-y-7">
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">The Business Challenge</h3>
+            <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+              <p>A blade card fails in a colocation facility at 2 AM. In today's world, the operations team doesn't learn about it until IT opens a service request — often days later. A technician then walks the colo floor scanning barcodes for two days to identify affected hardware — they can't even tell which rack or facility the blade belongs to without cross-referencing a spreadsheet. The repair gets tracked in a disconnected system. Costs are manually entered into SAP weeks after the fact.</p>
+              <p>Then the hunt for a replacement begins. Is there a spare blade on the shelf? At which facility? Is it allocated to another customer's expansion? The spare-pool inventory lives in yet another spreadsheet — so a fix that should take an hour waits on a phone call to find out whether the part even exists.</p>
+              <p>Between the failure and the resolution, a customer's emulation capacity is degraded. No automated alert. No automated dispatch. No automated cost tracking. Every step requires a person to notice something, tell someone else, and manually record what happened.</p>
+              <p>Even when the repair is complete, the financial picture isn't. Cost data from the contract manufacturer lives in a separate system. Margin impact isn't visible until the next monthly reconciliation. The business runs on lagging indicators because the systems aren't connected.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Potential Business Outcomes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-violet-600 mb-1">Instant</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Telemetry-triggered work orders</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-violet-600 mb-1">Real-Time</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Vendor RMA and cost tracking</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-xl font-bold text-violet-600 mb-1">2 Days → 0</div><div class="text-[11px] text-slate-500 uppercase tracking-wider">Manual inventory scan time</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Why Salesforce · Why Now</h3>
+            <div class="space-y-3 text-sm">
+              <div><div class="font-semibold text-slate-800">One System for the Sales Process</div><div class="text-slate-500 text-[13px] leading-relaxed">From failure detection through repair completion and cost write-back, every step is a connected record — the full asset lifecycle in one place.</div></div>
+              <div><div class="font-semibold text-slate-800">Collaborate in Slack</div><div class="text-slate-500 text-[13px] leading-relaxed">Incident swarming brings the right engineers, operations staff, and vendor contacts together in a Slack channel — replacing the phone tree and email escalation.</div></div>
+              <div><div class="font-semibold text-slate-800">Digital Labor with Agentforce</div><div class="text-slate-500 text-[13px] leading-relaxed">An AI agent detects the failure, creates the work order, identifies the nearest spare part, dispatches the technician, and notifies the customer — all autonomously.</div></div>
+              <div><div class="font-semibold text-slate-800">End the Spreadsheet Era</div><div class="text-slate-500 text-[13px] leading-relaxed">Asset tracking, repair costs, vendor RMA status, and margin impact are all live in the system — no more waiting for monthly reconciliation to see the financial picture.</div></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Salesforce Capabilities Powering This Solution</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Remote Monitoring &amp; Proactive Service</div><div class="text-[13px] text-slate-500 leading-relaxed">Real-time telemetry streams triggering automated work orders when performance degrades or failures occur. The asset hierarchy shows exactly which facility, rack, and blade is affected.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Field Service Worker Mobility</div><div class="text-[13px] text-slate-500 leading-relaxed">Mobile-enabled technician dispatch with asset location, repair instructions, and spare parts inventory.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">RMA / Depot Repair</div><div class="text-[13px] text-slate-500 leading-relaxed">Closed-loop return merchandise authorization with vendor tracking, cost capture, and financial reconciliation.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Slack Swarming</div><div class="text-[13px] text-slate-500 leading-relaxed">Instant incident collaboration bringing cross-functional experts together in real-time channels.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Agentforce Autonomous Agents</div><div class="text-[13px] text-slate-500 leading-relaxed">AI-powered automation handling failure detection, dispatch, notifications, and vendor coordination.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Revenue Intelligence</div><div class="text-[13px] text-slate-500 leading-relaxed">Live margin impact analysis connecting repair costs to customer profitability and contract terms.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Predictive Spares &amp; Replenishment <span class="text-slate-400 font-normal">(future state — illustrative)</span></div><div class="text-[13px] text-slate-500 leading-relaxed">Par-level / reorder-point per facility plus a failure-rate-driven spare-demand forecast, so a below-par colo triggers replenishment before the shelf is empty. Builds on the min-stock / below-minimum inventory logic already on the Spares view.</div></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="text-sm font-semibold text-siemens-accent mb-1">Vendor Orchestration &amp; Integration <span class="text-slate-400 font-normal">(future state — illustrative)</span></div><div class="text-[13px] text-slate-500 leading-relaxed">Slack Connect channels with contract manufacturers plus autonomous outreach to third-party repair services like PagerDuty — reachable via Slack, Agentforce + Apex, or MuleSoft. Illustrative roadmap on top of the live spare-pool, telemetry, and work-order spine.</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em]">Proactive Spares &amp; Vendor Orchestration</h3>
+            </div>
+            <div class="mb-4">
+              <span class="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-500/10 border border-indigo-500/25 rounded-full px-2 py-0.5" title="Illustrative roadmap. The reorder signal is on-screen today; predictive replenishment and third-party outreach build on the live spare-pool, telemetry, and work-order data already in the platform.">⚗ Future State</span>
+            </div>
+            <p class="text-[13px] text-slate-700 leading-relaxed mb-4">The reactive closed loop above resolves a failure fast. The next layer moves <em>ahead of</em> the failure — turning the spare pool into a managed, self-replenishing inventory and reaching out to repair vendors autonomously, before capacity is ever at risk.</p>
+            <div class="grid gap-3">
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Predictive replenishment</div><p class="text-[13px] text-slate-500 leading-relaxed">Par-level and reorder-point per facility — the same min-stock / below-minimum logic already visible on the Spares view — combined with a spare-demand forecast derived from failure rates (MTBF-style). A colo that drifts below par triggers replenishment automatically, so a spare is on the shelf before the next blade fails, not ordered after.</p></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Slack Connect to manufacturers</div><p class="text-[13px] text-slate-500 leading-relaxed">Shared Slack Connect channels bridge Siemens EDA operations and the contract manufacturer or repair vendor directly — extending the in-app incident-swarming pattern into a <em>cross-company</em> channel, so RMA status, parts availability, and dispatch happen in one thread instead of an email chain across two companies.</p></div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4"><div class="font-semibold text-slate-800 mb-1">Third-party repair-service integration</div><p class="text-[13px] text-slate-500 leading-relaxed mb-2">A telemetry threshold or a below-par spare event can drive autonomous outreach to a third-party repair-orchestration service like <strong>PagerDuty</strong> — reached three ways, each an illustrative integration option:</p><ul class="text-[13px] text-slate-500 leading-relaxed list-disc pl-5 space-y-0.5"><li><strong>Slack</strong> — a workflow/alert posted to a connected channel that the vendor already watches.</li><li><strong>Agentforce + Apex</strong> — an invocable Apex callout the agent fires as a tool action.</li><li><strong>MuleSoft</strong> — an integration flow to the vendor's RMA system or the PagerDuty Events API.</li></ul><p class="text-[13px] text-slate-500 leading-relaxed mt-2">The result is outreach <em>ahead of</em> failure — the vendor is engaged on a degradation or replenishment signal, not after a customer's capacity has already dropped.</p></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.1em] mb-3">Try It With the Agent</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Are there any critical alerts or errors across the fleet?"</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Which assets have the highest error rates in the last 24 hours?"</span>
+              <span class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg border border-siemens-teal/25 bg-siemens-teal/5 text-siemens-accent">HAV · "Which spare parts are below their minimum stock and at which facilities?"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-6 py-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div class="text-sm font-semibold text-slate-800">Siemens EDA · Hardware-Assisted Verification</div>
+          <div class="text-xs text-slate-500 mt-1">Solution Capabilities &amp; Vignettes — built on the platform already within the Siemens Enterprise License Agreement.</div>
+        </div>
+        <button type="button" onclick="window.print()" class="no-print inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg border border-siemens-teal/25 text-siemens-accent bg-siemens-teal/5 hover:bg-siemens-teal/15 transition-colors">
+          Save as PDF
+        </button>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
