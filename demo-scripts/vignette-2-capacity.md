@@ -2,7 +2,7 @@
 **Duration:** 15 minutes | **Persona:** Russell (Ops), Ken (HAV Operations)
 
 ## Narrative Setup
-> "A sales rep calls in: 'My customer needs 8 more racks at the Santa Clara colo next quarter.' Currently, Russell has to open three different spreadsheets, cross-reference customer contracts, check power availability, and get back to sales 48 hours later. The answer might be wrong because the spreadsheet was last updated two weeks ago."
+> "A sales rep calls in: 'My customer needs 8 more racks at the Hsinchu colo next quarter.' Currently, Russell has to open three different spreadsheets, cross-reference customer contracts, check power availability, and get back to sales 48 hours later. The answer might be wrong because the spreadsheet was last updated two weeks ago."
 
 ## Click Path
 
@@ -12,9 +12,9 @@
 **Talk track:**
 - "Here's every colocation facility at a glance — the picture Russell rebuilds by hand every two weeks."
 - Walk through **2-3 Location Cards**:
-  - **Rack Occupancy** — "Wilsonville is at 87% — near capacity, flagged in red."
+  - **Rack Occupancy** — "Point to the facility flagged in red — near capacity."
   - **Power Capacity** — "Austin has plenty of racks but is constrained on power."
-  - **PUE** — "Chandler's PUE of 1.65 is above target — a cooling efficiency signal."
+  - **PUE** — "Call out a facility whose PUE is above target — a cooling efficiency signal."
 - "Occupancy, power, and efficiency in one view. But the question sales asked was about *next quarter* — so let's forecast."
 
 ### Step 2: The Capacity Forecast Engine (5 min)
@@ -27,7 +27,7 @@
   - **Pipeline Confidence** — "How much of the weighted pipeline do we believe? Drag it to 60%."
   - **Renewal Rate** — "How many expiring contracts renew? Set it to 80%."
   - **OEM Repair Lag** and **Decom Buffer** — "These tune when repaired hardware returns and how early we flag expirations."
-- "Watch the waterfall and the per-facility projections recompute instantly. When sales asks 'Can we add 8 racks at Santa Clara?' — I answer in the meeting, not in 48 hours."
+- "Watch the waterfall and the per-facility projections recompute instantly. When sales asks 'Can we add 8 racks at Hsinchu?' — I answer in the meeting, not in 48 hours."
 - Use the **time-horizon selector** and **region/account filters** to narrow the view: "Scope it to the Americas, or to one account, and the projection follows."
 
 ### Step 3: What's Behind the Number (3 min)
@@ -53,7 +53,7 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Click suggested prompt: **"What is the rack utilization at Santa Clara HSC1?"**
+- Click suggested prompt: **"What is the rack utilization at Hsinchu?"**
 - Follow up: **"Run a scenario: 60% pipeline confidence, 80% renewal rate — what capacity do we need?"**
 - "The agent reads the same connected data — a 5-second answer instead of a 48-hour spreadsheet lookup."
 

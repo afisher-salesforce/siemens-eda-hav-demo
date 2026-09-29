@@ -77,12 +77,11 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Type: **"What critical alerts do we have right now?"**
-- "The agent sees the same telemetry data. It can tell Ken about failures without navigating to any page."
-- Follow up: **"What's the status of the work order for the blade failure at NVIDIA?"**
-- "It knows the work order was auto-created, what spare was assigned, and the current status."
-- Follow up: **"What's our spare blade inventory at Santa Clara?"**
-- "Three questions, three instant answers. No spreadsheets opened, no emails sent, no phone calls made."
+- Type: **"Are there any critical alerts for asset VS-SEL1-001?"**
+- "The agent sees the same telemetry data. It reports the blade in trouble — temperature, CPU, error count — and even offers to open a work order, without Ken navigating to any page."
+- Follow up: **"Fleet Status"**
+- "It rolls the whole fleet up in one answer — every asset ranked by utilization, by customer and location — so Ken can see which systems need attention across every site at once."
+- "Two questions, two instant answers. No spreadsheets opened, no emails sent, no phone calls made. The spare-parts inventory and the auto-created work order are right here on screen — the agent surfaces the telemetry that triggers them."
 
 ## Key Messages
 - Failure detection is automated through live telemetry — not customer phone calls

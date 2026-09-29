@@ -35,10 +35,10 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Type: **"List all contract renewals expiring in the next 30 days."**
-- "The agent watches every account continuously — it surfaces the expiring agreements without anyone pulling a report."
-- Follow up: **"Which customers have the lowest utilization on their installed fleet?"**
-- "And it finds the idle-capacity upsell candidates the same way. Two questions, two proactive moves — before the customer raises either one."
+- Type: **"Fleet Status"**
+- "The agent watches every account continuously — it returns the whole fleet ranked by utilization, by customer and location, without anyone pulling a report. The renewal picture itself lives on the **Upcoming Contract Renewals** panel we just walked through — the agent points you back to that view."
+- Follow up: **"What's the status of the loan-to-sale for TSMC?"**
+- "And it surfaces the loan-to-sale and expansion candidates the same way — the idle capacity and the low-utilization accounts are right there in the fleet ranking. Two questions, two proactive moves — before the customer raises either one."
 
 ## Key Messages
 - Renewal risk surfaces months earlier — before the customer raises it

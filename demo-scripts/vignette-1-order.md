@@ -11,7 +11,7 @@
 
 **Talk track:**
 - "Here's the full order pipeline — every sales agreement, loan, lease, and purchase order."
-- Point to a **specific order** for a major customer (e.g., Arm Holdings or NVIDIA).
+- Point to a **specific order** for a major customer (e.g., TSMC or NVIDIA).
 - "This order started as a loaner agreement. The customer wants to convert to a sale."
 - Show the **Status badge** — highlight the stage it's in.
 - "Today, this status would be tracked in a SharePoint list. Here, it's real-time."
@@ -45,7 +45,7 @@
 **Open:** Agent Chat
 
 **Talk track:**
-- Type or click: **"What's the status of the loan-to-sale for Arm Holdings?"**
+- Type or click: **"What's the status of the loan-to-sale for TSMC?"**
 - "The agent knows the order pipeline. It can tell you the status, the compliance state, and the next action — without navigating anywhere."
 
 ## Key Messages
