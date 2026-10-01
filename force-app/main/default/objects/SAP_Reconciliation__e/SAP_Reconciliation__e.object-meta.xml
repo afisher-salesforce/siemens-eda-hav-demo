@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Represents a triggered financial-reconciliation event sent to SAP on loan-to-sale conversion. Published by HAV_LoanToSaleService (one event per return line and per reissue line, mirroring the MSO two-line pattern). In the demo this stands in for a MuleSoft-to-SAP integration; no live SAP call is made.</description>
+    <eventType>HighVolume</eventType>
+    <label>SAP Reconciliation</label>
+    <pluralLabel>SAP Reconciliations</pluralLabel>
+    <publishBehavior>PublishAfterCommit</publishBehavior>
+</CustomObject>
