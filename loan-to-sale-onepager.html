@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siemens EDA HAV — Loan-to-Sale Conversion</title>
+  <script src="https://assets.meshmesh.io/system/tailwindcss-browser-4.js"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-siemens-teal: #009999;
+      --color-siemens-dark: #0C2340;
+      --color-siemens-light: #E6F7F7;
+      --color-siemens-petrol: #006B75;
+      --color-accent-amber: #F59E0B;
+      --color-accent-red: #EF4444;
+      --color-accent-green: #10B981;
+      --color-slate-50: #F8FAFC;
+      --color-slate-100: #F1F5F9;
+      --color-slate-200: #E2E8F0;
+      --color-slate-300: #CBD5E1;
+      --color-slate-500: #64748B;
+      --color-slate-600: #475569;
+      --color-slate-700: #334155;
+      --color-slate-800: #1E293B;
+      --color-slate-900: #0F172A;
+    }
+    @media print {
+      @page { size: letter portrait; margin: 0.35in; }
+      html, body { font-size: 10.5px; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      section, header, footer { break-inside: avoid; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', system-ui, sans-serif; }</style>
+</head>
+<body class="bg-white text-slate-800 antialiased">
+
+  <!-- HEADER -->
+  <header class="bg-siemens-dark text-white">
+    <div class="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-8 h-8 rounded bg-siemens-teal flex items-center justify-center font-bold text-sm">S</div>
+          <span class="text-xs font-medium tracking-wide uppercase text-slate-300">Siemens EDA · Hardware-Assisted Verification</span>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tight">Loan-to-Sale Conversion</h1>
+        <p class="text-siemens-teal text-sm font-medium mt-1">Return &amp; reissue, automated in Salesforce — with full asset lineage</p>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <span class="inline-flex items-center gap-1.5 bg-accent-green/15 border border-accent-green/40 text-accent-green text-xs font-bold rounded-full px-3 py-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Deployed &amp; demo-ready
+        </span>
+        <code class="text-[11px] text-slate-300 font-mono">siemens-eda-hav-l15viz</code>
+        <button onclick="window.print()" class="no-print mt-1 inline-flex items-center gap-1.5 bg-siemens-teal hover:bg-siemens-petrol transition-colors text-white text-xs font-semibold rounded-md px-3 py-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M4 6h16M6 6v12a2 2 0 002 2h8a2 2 0 002-2V6"/></svg>
+          Download PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAIN -> SHIFT -->
+  <section class="max-w-6xl mx-auto px-8 pt-6 pb-2">
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- TODAY -->
+      <div class="border border-accent-red/30 rounded-xl p-5 bg-red-50/50">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 rounded-full bg-accent-red/10 flex items-center justify-center">
+            <svg class="w-4 h-4 text-accent-red" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </div>
+          <h3 class="font-bold text-accent-red text-sm uppercase tracking-wide">Today — the quarter-end fire drill</h3>
+        </div>
+        <ul class="text-sm text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Serial numbers reconciled <strong>across email threads</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>SAP return + reissue done by hand via a shared <strong>Excel "traveler"</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Hours of coordination per conversion — <strong>compliance, logistics</strong></span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>Revenue <strong>slips a quarter</strong> on a single missed handoff</span></li>
+          <li class="flex gap-2"><span class="text-accent-red mt-0.5">•</span><span>No single record of what was returned, reissued, or owed</span></li>
+        </ul>
+      </div>
+      <!-- AFTER -->
+      <div class="border border-accent-green/30 rounded-xl p-5 bg-green-50/50">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 rounded-full bg-accent-green/10 flex items-center justify-center">
+            <svg class="w-4 h-4 text-accent-green" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h3 class="font-bold text-accent-green text-sm uppercase tracking-wide">With the solution</h3>
+        </div>
+        <ul class="text-sm text-slate-700 space-y-2">
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span><strong>One action</strong> converts a loan to a sale in seconds</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>Serial validation is <strong>automated</strong> — all-or-nothing, no half-done conversions</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>The <strong>green return + reissue</strong> post as system transactions to SAP</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span><strong>Lineage</strong> is visible on the asset — loan → return → sale</span></li>
+          <li class="flex gap-2"><span class="text-accent-green mt-0.5">•</span><span>A <strong>100% audit trail</strong> on every conversion</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE THREE-ORDER MODEL (HERO) -->
+  <section class="max-w-6xl mx-auto px-8 py-5">
+    <h2 class="text-xl font-bold text-siemens-dark mb-1">The three-order model</h2>
+    <p class="text-sm text-slate-500 mb-4 max-w-4xl">
+      One <strong>Convert to Sale</strong> action decomposes the loan into a <strong>return</strong> and a <strong>sale</strong> — both linked back to the original loan order, so the whole chain reads from one record. Numbers below are the <strong>live org chain</strong>.
+    </p>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-5">
+      <div class="flex items-stretch justify-center gap-3 flex-wrap">
+        <!-- LOAN -->
+        <div class="flex-1 min-w-[150px] max-w-[220px] bg-white border-2 border-slate-300 rounded-lg p-4 text-center">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Loan Order</div>
+          <div class="font-mono text-lg font-bold text-siemens-dark">#00000236</div>
+          <div class="text-[11px] text-slate-500 mt-1">Veloce Strato on loan</div>
+          <div class="mt-2 inline-block text-[10px] font-mono bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">Loan_Order</div>
+        </div>
+
+        <!-- ARROW + ACTION -->
+        <div class="flex flex-col items-center justify-center px-1">
+          <div class="inline-flex items-center gap-1.5 bg-siemens-teal text-white text-xs font-bold rounded-full px-3 py-1.5 whitespace-nowrap">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Convert to Sale
+          </div>
+          <svg class="w-10 h-6 text-siemens-teal mt-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </div>
+
+        <!-- RETURN + SALE -->
+        <div class="flex-1 min-w-[150px] max-w-[260px] flex flex-col gap-3">
+          <div class="bg-white border-2 border-accent-amber/50 rounded-lg p-3 text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-accent-amber mb-0.5">Return Order · "green return"</div>
+            <div class="font-mono text-base font-bold text-siemens-dark">#00000237</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">SAP financial integrity — even if hardware never moves</div>
+            <div class="mt-1 inline-block text-[10px] font-mono bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">Return_Order</div>
+          </div>
+          <div class="bg-white border-2 border-accent-green/50 rounded-lg p-3 text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-accent-green mb-0.5">Sale Order</div>
+            <div class="font-mono text-base font-bold text-siemens-dark">#00000238</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Asset re-pointed here · entitlements active</div>
+            <div class="mt-1 inline-block text-[10px] font-mono bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">Sale_Order</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINEAGE RIBBON -->
+      <div class="mt-4 flex items-center justify-center gap-2 text-[11px] text-slate-600">
+        <svg class="w-4 h-4 text-siemens-petrol" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        <span>Return and Sale both link back to the loan via the custom <code class="font-mono bg-slate-100 rounded px-1">Order.Original_Loan_Order__c</code> — lineage renders on the asset detail page.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT'S CONFIGURED -->
+  <section class="max-w-6xl mx-auto px-8 py-3">
+    <h2 class="text-xl font-bold text-siemens-dark mb-3">How it's configured in Salesforce</h2>
+    <div class="grid md:grid-cols-5 gap-3">
+      <!-- Orders -->
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <svg class="w-5 h-5 text-siemens-petrol mb-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Standard Order</div>
+        <div class="text-[10px] text-slate-500">3 custom record types — <span class="font-mono">Loan</span> / <span class="font-mono">Return</span> / <span class="font-mono">Sale_Order</span>. No OMS objects.</div>
+      </div>
+      <!-- Custom fields -->
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <svg class="w-5 h-5 text-siemens-petrol mb-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/></svg>
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Custom fields</div>
+        <div class="text-[10px] text-slate-500"><span class="font-mono">Original_Loan_Order__c</span> (lineage) + <span class="font-mono">Asset.Order__c</span> (asset ↔ order).</div>
+      </div>
+      <!-- SAP stub -->
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <svg class="w-5 h-5 text-siemens-petrol mb-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <div class="text-xs font-bold text-siemens-petrol mb-1">SAP stub</div>
+        <div class="text-[10px] text-slate-500"><span class="font-mono">SAP_Reconciliation__e</span> platform event — 2 per asset (Return + Reissue). Publish-only, no live SAP.</div>
+      </div>
+      <!-- Automation -->
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <svg class="w-5 h-5 text-siemens-petrol mb-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Automation</div>
+        <div class="text-[10px] text-slate-500">Invocable Apex <span class="font-mono">HAV_LoanToSaleService</span>, all-or-nothing. Quick action → <span class="font-mono">Convert_Loan_To_Sale</span> flow.</div>
+      </div>
+      <!-- Security / headless -->
+      <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <svg class="w-5 h-5 text-siemens-petrol mb-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <div class="text-xs font-bold text-siemens-petrol mb-1">Security &amp; REST</div>
+        <div class="text-[10px] text-slate-500"><span class="font-mono">HAV_Loan_To_Sale</span> permission set. Also headless: <span class="font-mono">POST /hav/loan-to-sale</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT THE CONVERSION DOES -->
+  <section class="max-w-6xl mx-auto px-8 py-3">
+    <div class="bg-siemens-light border border-siemens-teal/20 rounded-xl p-4">
+      <h3 class="text-sm font-bold text-siemens-dark mb-2">One transaction, five effects</h3>
+      <div class="grid md:grid-cols-5 gap-2 text-[11px] text-slate-700">
+        <div class="flex gap-1.5"><span class="font-bold text-siemens-teal">1</span><span>Creates <strong>Return</strong> + <strong>Sale</strong> orders, both linked to the loan</span></div>
+        <div class="flex gap-1.5"><span class="font-bold text-siemens-teal">2</span><span>Re-points the <strong>asset</strong> to the sale order</span></div>
+        <div class="flex gap-1.5"><span class="font-bold text-siemens-teal">3</span><span>Stamps <span class="font-mono">Lease_Type=Sale</span>, <span class="font-mono">Converted to Sale</span></span></div>
+        <div class="flex gap-1.5"><span class="font-bold text-siemens-teal">4</span><span>Activates <strong>entitlements</strong> on the asset</span></div>
+        <div class="flex gap-1.5"><span class="font-bold text-siemens-teal">5</span><span>Publishes <strong>2 SAP events</strong> — rolls back fully on any failure</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO-READY FOOTER BAND -->
+  <section class="max-w-6xl mx-auto px-8 py-3">
+    <div class="border border-accent-green/30 rounded-xl p-4 bg-green-50/50 flex items-center gap-4">
+      <div class="w-8 h-8 rounded-full bg-accent-green/15 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-accent-green" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div class="text-sm text-slate-700">
+        <strong class="text-siemens-dark">Deployed and demo-ready for Monday.</strong>
+        Live in <code class="font-mono text-xs bg-white border border-slate-200 rounded px-1">siemens-eda-hav-l15viz</code> — drivable <strong>in Salesforce</strong> (Convert to Sale on the loan order) <em>or</em> <strong>headless via REST</strong>. Two demo surfaces, one source of truth on <span class="font-mono">main</span>.
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-3 text-center">
+    <p>Siemens EDA HAV — Loan-to-Sale Conversion · Prepared by Salesforce Account Team · Confidential</p>
+  </footer>
+
+</body>
+</html>
