@@ -830,9 +830,14 @@ export async function getWorkOrders(filters = {}) {
 
 /**
  * Get sales orders / agreements
+ * @param {Object} opts - { includeOrders } — when true, append ?include=orders so
+ *   the response unions the Loan/Return/Sale Order records (which carry the
+ *   loan-to-sale lineage) alongside the default SalesAgreement rows. The default
+ *   (no opt-in) response is unchanged, so existing callers are unaffected.
  */
-export async function getOrders() {
-  const raw = await request('/orders');
+export async function getOrders(opts = {}) {
+  const qs = opts.includeOrders ? '?include=orders' : '';
+  const raw = await request(`/orders${qs}`);
   return transformOrders(raw);
 }
 

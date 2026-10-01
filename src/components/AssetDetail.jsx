@@ -131,10 +131,23 @@ export default function AssetDetail() {
 
   // Fetch orders so we can show the loan → return → sale lineage for a
   // converted (or convertible) loaner. The trio is keyed on the loan order Id.
-  const { data: ordersData, refetch: refetchOrders } = useSalesforceData(getOrders);
+  // includeOrders unions the Loan/Return/Sale Order records (which carry the
+  // loan-to-sale lineage) into the response; the default /orders payload is
+  // SalesAgreement-only and has none, so without this the lineage never renders.
+  const { data: ordersData, refetch: refetchOrders } = useSalesforceData(
+    () => getOrders({ includeOrders: true })
+  );
   const orderLineage = useMemo(() => {
-    const loanOrderId = loanerInfo?.orderId;
-    if (!loanOrderId || !Array.isArray(ordersData)) return null;
+    // loanerInfo.orderId is the asset's CURRENT order. Pre-conversion that is
+    // the loan order; post-conversion it is the sale order. The chain is always
+    // rooted at the loan order, so resolve that first: if the current order is a
+    // Return/Sale it carries originalLoanOrderId back to the loan; if the asset
+    // is still on the loan order, that order is itself the root.
+    const currentOrderId = loanerInfo?.orderId;
+    if (!currentOrderId || !Array.isArray(ordersData)) return null;
+    const currentOrder = ordersData.find((o) => o.id === currentOrderId) || null;
+    if (!currentOrder) return null;
+    const loanOrderId = currentOrder.originalLoanOrderId || currentOrder.id;
     const loanOrder = ordersData.find((o) => o.id === loanOrderId) || null;
     const children = ordersData.filter((o) => o.originalLoanOrderId === loanOrderId);
     const returnOrder = children.find((o) => o.recordType === 'Return_Order') || null;
