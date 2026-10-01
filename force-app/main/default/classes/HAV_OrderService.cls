@@ -3,15 +3,30 @@ global with sharing class HAV_OrderService {
 
     @HttpGet
     global static void getOrders() {
+        RestRequest req = RestContext.request;
         RestResponse res = RestContext.response;
         res.addHeader('Content-Type', 'application/json');
 
         try {
+            // Opt-in: ?include=orders adds the Loan/Return/Sale Order records
+            // (with loan-to-sale lineage) alongside the SalesAgreement rows.
+            // Default behavior is unchanged — SalesAgreement-only where
+            // SalesAgreement is available — so existing callers (Orders list,
+            // COGS, Capacity, Compliance) see exactly the same payload as before.
+            String include = req != null && req.params != null ? req.params.get('include') : null;
+            Boolean includeOrders = include != null && include.equalsIgnoreCase('orders');
+
             List<Map<String, Object>> results = new List<Map<String, Object>>();
 
             if (isSalesAgreementAvailable()) {
                 results = querySalesAgreements();
+                // SalesAgreement and Order are distinct objects; the loan-to-sale
+                // lineage lives on Order, so it is only surfaced when asked for.
+                if (includeOrders) {
+                    results.addAll(queryOrders());
+                }
             } else {
+                // Orders already carry the lineage fields on this path.
                 results = queryOrders();
             }
 
@@ -66,7 +81,9 @@ global with sharing class HAV_OrderService {
     private static List<Map<String, Object>> queryOrders() {
         List<Order> orders = [
             SELECT Id, OrderNumber, Status, Account.Name,
-                EffectiveDate, EndDate, TotalAmount
+                EffectiveDate, EndDate, TotalAmount,
+                RecordType.DeveloperName, RecordType.Name,
+                Original_Loan_Order__c, Original_Loan_Order__r.OrderNumber
             FROM Order
             ORDER BY EffectiveDate DESC
             LIMIT 200
@@ -83,6 +100,15 @@ global with sharing class HAV_OrderService {
             row.put('EndDate', o.EndDate);
             row.put('TotalAmount', o.TotalAmount);
             row.put('Source', 'Order');
+            // Loan-to-sale lineage: record type classifies the order
+            // (Loan/Return/Sale) and Original_Loan_Order__c links the
+            // return and sale orders back to the originating loan order,
+            // so the app can render the three-order chain.
+            row.put('RecordType', o.RecordType != null ? o.RecordType.DeveloperName : null);
+            row.put('RecordTypeName', o.RecordType != null ? o.RecordType.Name : null);
+            row.put('OriginalLoanOrderId', o.Original_Loan_Order__c);
+            row.put('OriginalLoanOrderNumber',
+                o.Original_Loan_Order__r != null ? o.Original_Loan_Order__r.OrderNumber : null);
             results.add(row);
         }
 
