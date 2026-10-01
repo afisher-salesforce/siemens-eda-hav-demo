@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Order__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The Order this asset is currently associated with. Re-pointed from the Loan order to the new Sale order during loan-to-sale conversion (HAV_LoanToSaleService).</description>
+    <inlineHelpText>The order this asset currently belongs to. Updated automatically from the Loan order to the Sale order when the loan is converted to a sale.</inlineHelpText>
+    <label>Associated Order</label>
+    <referenceTo>Order</referenceTo>
+    <relationshipLabel>Assets</relationshipLabel>
+    <relationshipName>Assets</relationshipName>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <type>Lookup</type>
+</CustomField>
