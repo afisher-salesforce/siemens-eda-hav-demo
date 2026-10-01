@@ -627,6 +627,11 @@ function transformOrders(raw) {
       startDate: o.StartDate,
       endDate: o.EndDate,
       status: o.Status,
+      // Loan-to-sale lineage (Order source only; null for SalesAgreement rows)
+      recordType: o.RecordType || null,
+      recordTypeName: o.RecordTypeName || null,
+      originalLoanOrderId: o.OriginalLoanOrderId || null,
+      originalLoanOrderNumber: o.OriginalLoanOrderNumber || null,
     };
   });
 }
@@ -872,6 +877,8 @@ export async function getLoaners(filters = {}) {
     utilization: l.UtilizationPct,
     contractEnd: l.ContractEndDate,
     leaseType: l.LeaseType,
+    orderId: l.OrderId,
+    orderNumber: l.OrderNumber,
     loanerStatus: l.LoanerStatus,
     loanerExpiryDate: l.LoanerExpiryDate,
     originalLoanerDate: l.OriginalLoanerDate,

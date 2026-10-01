@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   RefreshCcw,
@@ -11,8 +11,10 @@ import {
   Timer,
   Server,
   Sparkles,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
-import { getLoaners } from '../api/salesforce';
+import { getLoaners, convertLoanToSale } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
@@ -100,6 +102,89 @@ function OppStageBadge({ stage }) {
     <span className={`text-[10px] px-2 py-0.5 rounded border font-medium whitespace-nowrap ${cls}`}>
       {stage || '--'}
     </span>
+  );
+}
+
+function ConvertButton({ loaner, onConverted }) {
+  const [state, setState] = useState('idle'); // idle | pending | done | error
+  const [message, setMessage] = useState(null);
+
+  const alreadyConverted = loaner.loanerStatus === 'Converted to Sale';
+
+  if (alreadyConverted) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+        <CheckCircle2 size={12} />
+        Converted
+      </span>
+    );
+  }
+
+  if (!loaner.orderId) {
+    return (
+      <span
+        className="text-[10px] text-th-faint italic"
+        title="No loan Order is linked to this asset, so it cannot be converted."
+      >
+        No loan order
+      </span>
+    );
+  }
+
+  async function handleConvert() {
+    setState('pending');
+    setMessage(null);
+    try {
+      const result = await convertLoanToSale(
+        loaner.orderId,
+        loaner.conversionOpportunity?.id
+      );
+      setState('done');
+      setMessage(result?.message || 'Converted to sale');
+      if (onConverted) onConverted();
+    } catch (err) {
+      setState('error');
+      setMessage(err.message || 'Conversion failed');
+    }
+  }
+
+  if (state === 'done') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+        <CheckCircle2 size={12} />
+        {message}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <button
+        onClick={handleConvert}
+        disabled={state === 'pending'}
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold bg-siemens-teal text-white hover:bg-siemens-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {state === 'pending' ? (
+          <>
+            <Loader2 size={12} className="animate-spin" />
+            Converting
+          </>
+        ) : (
+          <>
+            <ArrowRight size={12} />
+            Convert to Sale
+          </>
+        )}
+      </button>
+      {state === 'error' && message && (
+        <span className="inline-flex items-center gap-1 text-[10px] text-red-400">
+          <XCircle size={12} className="shrink-0" />
+          <span className="max-w-[160px] truncate" title={message}>
+            {message}
+          </span>
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -242,6 +327,7 @@ export default function LoanerConversionView() {
                     <th>Conversion Opp</th>
                     <th>Stage</th>
                     <th>Opp Value</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -324,6 +410,9 @@ export default function LoanerConversionView() {
                         {l.conversionOpportunity?.amount != null
                           ? `$${l.conversionOpportunity.amount.toLocaleString()}`
                           : '--'}
+                      </td>
+                      <td>
+                        <ConvertButton loaner={l} onConverted={refetch} />
                       </td>
                     </tr>
                   ))}
