@@ -19,6 +19,9 @@ import {
   X,
   CalendarClock,
   ArrowUpRight,
+  ArrowRight,
+  XCircle,
+  Package,
   FileText,
 } from 'lucide-react';
 import {
@@ -30,7 +33,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { getAssets, getTelemetry, getAssetLineage, getAssetHierarchy, createAssetRecord, getLoaners, getWorkOrders, getCases } from '../api/salesforce';
+import { getAssets, getTelemetry, getAssetLineage, getAssetHierarchy, createAssetRecord, getLoaners, getOrders, convertLoanToSale, getWorkOrders, getCases } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
 import SalesforceLink from './SalesforceLink';
@@ -49,6 +52,33 @@ function StatusBadge({ status }) {
     Decommissioned: 'badge-gray',
   };
   return <span className={`badge ${styles[status] || 'badge-gray'}`}>{status || '--'}</span>;
+}
+
+function OrderChip({ label, order, fallbackNumber, color }) {
+  const number = order?.orderNumber || fallbackNumber;
+  const present = Boolean(order || fallbackNumber);
+  return (
+    <div
+      className={`flex flex-col px-2.5 py-1.5 rounded-md border min-w-[88px] ${
+        present ? '' : 'opacity-40'
+      }`}
+      style={{
+        backgroundColor: present ? `${color}15` : 'transparent',
+        borderColor: present ? `${color}40` : 'var(--surface-border)',
+      }}
+    >
+      <span
+        className="text-[9px] uppercase tracking-wider font-semibold flex items-center gap-1"
+        style={{ color: present ? color : 'var(--text-faint)' }}
+      >
+        <Package size={10} />
+        {label}
+      </span>
+      <span className="text-xs font-mono text-th-secondary mt-0.5">
+        {number ? `#${number}` : 'Pending'}
+      </span>
+    </div>
+  );
 }
 
 function DetailRow({ label, value, icon: Icon }) {
@@ -93,11 +123,25 @@ export default function AssetDetail() {
   const { data: hierarchyData, loading: hierarchyLoading } = useSalesforceData(hierarchyFetcher);
 
   // Fetch loaner data to check if this asset is a loaner
-  const { data: loanerData } = useSalesforceData(getLoaners);
+  const { data: loanerData, refetch: refetchLoaners } = useSalesforceData(getLoaners);
   const loanerInfo = useMemo(() => {
     if (!loanerData?.loaners || !asset) return null;
     return loanerData.loaners.find((l) => l.id === asset.id) || null;
   }, [loanerData, asset]);
+
+  // Fetch orders so we can show the loan → return → sale lineage for a
+  // converted (or convertible) loaner. The trio is keyed on the loan order Id.
+  const { data: ordersData, refetch: refetchOrders } = useSalesforceData(getOrders);
+  const orderLineage = useMemo(() => {
+    const loanOrderId = loanerInfo?.orderId;
+    if (!loanOrderId || !Array.isArray(ordersData)) return null;
+    const loanOrder = ordersData.find((o) => o.id === loanOrderId) || null;
+    const children = ordersData.filter((o) => o.originalLoanOrderId === loanOrderId);
+    const returnOrder = children.find((o) => o.recordType === 'Return_Order') || null;
+    const saleOrder = children.find((o) => o.recordType === 'Sale_Order') || null;
+    if (!loanOrder && !returnOrder && !saleOrder) return null;
+    return { loanOrder, returnOrder, saleOrder };
+  }, [ordersData, loanerInfo?.orderId]);
 
   // Fetch work orders (all) and filter client-side for this asset
   const { data: allWorkOrders, loading: woLoading } = useSalesforceData(getWorkOrders);
@@ -147,6 +191,30 @@ export default function AssetDetail() {
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [actionError, setActionError] = useState(null);
+
+  // Loan-to-sale conversion state
+  const [convertState, setConvertState] = useState('idle'); // idle | pending | done | error
+  const [convertMessage, setConvertMessage] = useState(null);
+
+  const handleConvertToSale = async () => {
+    if (!loanerInfo?.orderId) return;
+    setConvertState('pending');
+    setConvertMessage(null);
+    try {
+      const result = await convertLoanToSale(
+        loanerInfo.orderId,
+        loanerInfo.conversionOpportunity?.id
+      );
+      setConvertState('done');
+      setConvertMessage(result?.message || 'Converted to sale');
+      // Refresh loaner status + the order lineage trio.
+      refetchLoaners();
+      refetchOrders();
+    } catch (err) {
+      setConvertState('error');
+      setConvertMessage(err.message || 'Conversion failed');
+    }
+  };
 
   const openActionModal = (type) => {
     // Pre-fill based on telemetry context
@@ -427,6 +495,72 @@ export default function AssetDetail() {
                 )}
               </div>
             </div>
+
+            {/* Three-order lineage: loan → return → sale */}
+            {orderLineage && (
+              <div className="mt-4 pt-4 border-t border-amber-500/15">
+                <span className="text-[10px] text-amber-400 uppercase tracking-wider block mb-2 font-semibold">
+                  Order Lineage
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <OrderChip
+                    label="Loan"
+                    order={orderLineage.loanOrder}
+                    fallbackNumber={loanerInfo.orderNumber}
+                    color="#3b82f6"
+                  />
+                  <ArrowRight size={14} className="text-th-faint shrink-0" />
+                  <OrderChip label="Return" order={orderLineage.returnOrder} color="#f59e0b" />
+                  <ArrowRight size={14} className="text-th-faint shrink-0" />
+                  <OrderChip label="Sale" order={orderLineage.saleOrder} color="#10b981" />
+                </div>
+              </div>
+            )}
+
+            {/* Convert to Sale action */}
+            {loanerInfo.loanerStatus === 'Converted to Sale' ? (
+              <div className="mt-4 pt-4 border-t border-amber-500/15 flex items-center gap-2 text-sm text-emerald-400 font-medium">
+                <CheckCircle2 size={16} />
+                Converted to Sale
+                {convertState === 'done' && convertMessage && (
+                  <span className="text-xs text-th-muted font-normal">— {convertMessage}</span>
+                )}
+              </div>
+            ) : loanerInfo.orderId ? (
+              <div className="mt-4 pt-4 border-t border-amber-500/15">
+                <button
+                  onClick={handleConvertToSale}
+                  disabled={convertState === 'pending'}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold bg-siemens-teal text-white hover:bg-siemens-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {convertState === 'pending' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Converting…
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight size={14} />
+                      Convert to Sale
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-th-faint mt-1.5">
+                  Creates a return order and a new sale order in Salesforce, re-associates this
+                  asset, and publishes the SAP reconciliation event.
+                </p>
+                {convertState === 'error' && convertMessage && (
+                  <div className="mt-2 flex items-start gap-1.5 text-xs text-red-400">
+                    <XCircle size={14} className="shrink-0 mt-0.5" />
+                    <span>{convertMessage}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-amber-500/15 text-[10px] text-th-faint italic">
+                No loan order is linked to this asset, so it cannot be converted.
+              </div>
+            )}
           </div>
         )}
 

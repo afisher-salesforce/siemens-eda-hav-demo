@@ -627,6 +627,11 @@ function transformOrders(raw) {
       startDate: o.StartDate,
       endDate: o.EndDate,
       status: o.Status,
+      // Loan-to-sale lineage (Order source only; null for SalesAgreement rows)
+      recordType: o.RecordType || null,
+      recordTypeName: o.RecordTypeName || null,
+      originalLoanOrderId: o.OriginalLoanOrderId || null,
+      originalLoanOrderNumber: o.OriginalLoanOrderNumber || null,
     };
   });
 }
@@ -872,6 +877,8 @@ export async function getLoaners(filters = {}) {
     utilization: l.UtilizationPct,
     contractEnd: l.ContractEndDate,
     leaseType: l.LeaseType,
+    orderId: l.OrderId,
+    orderNumber: l.OrderNumber,
     loanerStatus: l.LoanerStatus,
     loanerExpiryDate: l.LoanerExpiryDate,
     originalLoanerDate: l.OriginalLoanerDate,
@@ -1101,6 +1108,33 @@ export async function createAssetRecord(params) {
 }
 
 /**
+ * Convert a loan order to a sale: creates a Return order (green return) and a
+ * Sale order (reissue) linked back to the loan order, re-associates the
+ * asset(s) to the sale order, stamps status/entitlements, and publishes the
+ * SAP reconciliation events. All logic lives in the org
+ * (HAV_LoanToSaleService, exposed via HAV_LoanToSaleRest) — this is the same
+ * conversion the in-Salesforce Quick Action runs.
+ *
+ * @param {string} loanOrderId - Salesforce Order Id of the loan order to convert
+ * @param {string} [saleOpportunityId] - Optional Opportunity to link the sale
+ *   order to; if omitted the org resolves it from the asset's conversion opp
+ * @returns {Object} { success, loanOrderId, returnOrderId, saleOrderId,
+ *   saleOpportunityId, assetsConverted, message }
+ *
+ * On a business failure (e.g. a missing serial number) the org rolls the
+ * conversion back and returns HTTP 400; `request` throws with the service's
+ * message, so callers should try/catch and surface err.message.
+ */
+export async function convertLoanToSale(loanOrderId, saleOpportunityId) {
+  const body = { loanOrderId };
+  if (saleOpportunityId) body.saleOpportunityId = saleOpportunityId;
+  return request('/loan-to-sale', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * Get unified dashboard exceptions & escalations from live data.
  * Combines flagged work orders (escalated / high-priority / RMA-bound) and
  * flagged compliance records (not cleared/approved) into a single actionable list.
@@ -1215,5 +1249,6 @@ export default {
   updateWorkOrderStatus,
   getCases,
   createAssetRecord,
+  convertLoanToSale,
   getDashboardExceptions,
 };
