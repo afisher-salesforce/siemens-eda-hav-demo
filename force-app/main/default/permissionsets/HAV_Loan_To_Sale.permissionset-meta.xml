@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>HAV Loan To Sale</label>
+    <description>Grants access to the loan-to-sale conversion: the HAV_LoanToSaleService Apex class, the Asset.Order__c field, and the Loan/Return/Sale Order record types. Assign to the demo/admin user who drives the conversion.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+
+    <classAccesses>
+        <apexClass>HAV_LoanToSaleService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+
+    <fieldPermissions>
+        <field>Asset.Order__c</field>
+        <editable>true</editable>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>Order.Original_Loan_Order__c</field>
+        <editable>true</editable>
+        <readable>true</readable>
+    </fieldPermissions>
+
+    <recordTypeVisibilities>
+        <recordType>Order.Loan_Order</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>Order.Return_Order</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>Order.Sale_Order</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+</PermissionSet>
