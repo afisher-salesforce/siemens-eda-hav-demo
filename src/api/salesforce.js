@@ -829,10 +829,19 @@ export async function getWorkOrders(filters = {}) {
 }
 
 /**
- * Get sales orders / agreements
+ * Get sales orders / agreements.
+ *
+ * By default this returns only the SalesAgreement rows (the Orders list, COGS,
+ * Capacity, and Compliance views all rely on that shape). Pass
+ * `{ includeOrders: true }` to also pull the Loan/Return/Sale Order records that
+ * carry the loan-to-sale lineage — used by the AssetDetail "Order Lineage" strip.
+ * The server merges both sources only when `?include=orders` is present.
+ *
+ * @param {Object} [opts]
+ * @param {boolean} [opts.includeOrders=false] - also return lineage-bearing Orders
  */
-export async function getOrders() {
-  const raw = await request('/orders');
+export async function getOrders({ includeOrders = false } = {}) {
+  const raw = await request(includeOrders ? '/orders?include=orders' : '/orders');
   return transformOrders(raw);
 }
 

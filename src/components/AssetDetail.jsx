@@ -131,7 +131,11 @@ export default function AssetDetail() {
 
   // Fetch orders so we can show the loan → return → sale lineage for a
   // converted (or convertible) loaner. The trio is keyed on the loan order Id.
-  const { data: ordersData, refetch: refetchOrders } = useSalesforceData(getOrders);
+  // includeOrders pulls the Loan/Return/Sale Order records (which carry the
+  // lineage); the default /orders response is SalesAgreement-only and has none.
+  const { data: ordersData, refetch: refetchOrders } = useSalesforceData(
+    () => getOrders({ includeOrders: true })
+  );
   const orderLineage = useMemo(() => {
     const loanOrderId = loanerInfo?.orderId;
     if (!loanOrderId || !Array.isArray(ordersData)) return null;
