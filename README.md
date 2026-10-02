@@ -97,6 +97,7 @@ See `demo-scripts/` for the six vignette scripts:
 4. **V3 — The Finance** (15 min)
 5. **V4 — The Traveler** (10 min)
 6. **V6 — The Automation** (Hero story, 20 min)
+7. **V8 — The Loaner That Became a Sale** (Loan-to-sale, two-surface: Salesforce + React, 12 min)
 
 ## Local Development
 

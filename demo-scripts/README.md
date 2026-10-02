@@ -15,6 +15,9 @@ Walk all seven in app order as an executive overview:
 
 > Each script ends with a narrative transition into the next, so the seven run as one continuous 1→7 story.
 
+**Standalone:**
+- **V8 — The Loaner That Became a Sale, in One Click** — loan-to-sale conversion across two surfaces (Salesforce record pages + the Heroku React ops app), one source of truth. Can run on its own or feed into V1.
+
 ## Live vs. Illustrative
 The dashboard tags some surfaces as **Illustrative / future-state**, and the scripts follow suit. Most notably, **automated BOM matching** (in V3 — Finance) is illustrative: it depends on Lighthouse reconciling to SAP, and that data model is not yet in place. Revenue, COGS, and margin are live. See the "What's Live vs. What's Illustrative" note in `demo-overview.html`.
 
@@ -35,3 +38,4 @@ The dashboard tags some surfaces as **Illustrative / future-state**, and the scr
 - `vignette-5-platform.md` — The Platform That Connects It All
 - `vignette-6-renewal.md` — The Renewal That Nobody Saw Coming
 - `vignette-7-automation.md` — From Heroic Manual Efforts to Closed-Loop Automation
+- `vignette-8-loan-to-sale.md` — The Loaner That Became a Sale, in One Click (two-surface: Salesforce + Heroku React)
