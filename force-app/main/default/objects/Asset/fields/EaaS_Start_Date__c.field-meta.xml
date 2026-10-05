@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>EaaS_Start_Date__c</fullName>
+    <description>Date the Emulation-as-a-Service agreement began for this unit. Anchors the consumption term and the renewal/expansion timeline.</description>
+    <externalId>false</externalId>
+    <label>EaaS Start Date</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>
