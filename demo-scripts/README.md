@@ -17,6 +17,7 @@ Walk all seven in app order as an executive overview:
 
 **Standalone:**
 - **V8 — The Loaner That Became a Sale, in One Click** — loan-to-sale conversion across two surfaces (Salesforce record pages + the Heroku React ops app), one source of truth. Can run on its own or feed into V1.
+- **V9 — Emulation-as-a-Service: The Consumption Model and the Ops Lifecycle** — the full EaaS story across two surfaces (Salesforce commercial record + React ops app), with Agentforce beats for free capacity, EaaS MRR, spare safety stock, and repair shipping. Can run on its own or feed into V6.
 
 ## Live vs. Illustrative
 The dashboard tags some surfaces as **Illustrative / future-state**, and the scripts follow suit. Most notably, **automated BOM matching** (in V3 — Finance) is illustrative: it depends on Lighthouse reconciling to SAP, and that data model is not yet in place. Revenue, COGS, and margin are live. See the "What's Live vs. What's Illustrative" note in `demo-overview.html`.
@@ -39,3 +40,4 @@ The dashboard tags some surfaces as **Illustrative / future-state**, and the scr
 - `vignette-6-renewal.md` — The Renewal That Nobody Saw Coming
 - `vignette-7-automation.md` — From Heroic Manual Efforts to Closed-Loop Automation
 - `vignette-8-loan-to-sale.md` — The Loaner That Became a Sale, in One Click (two-surface: Salesforce + Heroku React)
+- `vignette-9-eaas.md` — Emulation-as-a-Service: The Consumption Model and the Ops Lifecycle (two-surface: Salesforce + Heroku React; EaaS agent beats)
