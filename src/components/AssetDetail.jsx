@@ -36,7 +36,7 @@ import {
 import { getAssets, getTelemetry, getAssetLineage, getAssetHierarchy, createAssetRecord, getLoaners, getOrders, convertLoanToSale, getWorkOrders, getCases } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import SlackFeed from './SlackFeed';
-import SalesforceLink from './SalesforceLink';
+import SalesforceLink, { useOrgUrl, salesforceRecordUrl } from './SalesforceLink';
 import { getSlackChannelName } from '../utils/slackChannel';
 import { renderChartTooltip } from './ChartTooltip';
 
@@ -208,6 +208,9 @@ export default function AssetDetail() {
   // Loan-to-sale conversion state
   const [convertState, setConvertState] = useState('idle'); // idle | pending | done | error
   const [convertMessage, setConvertMessage] = useState(null);
+
+  // Org URL for building Open-in-Salesforce links (e.g. the conversion opp).
+  const orgUrl = useOrgUrl();
 
   const handleConvertToSale = async () => {
     if (!loanerInfo?.orderId) return;
@@ -492,17 +495,40 @@ export default function AssetDetail() {
               <div>
                 <span className="text-[10px] text-th-muted uppercase tracking-wider block mb-1">Conversion Opp</span>
                 {loanerInfo.conversionOpportunity ? (
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-medium text-siemens-accent">
-                      {loanerInfo.conversionOpportunity.stageName}
-                    </span>
-                    {loanerInfo.conversionOpportunity.amount != null && (
-                      <span className="text-xs text-th-muted">
-                        (${(loanerInfo.conversionOpportunity.amount / 1000).toFixed(0)}K)
-                      </span>
-                    )}
-                    <ArrowUpRight size={12} className="text-siemens-accent" />
-                  </div>
+                  (() => {
+                    const oppHref = salesforceRecordUrl(
+                      orgUrl,
+                      loanerInfo.conversionOpportunity.id
+                    );
+                    const inner = (
+                      <>
+                        <span className="text-sm font-medium text-siemens-accent">
+                          {loanerInfo.conversionOpportunity.stageName}
+                        </span>
+                        {loanerInfo.conversionOpportunity.amount != null && (
+                          <span className="text-xs text-th-muted">
+                            (${(loanerInfo.conversionOpportunity.amount / 1000).toFixed(0)}K)
+                          </span>
+                        )}
+                        <ArrowUpRight size={12} className="text-siemens-accent" />
+                      </>
+                    );
+                    // Link to the Salesforce Opportunity record when we have both
+                    // the org URL and the opp id; otherwise show the plain row.
+                    return oppHref ? (
+                      <a
+                        href={oppHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open ${loanerInfo.conversionOpportunity.name || 'opportunity'} in Salesforce`}
+                        className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-1">{inner}</div>
+                    );
+                  })()
                 ) : (
                   <span className="text-sm text-th-muted">None</span>
                 )}

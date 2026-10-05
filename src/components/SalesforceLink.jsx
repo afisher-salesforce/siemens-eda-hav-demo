@@ -4,7 +4,7 @@ import { Cloud } from 'lucide-react';
 let cachedOrgUrl = null;
 let fetchPromise = null;
 
-function fetchOrgUrl() {
+export function fetchOrgUrl() {
   if (!fetchPromise) {
     fetchPromise = fetch('/api/sf-org-url')
       .then((r) => r.json())
@@ -14,16 +14,29 @@ function fetchOrgUrl() {
   return fetchPromise;
 }
 
-export default function SalesforceLink({ recordId }) {
+// Shared hook so any component can build an Open-in-Salesforce href from the
+// same cached org URL (one fetch for the whole app).
+export function useOrgUrl() {
   const [orgUrl, setOrgUrl] = useState(cachedOrgUrl);
 
   useEffect(() => {
     if (!orgUrl) fetchOrgUrl().then(setOrgUrl);
   }, [orgUrl]);
 
-  if (!recordId || !orgUrl) return null;
+  return orgUrl;
+}
 
-  const href = `${orgUrl.replace(/\/+$/, '')}/${recordId}`;
+// Build a Salesforce record URL once the org URL is known; null otherwise.
+export function salesforceRecordUrl(orgUrl, recordId) {
+  if (!orgUrl || !recordId) return null;
+  return `${orgUrl.replace(/\/+$/, '')}/${recordId}`;
+}
+
+export default function SalesforceLink({ recordId }) {
+  const orgUrl = useOrgUrl();
+
+  const href = salesforceRecordUrl(orgUrl, recordId);
+  if (!href) return null;
 
   return (
     <a
