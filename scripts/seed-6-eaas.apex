@@ -66,16 +66,17 @@ if (!hasShipFields) {
     System.debug('WARNING: WorkOrder shipping fields not deployed yet. Skipping Part 2. '
         + 'Deploy the EaaS branch metadata, then re-run.');
 } else {
-    List<WorkOrder> candidates = [
-        SELECT Id, Shipping_Carrier__c
-        FROM WorkOrder
-        WHERE Status = 'In Progress'
-          AND RMA_Number__c != null
-          AND Asset.Product2.Family = 'Emulation Systems'
-          AND Shipping_Carrier__c = null
-        ORDER BY CreatedDate ASC
-        LIMIT 1
-    ];
+    // Dynamic SOQL so this part only references Shipping_Carrier__c when the
+    // field actually exists — a static query would fail to COMPILE (not just
+    // run) when the field is absent, defeating the describe-guard above.
+    List<WorkOrder> candidates = Database.query(
+        'SELECT Id, Shipping_Carrier__c FROM WorkOrder '
+        + 'WHERE Status = \'In Progress\' '
+        + 'AND RMA_Number__c != null '
+        + 'AND Asset.Product2.Family = \'Emulation Systems\' '
+        + 'AND Shipping_Carrier__c = null '
+        + 'ORDER BY CreatedDate ASC LIMIT 1'
+    );
     if (candidates.isEmpty()) {
         System.debug('No un-shipped in-progress RMA work order found (already seeded, or none). Skipping Part 2.');
     } else {
