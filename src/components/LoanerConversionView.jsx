@@ -18,6 +18,7 @@ import { getLoaners, convertLoanToSale } from '../api/salesforce';
 import DemoContextPanel from './DemoContextPanel';
 import CONTEXT from './demoContextData';
 import { useSalesforceData } from '../hooks/useSalesforceData';
+import { useOrgUrl, salesforceRecordUrl } from './SalesforceLink';
 
 function MetricCard({ icon: Icon, label, value, color, subtitle }) {
   return (
@@ -230,6 +231,8 @@ function ErrorState({ message, onRetry }) {
 
 export default function LoanerConversionView() {
   const { data, loading, error, refetch } = useSalesforceData(getLoaners);
+  // Org URL for building Open-in-Salesforce links on the conversion opp.
+  const orgUrl = useOrgUrl();
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -391,10 +394,33 @@ export default function LoanerConversionView() {
                       </td>
                       <td className="text-th-secondary text-xs max-w-[140px] truncate">
                         {l.conversionOpportunity ? (
-                          <div className="flex items-center gap-1">
-                            <TrendingUp size={12} className="text-emerald-400 shrink-0" />
-                            <span className="truncate">{l.conversionOpportunity.name}</span>
-                          </div>
+                          (() => {
+                            const oppHref = salesforceRecordUrl(
+                              orgUrl,
+                              l.conversionOpportunity.id
+                            );
+                            const inner = (
+                              <>
+                                <TrendingUp size={12} className="text-emerald-400 shrink-0" />
+                                <span className="truncate">{l.conversionOpportunity.name}</span>
+                              </>
+                            );
+                            // Link to the Salesforce Opportunity record when we have
+                            // both the org URL and the opp id; plain row otherwise.
+                            return oppHref ? (
+                              <a
+                                href={oppHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Open ${l.conversionOpportunity.name || 'opportunity'} in Salesforce`}
+                                className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                              >
+                                {inner}
+                              </a>
+                            ) : (
+                              <div className="flex items-center gap-1">{inner}</div>
+                            );
+                          })()
                         ) : (
                           <span className="text-th-faint italic">No opp</span>
                         )}
