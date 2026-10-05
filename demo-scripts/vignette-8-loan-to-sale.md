@@ -12,23 +12,23 @@ The conversion is **live** in `siemens-eda-hav-l15viz`: it creates real Return a
 
 ### Surface A — Salesforce (the sales coordinator's world)
 
-### Step 1: The Loan Order (2 min)
-**Open:** the **Loan Order** record in `siemens-eda-hav-l15viz` (the freshly seeded `SN-LOAN2SALE-001` / `VS-SJ1-LOANER` loan order — see Setup).
+### Step 1: The Loaner Asset (2 min)
+**Open:** the loaner **Asset** `VS-SJ1-LOANER` (serial `SN-LOAN2SALE-001`) in `siemens-eda-hav-l15viz`. **Run the seed/reset first — see Setup — so the asset is in its pre-conversion state (Lease Type = Loan, Loaner Status = Active Loan). If it reads "Converted to Sale," the demo was already run; re-seed before presenting.**
 
 **Talk track:**
-- "This is a standard Salesforce **Order**, but on a custom **Loan Order** record type. The customer — TSMC — has the Veloce Strato on an evaluation loan, end date three months out."
-- Point to the linked **Asset** (`VS-SJ1-LOANER`) and the **Conversion Opportunity** ($2.85M): "The sales motion is already attached. Everyone's been waiting on one thing — the paperwork to turn the loan into a sale."
+- Scroll to the **Loan to Sale Process** section on the asset: "The customer — TSMC — has this Veloce Strato on an evaluation loan. You can see it right here: **Lease Type = Loan**, **Loaner Status = Active Loan**, loan end date a few months out."
+- Point to **Associated Order** (the `Order__c` lookup → the Loan Order) and the **Conversion Opportunity** ($2.85M): "The loan order and the sales motion are both already attached. Everyone's been waiting on one thing — the paperwork to turn the loan into a sale." *(Note: the entitlement field is labeled **Warranty Status** on the page = Active.)*
 - "Today that paperwork is a return booked in SAP, a reissue booked in SAP, a serial number reconciled by hand, and a traveler emailed between five teams. Watch what it is here."
 
 ### Step 2: Convert to Sale (3 min)
-**Click:** the **Convert to Sale** quick action on the Loan Order.
+**Open:** the Loan Order from the asset's **Associated Order** link, then **click** the **Convert to Sale** quick action on the Loan Order record. *(The action is on the Order page layout's action bar; it is NOT on the Asset.)*
 
 **Talk track:**
 - "One action. This launches the **Convert_Loan_To_Sale** flow, which calls a single invocable Apex method — all-or-nothing. If anything fails, the whole thing rolls back; there's never a half-converted order."
 - As the flow completes, read back what it created:
   1. **Return Order** — "The 'green return'. SAP needs a return booked for financial integrity even though the hardware never physically moves — the customer keeps the box. The system books it automatically."
   2. **Sale Order** — "The reissue. A new Sale Order, linked back to the original loan through a lineage field so you can always trace where it came from."
-  3. **Asset re-pointed** — "The asset now belongs to the Sale Order. Lease type flips to Sale, loaner status to Converted to Sale, entitlement goes active."
+  3. **Asset re-pointed** — "The asset now belongs to the Sale Order. Lease Type flips to Sale, Loaner Status to Converted to Sale, Warranty/entitlement stays active."
   4. **Two SAP events** — "A Return event and a Reissue event publish to the reconciliation channel — the two-line SAP posting, fired automatically."
 - "That's the quarter-end fire drill, done in seconds, as one transaction, with a complete audit trail."
 
@@ -49,11 +49,11 @@ The conversion is **live** in `siemens-eda-hav-l15viz`: it creates real Return a
 - "Ken doesn't live in Salesforce record pages. He lives here. And the conversion we just ran shows up on this board the moment it happens — no sync, same source of truth."
 
 ### Step 5: Asset Lineage Strip (2 min)
-**Navigate to:** click a converted asset row → `/assets/<assetId>` (reference asset `02iWt000005NoPRIA0`, the already-converted `VS-SJ1-LOANER`).
+**Navigate to:** click the `VS-SJ1-LOANER` row (now showing **Converted to Sale**) → `/assets/<assetId>`. *(Use whichever asset you just converted — the seed/reset creates a fresh asset ID each run, so don't hard-code one.)*
 
 **Talk track:**
 - "On the asset detail page, the **Order Lineage** strip tells the whole story at a glance:"
-  - **Loan #00000236** (blue) → **Return #00000237** (amber) → **Sale #00000238** (emerald).
+  - **Loan** (blue) → **Return** (amber) → **Sale** (emerald) — the three order numbers from the conversion you just ran.
 - "Loan, green return, sale — three chips, one line. That's the entire loan-to-sale history of this box, readable by anyone, no SOQL required."
 - Point to the **Convert to Sale** button on an un-converted loaner: "And Ken can run the exact same conversion from here — same invocable Apex, hit through the REST surface instead of the flow. The button says it plainly: creates a return order and a new sale order, re-associates the asset, publishes the SAP reconciliation event."
 
@@ -78,9 +78,13 @@ The conversion is **live** in `siemens-eda-hav-l15viz`: it creates real Return a
 > **After:** Click **Convert to Sale** → Return + Sale orders created, asset re-pointed, lineage drawn, two SAP events published — one transaction, seconds, full audit trail. Drivable in Salesforce or headless via REST.
 
 ## Setup (before you present)
-- [ ] Run `scripts/seed-5-loan-to-sale.apex` against `siemens-eda-hav-l15viz` to seed a **fresh, un-converted** loan order (`SN-LOAN2SALE-001` / `VS-SJ1-LOANER`). The reference chain **#00000236 → #00000237 → #00000238** is already converted — use it for the React lineage beat (Step 5), and use the freshly seeded order for the live Salesforce conversion (Steps 1–3) so the demo is repeatable.
+- [ ] **REQUIRED — reset the demo state.** Run the seed/reset against `siemens-eda-hav-l15viz` (absolute path; it is idempotent and tears down any prior conversion):
+      `sf apex run --target-org siemens-eda-hav-l15viz --file /Users/<you>/claude-projects/siemens-eda-hav-demo/scripts/seed-5-loan-to-sale.apex`
+      This rebuilds a **fresh, un-converted** loaner asset `VS-SJ1-LOANER` (serial `SN-LOAN2SALE-001`, Lease Type = Loan, Active Loan), its **Loan Order**, and the **$2.85M** conversion opp. **Re-run it between every dry-run** — once you click Convert to Sale the asset flips to Converted to Sale and Step 1 won't demo. The asset and order IDs/numbers change on each reset — never hard-code them.
+- [ ] Confirm the **Convert to Sale** quick action is on the **Order** page layout's action bar (it launches the `Convert_Loan_To_Sale` flow). It is not on the Asset.
+- [ ] Confirm the loaner fields (Order/Lease Type/Loaner Status/Warranty Status/Conversion Opportunity/Loaner dates) are on the Asset page layout **assigned to your profile** — in this org that is **EaaS Asset Layout** (System Administrator), not the generic "Asset Layout." They appear in the **Loan to Sale Process** section. (The entitlement field is labeled **Warranty Status** on the page.)
 - [ ] Confirm the presenting user has the **HAV_Loan_To_Sale** permission set.
-- [ ] Open the Heroku app and confirm the asset detail **Order Lineage** strip renders against the live org before presenting (see `docs/loan-to-sale-ui-fixes-spec.md` — a converted asset can drop out of the loaner feed; verify the strip shows for asset `02iWt000005NoPRIA0`).
+- [ ] Open the Heroku app and confirm the asset detail **Order Lineage** strip renders against the live org before presenting (see `docs/loan-to-sale-ui-fixes-spec.md` — a converted asset can drop out of the loaner feed; verify the strip shows for the asset you just converted).
 - [ ] Have Agent Chat open and the TSMC loan-to-sale prompt ready to paste.
 
 ## Transition to V1
