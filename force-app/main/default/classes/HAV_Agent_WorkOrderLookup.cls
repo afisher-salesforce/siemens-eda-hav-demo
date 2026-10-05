@@ -28,7 +28,8 @@ public with sharing class HAV_Agent_WorkOrderLookup {
 
             String query = 'SELECT WorkOrderNumber, Subject, Priority, Status, '
                 + 'Asset.Name, Account.Name, RMA_Number__c, Vendor__c, '
-                + 'Estimated_Repair_Cost__c, CreatedDate '
+                + 'Estimated_Repair_Cost__c, Shipping_Carrier__c, '
+                + 'Tracking_Number__c, Shipment_Status__c, CreatedDate '
                 + 'FROM WorkOrder '
                 + 'WHERE Asset.Product2.Family = \'Emulation Systems\' ';
 
@@ -96,6 +97,17 @@ public with sharing class HAV_Agent_WorkOrderLookup {
                     if (wo.Estimated_Repair_Cost__c != null) details.add('Est. Cost: $' + String.valueOf(wo.Estimated_Repair_Cost__c.setScale(0)));
                     if (!details.isEmpty()) {
                         lines.add('  ' + String.join(details, ' | '));
+                    }
+
+                    // Repair shipping (third-party RMA logistics). Carrier/tracking/
+                    // status are the queryable demo state; the Shipment__e platform
+                    // event is published alongside as the carrier-integration stub.
+                    List<String> shipping = new List<String>();
+                    if (wo.Shipping_Carrier__c != null) shipping.add('Carrier: ' + wo.Shipping_Carrier__c);
+                    if (wo.Tracking_Number__c != null) shipping.add('Tracking: ' + wo.Tracking_Number__c);
+                    if (wo.Shipment_Status__c != null) shipping.add('Shipment: ' + wo.Shipment_Status__c);
+                    if (!shipping.isEmpty()) {
+                        lines.add('  ' + String.join(shipping, ' | '));
                     }
                     lines.add('');
                 }

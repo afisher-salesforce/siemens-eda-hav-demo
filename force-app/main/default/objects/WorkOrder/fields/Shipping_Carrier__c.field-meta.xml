@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Shipping_Carrier__c</fullName>
+    <description>Carrier handling the third-party repair shipment for this work order (FedEx, UPS, or DHL). Holds the current, queryable shipping state the ops agent reports; the Shipment__e platform event is published alongside as the integration stub. In a future state this would be driven by a live carrier (FedEx/UPS) integration.</description>
+    <externalId>false</externalId>
+    <label>Shipping Carrier</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>FedEx</fullName>
+                <default>false</default>
+                <label>FedEx</label>
+            </value>
+            <value>
+                <fullName>UPS</fullName>
+                <default>false</default>
+                <label>UPS</label>
+            </value>
+            <value>
+                <fullName>DHL</fullName>
+                <default>false</default>
+                <label>DHL</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -17,9 +17,10 @@ system:
     Your capabilities:
     1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
     2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
-    3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility
-    4. Financial Operations — review revenue estimates, lease breakdowns, and repair costs
-    5. Work Order Tracking — find and summarize field service work orders, RMA status, and repair costs
+    3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility (including free capacity for new EaaS demand)
+    4. Financial Operations — review revenue estimates, lease breakdowns (incl. EaaS MRR), and repair costs
+    5. Work Order Tracking — find and summarize field service work orders, RMA status, repair costs, and third-party repair shipping (carrier/tracking/status)
+    6. Spare Safety Stock — check available spare units per site and flag sites below the safety-stock minimum
 
     Always be concise, data-driven, and proactive about flagging anomalies or risks.
     When presenting data, use clear formatting with bullet points and key metrics highlighted.
@@ -36,6 +37,8 @@ variables:
     description: "Stores the result of the latest financial summary"
   workorder_result: mutable string = ""
     description: "Stores the result of the latest work order search"
+  spare_stock_result: mutable string = ""
+    description: "Stores the result of the latest spare safety-stock check"
 
 language:
   default_locale: "en_US"
@@ -51,7 +54,8 @@ start_agent entry:
         - Questions about telemetry, CPU, memory, temperature, health, errors → telemetry_monitoring
         - Questions about capacity, racks, power, facilities, locations, PUE → capacity_planning
         - Questions about revenue, financials, costs, leases, MRR → financial_operations
-        - Questions about work orders, repairs, RMA, field service → workorder_management
+        - Questions about work orders, repairs, RMA, field service, repair shipping, carrier, tracking → workorder_management
+        - Questions about spares, spare units, safety stock, replacement inventory → spares_management
     actions:
       go_assets: @utils.transition to @topic.asset_management
         description: "Route to asset fleet management"
@@ -63,6 +67,8 @@ start_agent entry:
         description: "Route to financial operations and analysis"
       go_workorders: @utils.transition to @topic.workorder_management
         description: "Route to work order tracking"
+      go_spares: @utils.transition to @topic.spares_management
+        description: "Route to spare safety-stock checks"
 
 topic asset_management:
   description: "Search and look up emulator assets across the global fleet. Find assets by name, serial number, customer, location, or status."
@@ -207,6 +213,8 @@ topic workorder_management:
       | Help the user track and manage field service work orders.
         Extract any asset name or priority level from the user's message.
         Present work order details clearly with priority, status, and cost information.
+        When the user asks about repair shipping, RMA logistics, carriers, or tracking,
+        surface the carrier, tracking number, and shipment status returned for each work order.
         Flag critical or high-priority work orders that need immediate attention.
         Summarize total repair cost exposure when multiple work orders are shown.
 
@@ -218,3 +226,32 @@ topic workorder_management:
         with assetName = ...
         with priorityFilter = ...
         set @variables.workorder_result = @outputs.result
+
+topic spares_management:
+  description: "Check spare replacement-unit safety stock across sites. Counts available spare emulator units per location and flags any site below its safety-stock minimum."
+
+  actions:
+    check_safety_stock:
+      description: "Count available spare units per site and flag sites below the safety-stock minimum"
+      inputs:
+        locationName: string
+          description: "Optional location/site name to scope the spare-stock check (e.g. San Jose). Omit to check all sites."
+      outputs:
+        result: string
+          description: "Formatted spare safety-stock summary"
+      target: "apex://HAV_Agent_SpareStockCheck"
+
+  reasoning:
+    instructions: ->
+      | Help the user confirm spare-unit safety stock across sites before committing new EaaS demand.
+        If the user names a site, pass the location name; otherwise leave it blank to check all sites.
+        Flag any site below the safety-stock minimum and recommend replenishment there.
+        Note that spare counts are live but the safety-stock threshold is an illustrative figure.
+
+      if @variables.spare_stock_result != "":
+        | {!@variables.spare_stock_result}
+
+    actions:
+      do_check_spares: @actions.check_safety_stock
+        with locationName = ...
+        set @variables.spare_stock_result = @outputs.result

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Represents a triggered shipment event for a third-party manufacturer repair (RMA). Published when a repair work order is routed to a vendor and when the repaired unit is returned (two directions: Outbound-to-vendor and Return-from-vendor). In the demo this stands in for a MuleSoft-to-carrier (FedEx/UPS/DHL) integration; no live carrier API call is made. Mirrors the SAP_Reconciliation__e publish-only stub pattern.</description>
+    <eventType>HighVolume</eventType>
+    <label>Shipment</label>
+    <pluralLabel>Shipments</pluralLabel>
+    <publishBehavior>PublishAfterCommit</publishBehavior>
+</CustomObject>
