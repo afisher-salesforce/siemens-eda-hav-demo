@@ -16,9 +16,11 @@ private class HAV_Agent_SpareStockCheckTest {
         Product2 prod = new Product2(Name = 'Veloce Strato', Family = 'Emulation Systems', IsActive = true);
         insert prod;
 
-        List<Location> locs = new List<Location>{
-            new Location(Name = 'San Jose Colo (SJ1)'),
-            new Location(Name = 'Hsinchu Colo (HSC1)')
+        // 'Location' is a reserved Apex type (System.Location geolocation);
+        // the Salesforce sObject must be referenced as Schema.Location.
+        List<Schema.Location> locs = new List<Schema.Location>{
+            new Schema.Location(Name = 'San Jose Colo (SJ1)'),
+            new Schema.Location(Name = 'Hsinchu Colo (HSC1)')
         };
         insert locs;
         Id sjId = locs[0].Id;   // will get 3 spares (OK)
