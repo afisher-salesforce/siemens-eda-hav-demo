@@ -159,15 +159,18 @@ topic capacity_planning:
 
   reasoning:
     instructions: ->
+      run @actions.analyze_capacity
+        with locationName = ""
+        set @variables.capacity_result = @outputs.result
       | Help the user understand facility capacity and plan for future demand.
         If the user asks about a specific location, pass the location name.
         If the user asks for an overview, leave locationName empty to get all facilities.
         Highlight facilities that are near capacity or have forecast demand exceeding supply.
         Suggest expansion or redistribution when capacity is tight.
-        Before answering, always call the do_analyze action for this question, including follow-up
-        questions; earlier results may be stale or scoped differently. Only state figures,
-        names, and statuses that appear in the do_analyze result. If the result does not contain
-        what was asked, say so. Never estimate or invent numbers.
+        The current result for all facilities is loaded below. Call the do_analyze action only when the
+        user asks about a specific location. Only state figures, names, and statuses that appear in a
+        result. If a result does not contain what was asked, say so. Never estimate or
+        invent numbers.
         For free capacity or where new (EaaS) demand fits, lead with the "Free capacity for new
         demand", "Best fit" and "Avoid" lines from the result, quoting the rack headroom numbers.
 
@@ -195,15 +198,18 @@ topic financial_operations:
 
   reasoning:
     instructions: ->
+      run @actions.get_financials
+        with customerName = ""
+        set @variables.financial_result = @outputs.result
       | Help the user understand the financial performance of the emulator fleet.
         If the user asks about a specific customer, pass the customer name.
         If the user asks for overall financials, leave customerName empty.
         Highlight key metrics: MRR, annualized revenue, top customers, and repair cost exposure.
         Flag any contract renewals approaching or high repair costs.
-        Before answering, always call the do_financials action for this question, including follow-up
-        questions; earlier results may be stale or scoped differently. Only state figures,
-        names, and statuses that appear in the do_financials result. If the result does not contain
-        what was asked, say so. Never estimate or invent numbers.
+        The current result for all customers is loaded below. Call the do_financials action only when the
+        user asks about a specific customer. Only state figures, names, and statuses that appear in a
+        result. If a result does not contain what was asked, say so. Never estimate or
+        invent numbers.
 
       if @variables.financial_result != "":
         | {!@variables.financial_result}
@@ -231,6 +237,10 @@ topic workorder_management:
 
   reasoning:
     instructions: ->
+      run @actions.search_workorders
+        with assetName = ""
+        with priorityFilter = ""
+        set @variables.workorder_result = @outputs.result
       | Help the user track and manage field service work orders.
         Extract any asset name or priority level from the user's message.
         Present work order details clearly with priority, status, and cost information.
@@ -238,10 +248,10 @@ topic workorder_management:
         surface the carrier, tracking number, and shipment status returned for each work order.
         Flag critical or high-priority work orders that need immediate attention.
         Summarize total repair cost exposure when multiple work orders are shown.
-        Before answering, always call the do_search_wo action for this question, including follow-up
-        questions; earlier results may be stale or scoped differently. Only state figures,
-        names, and statuses that appear in the do_search_wo result. If the result does not contain
-        what was asked, say so. Never estimate or invent numbers.
+        The current result for all work orders (open RMAs with shipping listed first) is loaded
+        below. Call the do_search_wo action only when the user names an asset or a priority.
+        Only state figures, names, and statuses that appear in a result. If a result does not
+        contain what was asked, say so. Never estimate or invent numbers.
         For RMA shipping questions, list only work orders whose result shows Carrier, Tracking,
         or Shipment details; if none do, say no open RMAs have shipping recorded.
 
