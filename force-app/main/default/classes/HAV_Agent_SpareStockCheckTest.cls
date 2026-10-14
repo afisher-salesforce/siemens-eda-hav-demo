@@ -77,6 +77,26 @@ private class HAV_Agent_SpareStockCheckTest {
         System.assert(!r.contains('San Jose'), 'Scoped result should exclude San Jose: ' + r);
     }
 
+    /** A colo site with zero spares is still listed and flagged. */
+    @isTest
+    static void testZeroSpareSiteFlagged() {
+        insert new List<Schema.Location>{
+            new Schema.Location(Name = 'Seoul Colo (SEL1)', LocationType = 'Site', Total_Rack_Capacity__c = 100),
+            new Schema.Location(Name = 'Unrelated Sales Office', LocationType = 'Site')
+        };
+
+        Test.startTest();
+        List<HAV_Agent_SpareStockCheck.Output> res =
+            HAV_Agent_SpareStockCheck.checkSafetyStock(
+                new List<HAV_Agent_SpareStockCheck.Input>{ makeInput(null) });
+        Test.stopTest();
+
+        String r = res[0].result;
+        System.assert(r.contains('Seoul Colo (SEL1): 0 spare(s)  ⚠ BELOW SAFETY STOCK'), 'Zero-spare site must be flagged: ' + r);
+        System.assert(r.contains('Seoul Colo (SEL1) (0/'), 'Zero-spare site listed in the below-minimum summary: ' + r);
+        System.assert(!r.contains('Unrelated Sales Office'), 'Non-colo Site locations must not be listed: ' + r);
+    }
+
     /** No matching spares returns a graceful message, not an error. */
     @isTest
     static void testNoSpares() {

@@ -49,7 +49,31 @@ public with sharing class HAV_Agent_SpareStockCheck {
 
             List<AggregateResult> rows = Database.query(query);
 
-            if (rows.isEmpty()) {
+            // Spare count per site. Start from the spares found, then add every
+            // HAV colo site (a Site Location with rack capacity; the shared org has
+            // many unrelated Site records) with none, so a site with zero spares is reported (and
+            // flagged) instead of silently dropping out of the answer.
+            Map<String, Integer> countBySite = new Map<String, Integer>();
+            for (AggregateResult ar : rows) {
+                String loc = (String) ar.get('loc');
+                if (String.isBlank(loc)) loc = 'Unassigned';
+                countBySite.put(loc, (Integer) ar.get('cnt'));
+            }
+            String siteQuery = 'SELECT Name FROM Location WHERE LocationType = \'Site\' AND Total_Rack_Capacity__c != null ';
+            if (String.isNotBlank(inp.locationName)) {
+                String siteTerm = '%' + inp.locationName.trim() + '%';
+                siteQuery += 'AND Name LIKE :siteTerm ';
+            }
+            for (SObject site : Database.query(siteQuery)) {
+                String siteName = (String) site.get('Name');
+                if (!countBySite.containsKey(siteName)) {
+                    countBySite.put(siteName, 0);
+                }
+            }
+            List<String> siteNames = new List<String>(countBySite.keySet());
+            siteNames.sort();
+
+            if (countBySite.isEmpty()) {
                 out.result = 'No available spare units found'
                     + (String.isNotBlank(inp.locationName) ? ' at "' + inp.locationName + '"' : '')
                     + '. Note: spare counts are live; the safety-stock minimum ('
@@ -63,10 +87,8 @@ public with sharing class HAV_Agent_SpareStockCheck {
 
             lines.add('Spare safety-stock check (minimum ' + SAFETY_STOCK_MIN + ' per site — illustrative threshold):');
             lines.add('');
-            for (AggregateResult ar : rows) {
-                String loc = (String) ar.get('loc');
-                if (String.isBlank(loc)) loc = 'Unassigned';
-                Integer cnt = (Integer) ar.get('cnt');
+            for (String loc : siteNames) {
+                Integer cnt = countBySite.get(loc);
                 totalSpares += cnt;
                 Boolean below = cnt < SAFETY_STOCK_MIN;
                 lines.add('• ' + loc + ': ' + cnt + ' spare(s)'
@@ -74,7 +96,7 @@ public with sharing class HAV_Agent_SpareStockCheck {
                 if (below) belowMin.add(loc + ' (' + cnt + '/' + SAFETY_STOCK_MIN + ')');
             }
             lines.add('');
-            lines.add('Total available spares: ' + totalSpares + ' across ' + rows.size() + ' site(s).');
+            lines.add('Total available spares: ' + totalSpares + ' across ' + siteNames.size() + ' site(s).');
             if (!belowMin.isEmpty()) {
                 lines.add('Below safety stock: ' + String.join(belowMin, ', ')
                     + '. Recommend replenishing before accepting new EaaS commitments at these sites.');

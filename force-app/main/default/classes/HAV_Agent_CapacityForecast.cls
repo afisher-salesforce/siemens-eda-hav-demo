@@ -29,7 +29,7 @@ public with sharing class HAV_Agent_CapacityForecast {
 
             // Query locations with asset counts
             String locQuery = 'SELECT Id, Name, Total_Rack_Capacity__c, Power_Capacity_kW__c, PUE__c '
-                + 'FROM Location WHERE LocationType = \'Site\'';
+                + 'FROM Location WHERE LocationType = \'Site\' AND Total_Rack_Capacity__c != null';
             if (String.isNotBlank(locFilter)) {
                 String term = '%' + locFilter.trim() + '%';
                 locQuery += ' AND Name LIKE :term';

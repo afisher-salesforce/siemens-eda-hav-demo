@@ -57,7 +57,8 @@ start_agent entry:
         - Questions about work orders, repairs, RMA, field service, repair shipping, carrier, tracking → workorder_management
         - Questions about spares, spare units, safety stock, replacement inventory → spares_management
         You have no fleet, capacity, financial, work-order, or spares data in this step.
-        Never answer a data question yourself, including follow-up questions such as
+        Never answer a data question yourself or say you will check something; route it instead.
+        This includes follow-up questions such as
         "break that down by site". Always route it with one of the go_ actions.
     actions:
       go_assets: @utils.transition to @topic.asset_management
@@ -280,14 +281,17 @@ topic spares_management:
 
   reasoning:
     instructions: ->
+      run @actions.check_safety_stock
+        with locationName = ""
+        set @variables.spare_stock_result = @outputs.result
       | Help the user confirm spare-unit safety stock across sites before committing new EaaS demand.
         If the user names a site, pass the location name; otherwise leave it blank to check all sites.
         Flag any site below the safety-stock minimum and recommend replenishment there.
         Note that spare counts are live but the safety-stock threshold is an illustrative figure.
-        Before answering, always call the do_check_spares action for this question, including follow-up
-        questions; earlier results may be stale or scoped differently. Only state figures,
-        names, and statuses that appear in the do_check_spares result. If the result does not contain
-        what was asked, say so. Never estimate or invent numbers.
+        The current result for all sites is loaded below; it already includes the per-site
+        breakdown. Call the do_check_spares action only when the user names a site.
+        Only state figures, names, and statuses that appear in a result. Never estimate or
+        invent numbers.
         The minimum is the single value stated in the result; do not give different per-site minimums.
 
       if @variables.spare_stock_result != "":
