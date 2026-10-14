@@ -90,6 +90,28 @@ private class HAV_Agent_WorkOrderLookupTest {
         System.assert(posInProgress < posOnHold, 'In Progress must sort before On Hold');
     }
 
+    /**
+     * Open work orders with repair shipping come first, then open RMAs, then the
+     * rest, and the list is trimmed to the cap. In-memory records, no DML, so the
+     * org's WorkOrder flows can't interfere.
+     */
+    @isTest
+    static void testRmaAndShippingPrioritized() {
+        List<WorkOrder> wos = new List<WorkOrder>{
+            new WorkOrder(Subject = 'Telemetry noise', Status = 'New'),
+            new WorkOrder(Subject = 'Closed shipped RMA', Status = 'Closed', RMA_Number__c = 'RMA-1', Tracking_Number__c = 'T1'),
+            new WorkOrder(Subject = 'Open RMA', Status = 'In Progress', RMA_Number__c = 'RMA-2'),
+            new WorkOrder(Subject = 'Open shipped RMA', Status = 'In Progress', RMA_Number__c = 'RMA-3', Shipping_Carrier__c = 'FedEx')
+        };
+
+        List<WorkOrder> ranked = HAV_Agent_WorkOrderLookup.prioritizeRmaWork(wos, 3);
+
+        System.assertEquals(3, ranked.size(), 'Trimmed to the cap');
+        System.assertEquals('Open shipped RMA', ranked[0].Subject, 'Open work order with shipping first');
+        System.assertEquals('Open RMA', ranked[1].Subject, 'Open RMA second');
+        System.assertEquals('Telemetry noise', ranked[2].Subject, 'Then the rest, in original order');
+    }
+
     @isTest
     static void testNoMatchMessage() {
         Test.startTest();

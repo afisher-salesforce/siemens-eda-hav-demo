@@ -56,6 +56,9 @@ start_agent entry:
         - Questions about revenue, financials, costs, leases, MRR → financial_operations
         - Questions about work orders, repairs, RMA, field service, repair shipping, carrier, tracking → workorder_management
         - Questions about spares, spare units, safety stock, replacement inventory → spares_management
+        You have no fleet, capacity, financial, work-order, or spares data in this step.
+        Never answer a data question yourself, including follow-up questions such as
+        "break that down by site". Always route it with one of the go_ actions.
     actions:
       go_assets: @utils.transition to @topic.asset_management
         description: "Route to asset fleet management"
@@ -93,6 +96,10 @@ topic asset_management:
         Present results clearly and highlight key details like utilization and contract dates.
         If the user asks about a specific asset, search by its name (e.g. VS-SJ1-001).
         If the user asks about a customer's assets, search by customer name (e.g. TSMC, Intel).
+        Before answering, always call the do_search action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_search result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
 
       if @variables.asset_search_result != "":
         | {!@variables.asset_search_result}
@@ -123,6 +130,10 @@ topic telemetry_monitoring:
         Extract the asset name from the user's message (e.g. VS-SJ1-001, PM-AUS1-002).
         After retrieving telemetry, highlight any anomalies (high CPU, high temperature, errors).
         Suggest actions for any issues found (e.g. check cooling, reduce workload, create work order).
+        Before answering, always call the do_check action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_check result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
 
       if @variables.telemetry_result != "":
         | {!@variables.telemetry_result}
@@ -153,6 +164,12 @@ topic capacity_planning:
         If the user asks for an overview, leave locationName empty to get all facilities.
         Highlight facilities that are near capacity or have forecast demand exceeding supply.
         Suggest expansion or redistribution when capacity is tight.
+        Before answering, always call the do_analyze action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_analyze result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
+        For free capacity or where new (EaaS) demand fits, lead with the "Free capacity for new
+        demand", "Best fit" and "Avoid" lines from the result, quoting the rack headroom numbers.
 
       if @variables.capacity_result != "":
         | {!@variables.capacity_result}
@@ -183,6 +200,10 @@ topic financial_operations:
         If the user asks for overall financials, leave customerName empty.
         Highlight key metrics: MRR, annualized revenue, top customers, and repair cost exposure.
         Flag any contract renewals approaching or high repair costs.
+        Before answering, always call the do_financials action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_financials result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
 
       if @variables.financial_result != "":
         | {!@variables.financial_result}
@@ -217,6 +238,12 @@ topic workorder_management:
         surface the carrier, tracking number, and shipment status returned for each work order.
         Flag critical or high-priority work orders that need immediate attention.
         Summarize total repair cost exposure when multiple work orders are shown.
+        Before answering, always call the do_search_wo action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_search_wo result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
+        For RMA shipping questions, list only work orders whose result shows Carrier, Tracking,
+        or Shipment details; if none do, say no open RMAs have shipping recorded.
 
       if @variables.workorder_result != "":
         | {!@variables.workorder_result}
@@ -247,6 +274,11 @@ topic spares_management:
         If the user names a site, pass the location name; otherwise leave it blank to check all sites.
         Flag any site below the safety-stock minimum and recommend replenishment there.
         Note that spare counts are live but the safety-stock threshold is an illustrative figure.
+        Before answering, always call the do_check_spares action for this question, including follow-up
+        questions; earlier results may be stale or scoped differently. Only state figures,
+        names, and statuses that appear in the do_check_spares result. If the result does not contain
+        what was asked, say so. Never estimate or invent numbers.
+        The minimum is the single value stated in the result; do not give different per-site minimums.
 
       if @variables.spare_stock_result != "":
         | {!@variables.spare_stock_result}
