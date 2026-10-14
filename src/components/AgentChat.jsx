@@ -12,6 +12,9 @@ const SUGGESTED_PROMPTS = [
   { label: 'Asset Health', prompt: 'Are there any critical alerts for asset VS-SEL1-001?' },
   { label: 'Hsinchu Utilization', prompt: 'What is the rack utilization at Hsinchu?' },
   { label: 'Revenue Exposure', prompt: 'Give me a fleet-wide revenue summary by lease type.' },
+  { label: 'EaaS Free Capacity', prompt: 'Where do we have free capacity for a new EaaS customer?' },
+  { label: 'Spare Safety Stock', prompt: 'Are we below safety stock on spares anywhere?' },
+  { label: 'RMA Shipping', prompt: "What's the shipping status of our open RMAs?" },
 ];
 
 export default function AgentChat({ open, onClose, prefill, onPrefillConsumed }) {

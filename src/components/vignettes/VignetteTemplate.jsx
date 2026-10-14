@@ -11,6 +11,8 @@ const VIGNETTES = [
   { path: '/capabilities/platform', title: 'The Platform That Connects It All' },
   { path: '/capabilities/accounts', title: 'The Renewal That Nobody Saw Coming' },
   { path: '/capabilities/automation', title: 'From Heroic Manual Efforts to Closed-Loop Automation' },
+  { path: '/capabilities/loan-to-sale', title: 'The Loaner That Became a Sale, in One Click' },
+  { path: '/capabilities/eaas', title: 'Emulation-as-a-Service: The Consumption Model and the Ops Lifecycle' },
 ];
 
 function OutcomeCard({ metric, label, color }) {
