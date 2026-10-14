@@ -88,17 +88,30 @@ Built, deployed and tested (7/7 tests pass) as of Oct 5:
 - `seed-6-eaas.apex` (seeded)
 - Org-only EaaS layout and flexipage, plus loaner fields and FLS for both System Administrator profiles, captured into source
 
+Oct 14 hardening session. Agent **v7 is active**, and all four V9 prompts pass in Agent Builder Preview on real org data:
+
+| Prompt | Expected answer (current seed) |
+|---|---|
+| "Where do we have free capacity for a new EaaS customer?" | Best fit: San Jose +24, Austin +22, Bangalore +18, Munich +12. Avoid: Seoul +2 (tight), Hsinchu −5 (over). |
+| "What's our revenue by lease type?" | MRR $4.72M: Lease 17 units $2.96M, EaaS 12 units $1.76M. $56.64M/yr. 34 open WOs, $89K. |
+| "What's the shipping status of our open RMAs?" | WO 00000593 (RMA-2025-10044) and WO 00000591 (RMA-2025-10042), both FedEx In Transit. |
+| "Are we below safety stock on spares anywhere?" | Bangalore and Seoul flagged (1 of a minimum of 2). SJ1, HSC1, AUS1 and MUC1 at 2. |
+
+What changed on Oct 14:
+
+- **Every data topic runs its action deterministically** (`run @actions.X` at the top of `instructions: ->`). Telling the model to "always call the action" was not reliable: it skipped the call and invented figures. The model-callable action is only used for site-, asset-, priority- or customer-scoped follow-ups.
+- **`HAV_Agent_CapacityForecast` math fixed.** Headroom = total racks − projected demand, and rack occupancy comes from the forecast, not the asset count. It ranks sites with "Best fit" and "Avoid" lines.
+- **`HAV_Agent_WorkOrderLookup`** puts open RMAs with shipping first, then other open RMAs, then trims to 15.
+- **Revenue model (user decision):** `HAV_RevenueModel` is shared by the React app (`HAV_FinancialService`) and the agent. Only blade-tier Lease or EaaS units earn the per-product rate (Veloce $200K, Primo $100K, proFPGA $60K). The app headline moved from $14.0M to $4.72M. The old figure counted facility, rack and spare records.
+- **Spares:** `scripts/seed-7-spares.apex` added T-307…T-310 at their home sites. `HAV_Agent_SpareStockCheck` also lists HAV colos with zero spares.
+- **Colo filter:** spares and capacity only consider HAV colos, i.e. Site Locations with `Total_Rack_Capacity__c` set. The shared org has about 20 unrelated Site records.
+- `Asset_Tier__c` captured into `main` from `heroku`.
+
 Remaining:
 
-1. **Publish the agent:** `sf agent publish authoring-bundle --target-org siemens-eda-hav-l15viz --api-name HAV_Operations_Agent`. Confirm flags with `--help`. Agents publish with this command, not with a metadata deploy.
-2. **Grant FLS on the 6 new fields to the agent's run-as/integration user.** Otherwise the shipping and safety-stock answers come back empty.
-3. **Smoke-test these prompts:**
-   - "Where do we have free capacity for a new EaaS customer?"
-   - "What's our revenue by lease type?"
-   - "Are we below safety stock on spares anywhere?"
-   - "What's the shipping status of our open RMAs?"
-4. Draft the PR body and open `feat/eaas-demo-oct26 → main`.
-5. Confirm `HAV_Agent_WorkOrderLookupTest` is deployed to the org. It was on `main` but missing from the org on Oct 5. Then re-test "list all open work orders". The WHEN-clause SOQL bug was fixed in PR #20.
+1. Commit the Oct 14 working tree if it isn't committed yet, then draft the PR body and open `feat/eaas-demo-oct26 → main`.
+2. Merge the `heroku` PR `feat/capabilities-v8-v9` (V8/V9 capability pages and EaaS chat buttons), then smoke-test the same four prompts through the React app's agent chat.
+3. The MCP `agentforce_ask` session is sticky, opened once per server. Restart the MCP server, or use a new Cowork session, before demoing the Claude surface on the new agent version.
 
 ## Agent prompts that work live (tested Sept 29)
 
@@ -125,6 +138,9 @@ Remaining:
 - **Retrieving a profile alone returns no `fieldPermissions`.** Bundle the `CustomField:` entries into the same retrieve. The standard System Administrator profile's metadata name is `Admin`.
 - **Quick actions don't appear until they're added to the layout** for that record type. Page layout assignment is by record type.
 - **Multi-name `--metadata` lists can silently drop items.** When something is missing, retrieve one item at a time.
+- **Agent publish:** `sf agent publish authoring-bundle --api-name HAV_Operations_Agent --target-org siemens-eda-hav-l15viz`, then `sf agent activate …`. This needs `@salesforce/plugin-agent` v2.x. Publish writes `aiAgentDefinitionVersions/HAV_Operations_Agent#N/` back into source, so commit it. Apex-only fixes need no republish.
+- **Verify agent answers from the Preview trace.** An **Action** step must appear before the answer. The trace's summary text can claim an action ran when it didn't.
+- **The user's zsh doesn't treat `#` as a comment** when commands are pasted interactively. Never put inline comments in commands given to Drew. An `if>` prompt means a comment broke the paste.
 - **PR #28 merged an older head,** so the V8 script needed a follow-up PR (#30). After any merge, verify on `origin/main`.
 - **Untracked in the working tree on purpose:** the Location power-headroom files (`HAV_LocationHeadroomController*`, `lwc/locationHeadroom`, `Location_Power_Headroom_Rollup` flow, 3 Location fields). They are the scaffolded **DevOps Center demo** work item (WI-000101, see `../siemens-devops-center-demo/`). Leave them uncommitted unless asked.
 
