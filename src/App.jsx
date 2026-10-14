@@ -29,6 +29,8 @@ import Vignette4 from './components/vignettes/Vignette4';
 import Vignette5 from './components/vignettes/Vignette5';
 import Vignette6 from './components/vignettes/Vignette6';
 import Vignette7 from './components/vignettes/Vignette7';
+import Vignette8 from './components/vignettes/Vignette8';
+import Vignette9 from './components/vignettes/Vignette9';
 
 // Redirect legacy /vignettes(/sub-path) links to their new /capabilities
 // equivalent, preserving whatever sub-path followed so old bookmarks and
@@ -72,6 +74,8 @@ export default function App() {
         <Route path="/capabilities/platform" element={<Vignette5 />} />
         <Route path="/capabilities/accounts" element={<Vignette6 />} />
         <Route path="/capabilities/automation" element={<Vignette7 />} />
+        <Route path="/capabilities/loan-to-sale" element={<Vignette8 />} />
+        <Route path="/capabilities/eaas" element={<Vignette9 />} />
         {/* Legacy URL redirects — keep old /vignettes links working */}
         <Route path="/vignettes/*" element={<VignettesRedirect />} />
         <Route path="*" element={<Navigate to="/capabilities" replace />} />

@@ -8,6 +8,8 @@ import {
   Layers,
   HeartHandshake,
   Zap,
+  Repeat,
+  CloudCog,
   ArrowUpRight,
 } from 'lucide-react';
 import LeadToCashMap from './LeadToCashMap';
@@ -77,7 +79,67 @@ const vignettes = [
     icon: Zap,
     color: '#8b5cf6',
   },
+  {
+    number: 8,
+    path: '/capabilities/loan-to-sale',
+    title: 'The Loaner That Became a Sale, in One Click',
+    description:
+      'A loaner converts to a sale as one all-or-nothing transaction: the green return and the sale order are created, the asset is re-pointed, and Loan → Return → Sale lineage is recorded.',
+    icon: Repeat,
+    color: '#14b8a6',
+    standalone: true,
+  },
+  {
+    number: 9,
+    path: '/capabilities/eaas',
+    title: 'Emulation-as-a-Service: The Consumption Model and the Ops Lifecycle',
+    description:
+      'EaaS as a recurring consumption relationship — rate, committed capacity, and utilization on the asset — kept billable by free capacity, spare safety stock, and tracked repair shipping.',
+    icon: CloudCog,
+    color: '#0891b2',
+    standalone: true,
+  },
 ];
+
+function VignetteCard({ v }) {
+  return (
+    <Link
+      to={v.path}
+      className="section-card group hover:border-opacity-40 transition-all cursor-pointer"
+      style={{ '--hover-color': v.color }}
+    >
+      <div className="relative overflow-hidden px-5 py-5">
+        <div
+          className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20"
+          style={{ backgroundColor: v.color }}
+        />
+        <div className="relative">
+          <div className="flex items-start justify-between mb-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{
+                backgroundColor: `${v.color}15`,
+                border: `1px solid ${v.color}30`,
+              }}
+            >
+              <v.icon size={20} style={{ color: v.color }} />
+            </div>
+            <div className="flex items-center gap-1 text-th-faint group-hover:text-siemens-accent transition-colors">
+              <span className="text-[10px] uppercase tracking-wider">Story {v.number}</span>
+              <ArrowUpRight size={12} />
+            </div>
+          </div>
+          <h3 className="text-sm font-semibold text-th-secondary mb-2 group-hover:text-th-primary transition-colors">
+            {v.title}
+          </h3>
+          <p className="text-xs text-th-muted leading-relaxed line-clamp-3">
+            {v.description}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function VignetteIndex() {
   return (
@@ -92,7 +154,8 @@ export default function VignetteIndex() {
           <p className="text-sm text-th-muted leading-relaxed max-w-2xl">
             Seven stories illustrating how Siemens EDA's Hardware-Assisted Verification business
             transforms from spreadsheet-driven coordination to connected, intelligent operations
-            — all on a platform already within the Siemens Enterprise License Agreement.
+            — all on a platform already within the Siemens Enterprise License Agreement — plus two
+            standalone deep dives on loan-to-sale conversion and Emulation-as-a-Service.
           </p>
         </div>
       </div>
@@ -102,43 +165,18 @@ export default function VignetteIndex() {
 
       {/* Vignette Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {vignettes.map((v) => (
-          <Link
-            key={v.number}
-            to={v.path}
-            className="section-card group hover:border-opacity-40 transition-all cursor-pointer"
-            style={{ '--hover-color': v.color }}
-          >
-            <div className="relative overflow-hidden px-5 py-5">
-              <div
-                className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20"
-                style={{ backgroundColor: v.color }}
-              />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{
-                      backgroundColor: `${v.color}15`,
-                      border: `1px solid ${v.color}30`,
-                    }}
-                  >
-                    <v.icon size={20} style={{ color: v.color }} />
-                  </div>
-                  <div className="flex items-center gap-1 text-th-faint group-hover:text-siemens-accent transition-colors">
-                    <span className="text-[10px] uppercase tracking-wider">Story {v.number}</span>
-                    <ArrowUpRight size={12} />
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-th-secondary mb-2 group-hover:text-th-primary transition-colors">
-                  {v.title}
-                </h3>
-                <p className="text-xs text-th-muted leading-relaxed line-clamp-3">
-                  {v.description}
-                </p>
-              </div>
-            </div>
-          </Link>
+        {vignettes.filter((v) => !v.standalone).map((v) => (
+          <VignetteCard key={v.number} v={v} />
+        ))}
+      </div>
+
+      {/* Standalone deep dives */}
+      <div className="px-1 pt-2">
+        <h2 className="text-[11px] font-semibold text-th-muted uppercase tracking-[0.1em]">Standalone Deep Dives</h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {vignettes.filter((v) => v.standalone).map((v) => (
+          <VignetteCard key={v.number} v={v} />
         ))}
       </div>
     </div>
