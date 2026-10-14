@@ -4,6 +4,10 @@
  */
 public with sharing class HAV_Agent_WorkOrderLookup {
 
+    /** Maximum work orders returned to the agent in one answer. */
+    @TestVisible
+    private static final Integer MAX_RESULTS = 15;
+
     public class Input {
         @InvocableVariable(description='Optional asset name to filter work orders for a specific emulator')
         public String assetName;
@@ -28,7 +32,8 @@ public with sharing class HAV_Agent_WorkOrderLookup {
 
             String query = 'SELECT WorkOrderNumber, Subject, Priority, Status, '
                 + 'Asset.Name, Account.Name, RMA_Number__c, Vendor__c, '
-                + 'Estimated_Repair_Cost__c, CreatedDate '
+                + 'Estimated_Repair_Cost__c, Shipping_Carrier__c, '
+                + 'Tracking_Number__c, Shipment_Status__c, CreatedDate '
                 + 'FROM WorkOrder '
                 + 'WHERE Asset.Product2.Family = \'Emulation Systems\' ';
 
@@ -46,10 +51,16 @@ public with sharing class HAV_Agent_WorkOrderLookup {
             // (that is SQL, not SOQL) — it throws unexpected token: 'WHEN' on
             // every call. Order by CreatedDate here and apply the New >
             // In Progress > On Hold > other status ranking in Apex below.
-            query += 'ORDER BY CreatedDate DESC LIMIT 15';
+            // Pull a wide window, then rank and trim in Apex. A plain
+            // 'newest 15' window was dominated by recent telemetry-generated
+            // work orders with no RMA, which pushed the RMA / repair-shipping
+            // work orders (the ones the shipping questions are about) out of
+            // the result entirely.
+            query += 'ORDER BY CreatedDate DESC LIMIT 200';
 
             List<WorkOrder> wos = Database.query(query);
             wos = sortByStatusRank(wos);
+            wos = prioritizeRmaWork(wos, MAX_RESULTS);
 
             if (wos.isEmpty()) {
                 out.result = 'No work orders found'
@@ -97,6 +108,17 @@ public with sharing class HAV_Agent_WorkOrderLookup {
                     if (!details.isEmpty()) {
                         lines.add('  ' + String.join(details, ' | '));
                     }
+
+                    // Repair shipping (third-party RMA logistics). Carrier/tracking/
+                    // status are the queryable demo state; the Shipment__e platform
+                    // event is published alongside as the carrier-integration stub.
+                    List<String> shipping = new List<String>();
+                    if (wo.Shipping_Carrier__c != null) shipping.add('Carrier: ' + wo.Shipping_Carrier__c);
+                    if (wo.Tracking_Number__c != null) shipping.add('Tracking: ' + wo.Tracking_Number__c);
+                    if (wo.Shipment_Status__c != null) shipping.add('Shipment: ' + wo.Shipment_Status__c);
+                    if (!shipping.isEmpty()) {
+                        lines.add('  ' + String.join(shipping, ' | '));
+                    }
                     lines.add('');
                 }
 
@@ -106,6 +128,41 @@ public with sharing class HAV_Agent_WorkOrderLookup {
             out.result = 'Error searching work orders: ' + e.getMessage();
         }
         return new List<Output>{ out };
+    }
+
+    /**
+     * Stable re-order so open repair work surfaces first, then trim to max:
+     *   0. open work orders with repair shipping recorded (carrier/tracking/status)
+     *   1. open work orders with an RMA number
+     *   2. everything else
+     * Order within each tier (status rank, then CreatedDate DESC) is preserved.
+     */
+    @TestVisible
+    private static List<WorkOrder> prioritizeRmaWork(List<WorkOrder> wos, Integer max) {
+        List<WorkOrder> ordered = new List<WorkOrder>();
+        for (Integer tier = 0; tier <= 2; tier++) {
+            for (WorkOrder wo : wos) {
+                if (rmaTier(wo) == tier) {
+                    ordered.add(wo);
+                }
+            }
+        }
+        List<WorkOrder> trimmed = new List<WorkOrder>();
+        for (Integer i = 0; i < ordered.size() && i < max; i++) {
+            trimmed.add(ordered[i]);
+        }
+        return trimmed;
+    }
+
+    private static Integer rmaTier(WorkOrder wo) {
+        Boolean isOpen = wo.Status != 'Completed' && wo.Status != 'Closed' && wo.Status != 'Cancelled';
+        if (!isOpen) return 2;
+        Boolean hasShipping = wo.Shipping_Carrier__c != null
+            || wo.Tracking_Number__c != null
+            || wo.Shipment_Status__c != null;
+        if (hasShipping) return 0;
+        if (wo.RMA_Number__c != null) return 1;
+        return 2;
     }
 
     /**

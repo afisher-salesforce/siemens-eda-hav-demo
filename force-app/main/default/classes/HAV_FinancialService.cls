@@ -1,12 +1,6 @@
 @RestResource(urlMapping='/hav/financials/*')
 global with sharing class HAV_FinancialService {
 
-    private static final Map<String, Decimal> PRICE_TIERS = new Map<String, Decimal>{
-        'Veloce Strato' => 200000,
-        'Primo' => 100000,
-        'proFPGA' => 60000
-    };
-
     @HttpGet
     global static void getFinancials() {
         RestResponse res = RestContext.response;
@@ -47,27 +41,33 @@ global with sharing class HAV_FinancialService {
             }
             summary.put('openRepairCosts', repairSummary);
 
-            // Revenue estimate by product
+            // Recurring revenue estimate — shared model with the Agentforce
+            // financial action (HAV_RevenueModel): Blade-tier contract units on
+            // Lease or EaaS, priced per unit per month by product tier.
             Decimal totalMonthlyRevenue = 0;
             Map<String, Object> revenueByProduct = new Map<String, Object>();
-            for (AggregateResult ar : [
-                SELECT Product2.Name productName, COUNT(Id) cnt
-                FROM Asset
-                WHERE Product2.Family = 'Emulation Systems'
-                GROUP BY Product2.Name
-            ]) {
-                String productName = (String) ar.get('productName');
-                Integer cnt = (Integer) ar.get('cnt');
-                Decimal pricePerUnit = matchPriceTier(productName);
-                Decimal revenue = pricePerUnit * cnt;
-                totalMonthlyRevenue += revenue;
-
-                Map<String, Object> prodRevenue = new Map<String, Object>();
-                prodRevenue.put('count', cnt);
-                prodRevenue.put('pricePerUnit', pricePerUnit);
-                prodRevenue.put('monthlyRevenue', revenue);
-                revenueByProduct.put(productName != null ? productName : 'Unknown', prodRevenue);
+            Map<String, Decimal> revenueByLeaseType = new Map<String, Decimal>();
+            Map<String, Integer> unitsByProduct = new Map<String, Integer>();
+            Map<String, Decimal> mrrByProduct = new Map<String, Decimal>();
+            for (Asset a : HAV_RevenueModel.contractUnits(null)) {
+                Decimal mrr = HAV_RevenueModel.monthlyRevenue(a.Product2.Name, a.Lease_Type__c);
+                if (mrr <= 0) {
+                    continue;
+                }
+                String productName = a.Product2.Name != null ? a.Product2.Name : 'Unknown';
+                unitsByProduct.put(productName, (unitsByProduct.containsKey(productName) ? unitsByProduct.get(productName) : 0) + 1);
+                mrrByProduct.put(productName, (mrrByProduct.containsKey(productName) ? mrrByProduct.get(productName) : 0) + mrr);
+                revenueByLeaseType.put(a.Lease_Type__c, (revenueByLeaseType.containsKey(a.Lease_Type__c) ? revenueByLeaseType.get(a.Lease_Type__c) : 0) + mrr);
+                totalMonthlyRevenue += mrr;
             }
+            for (String productName : mrrByProduct.keySet()) {
+                Map<String, Object> prodRevenue = new Map<String, Object>();
+                prodRevenue.put('count', unitsByProduct.get(productName));
+                prodRevenue.put('pricePerUnit', HAV_RevenueModel.priceFor(productName));
+                prodRevenue.put('monthlyRevenue', mrrByProduct.get(productName));
+                revenueByProduct.put(productName, prodRevenue);
+            }
+            summary.put('revenueByLeaseType', revenueByLeaseType);
             summary.put('revenueByProduct', revenueByProduct);
             summary.put('totalMonthlyRevenue', totalMonthlyRevenue);
 
@@ -93,17 +93,5 @@ global with sharing class HAV_FinancialService {
                 'type' => e.getTypeName()
             }));
         }
-    }
-
-    private static Decimal matchPriceTier(String productName) {
-        if (String.isBlank(productName)) {
-            return 0;
-        }
-        for (String tier : PRICE_TIERS.keySet()) {
-            if (productName.containsIgnoreCase(tier)) {
-                return PRICE_TIERS.get(tier);
-            }
-        }
-        return 0;
     }
 }
