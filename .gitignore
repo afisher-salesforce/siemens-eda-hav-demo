@@ -50,3 +50,6 @@ heroku-app/dist/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Prior-session transcripts and memory (may contain secrets)
+docs/prior-sessions/
