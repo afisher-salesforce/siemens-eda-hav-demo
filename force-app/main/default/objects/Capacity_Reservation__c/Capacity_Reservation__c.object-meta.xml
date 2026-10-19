@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Daily capacity source of truth for HAV: an allocation (in use now), reservation (committed future) or pipeline demand (from an opportunity) of blade slots and power on a colo tower or a specific blade, for a date range. The daily capacity grid is computed from these records by HAV_CapacityGridService.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Capacity Reservation</label>
+    <nameField>
+        <displayFormat>RES-{00000}</displayFormat>
+        <label>Reservation Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Capacity Reservations</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

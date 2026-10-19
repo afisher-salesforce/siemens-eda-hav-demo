@@ -17,8 +17,8 @@ system:
     Your capabilities:
     1. Asset Fleet Management — search and lookup emulator assets by name, customer, location, or status
     2. Telemetry Monitoring — check CPU, memory, temperature, and error counts for specific assets
-    3. Capacity Planning — analyze rack occupancy, power usage, and demand forecasts by facility (including free capacity for new EaaS demand)
-    4. Financial Operations — review revenue estimates, lease breakdowns (incl. EaaS MRR), and repair costs
+    3. Capacity Planning — daily blade-slot capacity by colo, row and tower (in use, reserved, free, pipeline demand, power), free capacity for new EaaS demand, job eligibility (capacity and power), and pipeline-informed expansion recommendations
+    4. Financial Operations — review revenue estimates, lease breakdowns (incl. EaaS MRR), repair costs, and capacity-based chargeback / customer cost allocation
     5. Work Order Tracking — find and summarize field service work orders, RMA status, repair costs, and third-party repair shipping (carrier/tracking/status)
     6. Spare Safety Stock — check available spare units per site and flag sites below the safety-stock minimum
 
@@ -35,6 +35,10 @@ variables:
     description: "Stores the result of the latest capacity analysis"
   financial_result: mutable string = ""
     description: "Stores the result of the latest financial summary"
+  eligibility_result: mutable string = ""
+    description: "Stores the result of the latest job eligibility check"
+  chargeback_result: mutable string = ""
+    description: "Stores the result of the latest chargeback calculation"
   workorder_result: mutable string = ""
     description: "Stores the result of the latest work order search"
   spare_stock_result: mutable string = ""
@@ -52,8 +56,8 @@ start_agent entry:
       | Determine what the user needs help with and route to the correct topic.
         - Questions about assets, emulators, systems, fleet → asset_management
         - Questions about telemetry, CPU, memory, temperature, health, errors → telemetry_monitoring
-        - Questions about capacity, racks, power, facilities, locations, PUE → capacity_planning
-        - Questions about revenue, financials, costs, leases, MRR → financial_operations
+        - Questions about capacity, racks, towers, rows, blades, slots, power, facilities, locations, PUE, allocations, reservations, job eligibility, can a job run, next-quarter availability → capacity_planning
+        - Questions about revenue, financials, costs, leases, MRR, chargeback, cost allocation, blade-days billed → financial_operations
         - Questions about work orders, repairs, RMA, field service, repair shipping, carrier, tracking → workorder_management
         - Questions about spares, spare units, safety stock, replacement inventory → spares_management
         You have no fleet, capacity, financial, work-order, or spares data in this step.
@@ -145,7 +149,7 @@ topic telemetry_monitoring:
         set @variables.telemetry_result = @outputs.result
 
 topic capacity_planning:
-  description: "Analyze colocation facility capacity including rack occupancy, power usage, PUE efficiency, and demand forecasts for Q3/Q4."
+  description: "Daily blade-slot capacity by colo, row and tower: in use, reserved, free, pipeline demand, power headroom, conflicts, shortfall forecast, where new demand fits, and job eligibility gated by capacity and power."
 
   actions:
     analyze_capacity:
@@ -157,6 +161,25 @@ topic capacity_planning:
         result: string
           description: "Formatted capacity analysis with forecasts"
       target: "apex://HAV_Agent_CapacityForecast"
+    check_eligibility:
+      description: "Check which towers can hold a job: enough free blade slots and power on every day of a date range"
+      inputs:
+        bladeCount: string
+          description: "Blade slots the job needs, e.g. 2"
+        powerKw: string
+          description: "Optional total power in kW; leave blank to estimate 20 kW per blade"
+        startDate: string
+          description: "Optional start date YYYY-MM-DD; blank means today"
+        endDate: string
+          description: "Optional end date YYYY-MM-DD"
+        durationDays: string
+          description: "Optional duration in days when no end date is given; blank means 30"
+        locationName: string
+          description: "Optional colo name to limit the search, e.g. San Jose"
+      outputs:
+        result: string
+          description: "Eligible towers and why others are blocked"
+      target: "apex://HAV_Agent_JobEligibility"
 
   reasoning:
     instructions: ->
@@ -172,8 +195,11 @@ topic capacity_planning:
         user asks about a specific location. Only state figures, names, and statuses that appear in a
         result. If a result does not contain what was asked, say so. Never estimate or
         invent numbers.
-        For free capacity or where new (EaaS) demand fits, lead with the "Free capacity for new
-        demand", "Best fit" and "Avoid" lines from the result, quoting the rack headroom numbers.
+        Capacity is in blade slots by day. For free capacity or where new (EaaS) demand fits, lead
+        with the "Free capacity for new demand", "Best fit" and "Avoid" lines, quoting the free-slot
+        numbers, then mention any shortfall, conflict and the expansion recommendation.
+        When the user asks whether a job or customer request can run (blades, power, dates), call
+        the do_check_eligibility action with those values and report eligible towers and blocks.
 
       if @variables.capacity_result != "":
         | {!@variables.capacity_result}
@@ -182,9 +208,17 @@ topic capacity_planning:
       do_analyze: @actions.analyze_capacity
         with locationName = ...
         set @variables.capacity_result = @outputs.result
+      do_check_eligibility: @actions.check_eligibility
+        with bladeCount = ...
+        with powerKw = ...
+        with startDate = ...
+        with endDate = ...
+        with durationDays = ...
+        with locationName = ...
+        set @variables.eligibility_result = @outputs.result
 
 topic financial_operations:
-  description: "Review financial metrics for the emulator fleet including monthly recurring revenue, lease type breakdown, customer revenue, and open repair costs."
+  description: "Review financial metrics for the emulator fleet including monthly recurring revenue, lease type breakdown, customer revenue, open repair costs, and capacity-based chargeback / customer cost allocation."
 
   actions:
     get_financials:
@@ -196,6 +230,19 @@ topic financial_operations:
         result: string
           description: "Formatted financial summary"
       target: "apex://HAV_Agent_FinancialSummary"
+    get_chargeback:
+      description: "Capacity-based chargeback: blade-days in use or reserved per customer and colo for a period, priced at the daily rate"
+      inputs:
+        customerName: string
+          description: "Optional customer name, e.g. TSMC"
+        startDate: string
+          description: "Optional period start YYYY-MM-DD; blank means first day of this month"
+        endDate: string
+          description: "Optional period end YYYY-MM-DD; blank means end of the start month"
+      outputs:
+        result: string
+          description: "Chargeback by customer"
+      target: "apex://HAV_Agent_Chargeback"
 
   reasoning:
     instructions: ->
@@ -207,6 +254,8 @@ topic financial_operations:
         If the user asks for overall financials, leave customerName empty.
         Highlight key metrics: MRR, annualized revenue, top customers, and repair cost exposure.
         Flag any contract renewals approaching or high repair costs.
+        For chargeback, cost allocation or blade-days billed, call the do_get_chargeback action
+        (with the customer and period if given) and report blade-days and amounts per customer.
         The current result for all customers is loaded below. Call the do_financials action only when the
         user asks about a specific customer. Only state figures, names, and statuses that appear in a
         result. If a result does not contain what was asked, say so. Never estimate or
@@ -219,6 +268,11 @@ topic financial_operations:
       do_financials: @actions.get_financials
         with customerName = ...
         set @variables.financial_result = @outputs.result
+      do_get_chargeback: @actions.get_chargeback
+        with customerName = ...
+        with startDate = ...
+        with endDate = ...
+        set @variables.chargeback_result = @outputs.result
 
 topic workorder_management:
   description: "Search and track field service work orders for emulator assets including priority, status, RMA numbers, vendor assignments, and estimated repair costs."

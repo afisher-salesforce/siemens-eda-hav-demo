@@ -113,6 +113,19 @@ Remaining:
 2. Merge the `heroku` PR `feat/capabilities-v8-v9` (V8/V9 capability pages and EaaS chat buttons), then smoke-test the same four prompts through the React app's agent chat.
 3. The MCP `agentforce_ask` session is sticky, opened once per server. Restart the MCP server, or use a new Cowork session, before demoing the Claude surface on the new agent version.
 
+## Daily capacity model (built Oct 19 for the 10/21 dry run)
+
+Siemens asked for blade-level capacity by day, with real allocations and forward projections. Spare capacity should roll up the hierarchy, and capacity and power should gate job eligibility.
+
+- **Source of truth:** `Capacity_Reservation__c`. Statuses: Allocated (now), Reserved (committed future), Pipeline (from an opportunity, never consumes capacity), Released.
+- **Nothing daily is stored.** `HAV_CapacityGridService` computes the grid on request, rolling up colo > row > tower > blade.
+- **Towers** are rack assets with `Blade_Slots__c`, `Tower_Power_Capacity_kW__c` and `Row__c`. Row is a capacity attribute, *not* a `Parent_Asset__c` level. The React hierarchy code (`HAV_AssetService` and `HAV_CapacityEngine`, heroku-only) assumes blade → rack → facility.
+- **REST:** `/hav/capacity-grid` with `view=grid|shortfall|eligibility|chargeback`. POST creates a reservation gated by eligibility.
+- **Agent actions:** `HAV_Agent_CapacityForecast` (daily model), `HAV_Agent_JobEligibility` and `HAV_Agent_Chargeback`.
+- **Seed:** `scripts/seed-8-daily-capacity.apex`. Its log prints the agent's exact free-capacity answer (`CAPACITY |` lines).
+- **Permission set `HAV_Demo_User`** is generated from every field definition on both branches. Assign it, plus `HAV_Loan_To_Sale`, to any non-admin tester. V9 testing failed for a non-admin because `HAV_Admin` covers only 21 fields.
+- **Next:** the React capacity-by-day view and reservation flow on `heroku`. The build plan with open decisions lives in the outputs from the Oct 19 session.
+
 ## Agent prompts that work live (tested Sept 29)
 
 - **HAV ops, works:**

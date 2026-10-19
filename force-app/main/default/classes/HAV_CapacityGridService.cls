@@ -1,0 +1,535 @@
+/**
+ * HAV_CapacityGridService
+ * -----------------------
+ * Daily blade-capacity model for the HAV EaaS demo. Replaces the spreadsheet
+ * allocation process: capacity by day at every level of the hierarchy, with
+ * actual allocations, committed reservations and pipeline demand.
+ *
+ * Hierarchy (capacity view):  fleet > colo > row > tower > blade
+ *   - colo  = Facility asset (Asset_Tier__c = 'Facility')
+ *   - row   = Row__c value on the towers in that colo
+ *   - tower = rack asset with Blade_Slots__c set (capacity node; power budget
+ *             in Tower_Power_Capacity_kW__c)
+ *   - blade = Blade asset whose Parent_Asset__c is the tower
+ *
+ * Source of truth is Capacity_Reservation__c. Nothing daily is stored: the grid
+ * is computed on request, so it can never drift from the reservations.
+ *   Allocated = in use now; Reserved = committed future; both consume slots and
+ *   power. Pipeline = forecast demand from opportunities; shown separately and
+ *   used for the shortfall forecast, never consumes capacity.
+ *
+ * Node keys: 'fleet', 'colo:<facilityId>', 'row:<facilityId>:<row>',
+ *            'tower:<towerId>', 'blade:<bladeId>'.
+ */
+public with sharing class HAV_CapacityGridService {
+
+    public static final Set<String> HOLDING = new Set<String>{ 'Allocated', 'Reserved' };
+    public static final Integer DEFAULT_DAYS = 90;
+
+    // ── Topology ────────────────────────────────────────────────────────────
+
+    public class Tower {
+        public Id nodeId;
+        public String name;
+        public Id coloId;
+        public String coloName;
+        public String row;
+        public Integer slots;
+        public Decimal powerCap;
+        public List<Asset> blades = new List<Asset>();
+    }
+
+    public class Topology {
+        public Map<Id, Tower> towers = new Map<Id, Tower>();
+        public Map<Id, Id> bladeToTower = new Map<Id, Id>();
+        public Map<Id, String> coloNames = new Map<Id, String>();
+        public Map<Id, Asset> blades = new Map<Id, Asset>();
+    }
+
+    public static Topology loadTopology() {
+        Topology t = new Topology();
+        for (Asset a : [
+            SELECT Id, Name, Blade_Slots__c, Tower_Power_Capacity_kW__c, Row__c,
+                   Parent_Asset__c, Parent_Asset__r.Name
+            FROM Asset
+            WHERE Blade_Slots__c != null AND Blade_Slots__c > 0
+            ORDER BY Name
+        ]) {
+            Tower tw = new Tower();
+            tw.nodeId = a.Id;
+            tw.name = a.Name;
+            tw.coloId = a.Parent_Asset__c;
+            tw.coloName = a.Parent_Asset__r != null ? a.Parent_Asset__r.Name : 'Unassigned colo';
+            tw.row = String.isNotBlank(a.Row__c) ? a.Row__c : 'Row (unassigned)';
+            tw.slots = a.Blade_Slots__c.intValue();
+            tw.powerCap = a.Tower_Power_Capacity_kW__c != null ? a.Tower_Power_Capacity_kW__c : 0;
+            t.towers.put(tw.nodeId, tw);
+            if (tw.coloId != null) t.coloNames.put(tw.coloId, shortColo(tw.coloName));
+        }
+        if (t.towers.isEmpty()) return t;
+        for (Asset b : [
+            SELECT Id, Name, Parent_Asset__c, Power_Draw_kW__c, Lease_Type__c, Status,
+                   Account.Name, Product2.Name
+            FROM Asset
+            WHERE Parent_Asset__c IN :t.towers.keySet() AND Asset_Tier__c = 'Blade'
+            ORDER BY Name
+        ]) {
+            t.towers.get(b.Parent_Asset__c).blades.add(b);
+            t.bladeToTower.put(b.Id, b.Parent_Asset__c);
+            t.blades.put(b.Id, b);
+        }
+        return t;
+    }
+
+    /** "Facility — San Jose Colo (SJ1)" -> "San Jose Colo (SJ1)". */
+    public static String shortColo(String facilityName) {
+        if (facilityName == null) return null;
+        return facilityName.contains('—') ? facilityName.substringAfter('—').trim() : facilityName;
+    }
+
+    // ── Reservations ────────────────────────────────────────────────────────
+
+    public static List<Capacity_Reservation__c> loadReservations(Date startDate, Date endDate, String accountFilter) {
+        String q = 'SELECT Id, Name, Status__c, Asset__c, Asset__r.Name, Account__c, Account__r.Name, '
+            + 'Opportunity__c, Opportunity__r.Name, Job_Name__c, Start_Date__c, End_Date__c, '
+            + 'Blade_Count__c, Power_kW__c, Daily_Rate__c '
+            + 'FROM Capacity_Reservation__c '
+            + 'WHERE Status__c IN (\'Allocated\', \'Reserved\', \'Pipeline\') '
+            + 'AND Start_Date__c <= :endDate AND End_Date__c >= :startDate';
+        if (String.isNotBlank(accountFilter)) {
+            String term = '%' + accountFilter.trim() + '%';
+            q += ' AND Account__r.Name LIKE :term';
+        }
+        q += ' ORDER BY Start_Date__c, Name';
+        return Database.query(q);
+    }
+
+    // ── Daily grid ──────────────────────────────────────────────────────────
+
+    public class DayCell {
+        public Date day;
+        public Integer total = 0;
+        public Integer allocated = 0;
+        public Integer reserved = 0;
+        public Integer pipeline = 0;
+        public Integer available = 0;
+        public Decimal powerCap = 0;
+        public Decimal powerCommitted = 0;
+        public Boolean overbooked = false;
+        public Boolean powerConflict = false;
+    }
+
+    public class NodeGrid {
+        public String key;
+        public String level;
+        public String label;
+        public List<DayCell> days = new List<DayCell>();
+        public List<NodeGrid> children = new List<NodeGrid>();
+        // Summary over the window
+        public Integer minAvailable;
+        /** Fewest free slots after subtracting pipeline demand (negative = short). */
+        public Integer minAfterPipeline;
+        public Date minAvailableDate;
+        public Date firstShortfallDate;
+        public Integer worstShortfall = 0;
+        public Integer conflictDays = 0;
+        public Decimal minPowerHeadroom;
+    }
+
+    /** Per-tower daily arrays computed once and reused for every node. */
+    public class Engine {
+        public Topology topo;
+        public Date startDate;
+        public Integer numDays;
+        public List<Capacity_Reservation__c> reservations;
+        public Map<Id, List<Integer>> alloc = new Map<Id, List<Integer>>();
+        public Map<Id, List<Integer>> resv = new Map<Id, List<Integer>>();
+        public Map<Id, List<Integer>> pipe = new Map<Id, List<Integer>>();
+        public Map<Id, List<Decimal>> power = new Map<Id, List<Decimal>>();
+        // Blade-level holds (reservations that target a specific blade)
+        public Map<Id, List<String>> bladeState = new Map<Id, List<String>>();
+
+        public Engine(Date startDate, Integer numDays) {
+            this.topo = HAV_CapacityGridService.loadTopology();
+            this.startDate = startDate;
+            this.numDays = numDays;
+            this.reservations = HAV_CapacityGridService.loadReservations(startDate, startDate.addDays(numDays - 1), null);
+            for (Id tid : topo.towers.keySet()) {
+                alloc.put(tid, HAV_CapacityGridService.zeros(numDays));
+                resv.put(tid, HAV_CapacityGridService.zeros(numDays));
+                pipe.put(tid, HAV_CapacityGridService.zeros(numDays));
+                power.put(tid, HAV_CapacityGridService.zerosD(numDays));
+            }
+            for (Capacity_Reservation__c r : reservations) {
+                Id towerId = towerFor(r.Asset__c);
+                if (towerId == null || r.Start_Date__c == null || r.End_Date__c == null) continue;
+                Integer blades = r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 0;
+                Decimal kw = r.Power_kW__c != null ? r.Power_kW__c : 0;
+                Integer first = Math.max(0, startDate.daysBetween(r.Start_Date__c));
+                Integer last = Math.min(numDays - 1, startDate.daysBetween(r.End_Date__c));
+                Boolean isBlade = topo.blades.containsKey(r.Asset__c);
+                if (isBlade && !bladeState.containsKey(r.Asset__c)) {
+                    List<String> blank = new String[numDays];
+                    bladeState.put(r.Asset__c, blank);
+                }
+                List<Integer> slotsArr = r.Status__c == 'Allocated' ? alloc.get(towerId)
+                    : r.Status__c == 'Reserved' ? resv.get(towerId)
+                    : pipe.get(towerId);
+                List<Decimal> powerArr = power.get(towerId);
+                List<String> stateArr = isBlade ? bladeState.get(r.Asset__c) : null;
+                Boolean holds = HAV_CapacityGridService.HOLDING.contains(r.Status__c);
+                for (Integer i = first; i <= last; i++) {
+                    slotsArr[i] = slotsArr[i] + blades;
+                    if (holds) {
+                        powerArr[i] = powerArr[i] + kw;
+                        if (stateArr != null) stateArr[i] = r.Status__c;
+                    }
+                }
+            }
+        }
+
+        public Id towerFor(Id assetId) {
+            if (assetId == null) return null;
+            if (topo.towers.containsKey(assetId)) return assetId;
+            return topo.bladeToTower.get(assetId);
+        }
+
+        /** Towers under a node key. */
+        public List<Tower> towersUnder(String key) {
+            List<Tower> out = new List<Tower>();
+            for (Tower tw : topo.towers.values()) {
+                if (key == 'fleet'
+                    || key == 'colo:' + tw.coloId
+                    || key == 'row:' + tw.coloId + ':' + tw.row
+                    || key == 'tower:' + tw.nodeId) {
+                    out.add(tw);
+                }
+            }
+            return out;
+        }
+
+        public NodeGrid build(String key, Boolean withChildren) {
+            NodeGrid g = new NodeGrid();
+            g.key = key;
+            if (key.startsWith('blade:')) {
+                return buildBlade(key);
+            }
+            List<Tower> towers = towersUnder(key);
+            g.level = key == 'fleet' ? 'fleet' : key.substringBefore(':');
+            g.label = labelFor(key, towers);
+            for (Integer i = 0; i < numDays; i++) {
+                DayCell c = new DayCell();
+                c.day = startDate.addDays(i);
+                Integer worstTowerOver = 0;
+                for (Tower tw : towers) {
+                    Integer a = alloc.get(tw.nodeId)[i];
+                    Integer r = resv.get(tw.nodeId)[i];
+                    c.total += tw.slots;
+                    c.allocated += a;
+                    c.reserved += r;
+                    c.pipeline += pipe.get(tw.nodeId)[i];
+                    c.powerCap += tw.powerCap;
+                    c.powerCommitted += power.get(tw.nodeId)[i];
+                    if (a + r > tw.slots) c.overbooked = true;
+                    if (tw.powerCap > 0 && power.get(tw.nodeId)[i] > tw.powerCap) c.powerConflict = true;
+                }
+                c.available = c.total - c.allocated - c.reserved;
+                g.days.add(c);
+            }
+            HAV_CapacityGridService.summarize(g);
+            if (withChildren) {
+                for (String childKey : childKeys(key, towers)) {
+                    g.children.add(build(childKey, false));
+                }
+            }
+            return g;
+        }
+
+        /** One blade = one slot; state comes from reservations that name it. */
+        NodeGrid buildBlade(String key) {
+            Id bladeId = Id.valueOf(key.substringAfter(':'));
+            Asset b = topo.blades.get(bladeId);
+            NodeGrid g = new NodeGrid();
+            g.key = key;
+            g.level = 'blade';
+            g.label = b != null ? b.Name + (b.Account != null ? ' (' + b.Account.Name + ')' : '') : String.valueOf(bladeId);
+            List<String> st = bladeState.get(bladeId);
+            for (Integer i = 0; i < numDays; i++) {
+                DayCell c = new DayCell();
+                c.day = startDate.addDays(i);
+                c.total = 1;
+                String s = st != null ? st[i] : null;
+                if (s == 'Allocated') c.allocated = 1;
+                if (s == 'Reserved') c.reserved = 1;
+                c.available = 1 - c.allocated - c.reserved;
+                if (b != null && b.Power_Draw_kW__c != null && s != null) c.powerCommitted = b.Power_Draw_kW__c;
+                g.days.add(c);
+            }
+            HAV_CapacityGridService.summarize(g);
+            return g;
+        }
+
+        List<String> childKeys(String key, List<Tower> towers) {
+            List<String> keys = new List<String>();
+            Set<String> seen = new Set<String>();
+            for (Tower tw : towers) {
+                String k;
+                if (key == 'fleet') k = 'colo:' + tw.coloId;
+                else if (key.startsWith('colo:')) k = 'row:' + tw.coloId + ':' + tw.row;
+                else if (key.startsWith('row:')) k = 'tower:' + tw.nodeId;
+                if (k != null && !seen.contains(k)) { seen.add(k); keys.add(k); }
+                if (key.startsWith('tower:')) {
+                    for (Asset b : tw.blades) keys.add('blade:' + b.Id);
+                }
+            }
+            keys.sort();
+            return keys;
+        }
+
+        String labelFor(String key, List<Tower> towers) {
+            if (key == 'fleet') return 'All colos';
+            if (towers.isEmpty()) return key;
+            Tower tw = towers[0];
+            if (key.startsWith('colo:')) return tw.coloName != null ? HAV_CapacityGridService.shortColo(tw.coloName) : key;
+            if (key.startsWith('row:')) return HAV_CapacityGridService.shortColo(tw.coloName) + ' / ' + tw.row;
+            return tw.name;
+        }
+    }
+
+    public static void summarize(NodeGrid g) {
+        for (DayCell c : g.days) {
+            if (g.minAvailable == null || c.available < g.minAvailable) {
+                g.minAvailable = c.available;
+                g.minAvailableDate = c.day;
+            }
+            Integer afterPipeline = c.available - c.pipeline;
+            if (g.minAfterPipeline == null || afterPipeline < g.minAfterPipeline) g.minAfterPipeline = afterPipeline;
+            if (afterPipeline < 0) {
+                if (g.firstShortfallDate == null) g.firstShortfallDate = c.day;
+                g.worstShortfall = Math.max(g.worstShortfall, -afterPipeline);
+            }
+            if (c.overbooked || c.powerConflict) g.conflictDays++;
+            Decimal headroom = c.powerCap - c.powerCommitted;
+            if (c.powerCap > 0 && (g.minPowerHeadroom == null || headroom < g.minPowerHeadroom)) {
+                g.minPowerHeadroom = headroom;
+            }
+        }
+    }
+
+    public static List<Integer> zeros(Integer n) {
+        List<Integer> a = new Integer[n];
+        for (Integer i = 0; i < n; i++) a[i] = 0;
+        return a;
+    }
+
+    public static List<Decimal> zerosD(Integer n) {
+        List<Decimal> a = new Decimal[n];
+        for (Integer i = 0; i < n; i++) a[i] = 0;
+        return a;
+    }
+
+    // ── Public API ──────────────────────────────────────────────────────────
+
+    /** Daily grid for a node, with one level of children. */
+    public static NodeGrid getGrid(String nodeKey, Date startDate, Integer numDays) {
+        Engine e = new Engine(startDate != null ? startDate : Date.today(),
+            numDays != null && numDays > 0 ? Math.min(numDays, 366) : DEFAULT_DAYS);
+        return e.build(String.isNotBlank(nodeKey) ? nodeKey : 'fleet', true);
+    }
+
+    public class Eligibility {
+        public String towerKey;
+        public String towerName;
+        public String colo;
+        public String row;
+        public Boolean eligible;
+        public Integer minFreeSlots;
+        public Decimal minFreePowerKw;
+        public Date firstBlockedDate;
+        public String blockedReason;
+    }
+
+    /**
+     * Job eligibility: which towers under a node can hold bladeCount blades and
+     * powerKw of power on every day from startDate to endDate. Capacity and power
+     * both gate. Eligible towers first, most headroom first.
+     */
+    public static List<Eligibility> checkEligibility(String nodeKey, Date startDate, Date endDate,
+                                                     Integer bladeCount, Decimal powerKw) {
+        Date s = startDate != null ? startDate : Date.today();
+        Date en = endDate != null && endDate >= s ? endDate : s.addDays(DEFAULT_DAYS - 1);
+        Integer n = Math.min(s.daysBetween(en) + 1, 366);
+        Integer need = bladeCount != null && bladeCount > 0 ? bladeCount : 1;
+        Decimal kw = powerKw != null ? powerKw : 0;
+        Engine e = new Engine(s, n);
+        List<Eligibility> eligible = new List<Eligibility>();
+        List<Eligibility> blocked = new List<Eligibility>();
+        for (Tower tw : e.towersUnder(String.isNotBlank(nodeKey) ? nodeKey : 'fleet')) {
+            Eligibility el = new Eligibility();
+            el.towerKey = 'tower:' + tw.nodeId;
+            el.towerName = tw.name;
+            el.colo = shortColo(tw.coloName);
+            el.row = tw.row;
+            el.eligible = true;
+            for (Integer i = 0; i < n; i++) {
+                Integer free = tw.slots - e.alloc.get(tw.nodeId)[i] - e.resv.get(tw.nodeId)[i];
+                Decimal freeKw = tw.powerCap - e.power.get(tw.nodeId)[i];
+                if (el.minFreeSlots == null || free < el.minFreeSlots) el.minFreeSlots = free;
+                if (el.minFreePowerKw == null || freeKw < el.minFreePowerKw) el.minFreePowerKw = freeKw;
+                if (el.eligible && (free < need || (tw.powerCap > 0 && freeKw < kw))) {
+                    el.eligible = false;
+                    el.firstBlockedDate = s.addDays(i);
+                    el.blockedReason = free < need
+                        ? 'capacity (' + free + ' of ' + need + ' blade slots free)'
+                        : 'power (' + freeKw.setScale(1) + ' of ' + kw.setScale(1) + ' kW free)';
+                }
+            }
+            if (el.eligible) eligible.add(el); else blocked.add(el);
+        }
+        sortByHeadroom(eligible);
+        eligible.addAll(blocked);
+        return eligible;
+    }
+
+    static void sortByHeadroom(List<Eligibility> els) {
+        for (Integer i = 0; i < els.size(); i++) {
+            for (Integer j = i + 1; j < els.size(); j++) {
+                if (els[j].minFreeSlots > els[i].minFreeSlots) {
+                    Eligibility tmp = els[i]; els[i] = els[j]; els[j] = tmp;
+                }
+            }
+        }
+    }
+
+    public class ReservationResult {
+        public Boolean success;
+        public Id reservationId;
+        public String message;
+    }
+
+    /**
+     * Reservation flow: create a Reserved hold on a tower, gated by eligibility.
+     * Rejects the request if the tower lacks slots or power on any day.
+     */
+    public static ReservationResult reserve(Id towerId, Id accountId, Id opportunityId, String jobName,
+                                            Date startDate, Date endDate, Integer bladeCount,
+                                            Decimal powerKw, Decimal dailyRate) {
+        ReservationResult res = new ReservationResult();
+        res.success = false;
+        if (towerId == null || startDate == null || endDate == null || endDate < startDate) {
+            res.message = 'A tower, a start date and an end date on or after the start are required.';
+            return res;
+        }
+        List<Eligibility> check = checkEligibility('tower:' + towerId, startDate, endDate, bladeCount, powerKw);
+        if (check.isEmpty()) {
+            res.message = 'Not a capacity tower: ' + towerId;
+            return res;
+        }
+        if (!check[0].eligible) {
+            res.message = 'Not eligible: ' + check[0].towerName + ' is blocked from '
+                + check[0].firstBlockedDate.format() + ' by ' + check[0].blockedReason + '.';
+            return res;
+        }
+        Capacity_Reservation__c r = new Capacity_Reservation__c(
+            Asset__c = towerId, Account__c = accountId, Opportunity__c = opportunityId,
+            Job_Name__c = jobName, Start_Date__c = startDate, End_Date__c = endDate,
+            Blade_Count__c = bladeCount, Power_kW__c = powerKw, Daily_Rate__c = dailyRate,
+            Status__c = 'Reserved');
+        insert r;
+        res.success = true;
+        res.reservationId = r.Id;
+        res.message = 'Reserved ' + bladeCount + ' blade(s) on ' + check[0].towerName + ' from '
+            + startDate.format() + ' to ' + endDate.format() + '.';
+        return res;
+    }
+
+    public class Shortfall {
+        public String colo;
+        public Integer minAvailable;
+        public Date minAvailableDate;
+        public Integer peakPipeline;
+        public Date firstShortfallDate;
+        public Integer slotsNeeded;
+        public Integer towersNeeded;
+        public Integer conflictDays;
+        public String recommendation;
+    }
+
+    /** Pipeline-informed forecast per colo: where demand outruns capacity. */
+    public static List<Shortfall> shortfallForecast(Date startDate, Integer numDays, Integer slotsPerTower) {
+        NodeGrid fleet = getGrid('fleet', startDate, numDays);
+        Integer perTower = slotsPerTower != null && slotsPerTower > 0 ? slotsPerTower : 4;
+        List<Shortfall> out = new List<Shortfall>();
+        for (NodeGrid colo : fleet.children) {
+            Shortfall s = new Shortfall();
+            s.colo = colo.label;
+            s.minAvailable = colo.minAvailable;
+            s.minAvailableDate = colo.minAvailableDate;
+            s.peakPipeline = 0;
+            for (DayCell c : colo.days) s.peakPipeline = Math.max(s.peakPipeline, c.pipeline);
+            s.firstShortfallDate = colo.firstShortfallDate;
+            s.slotsNeeded = colo.worstShortfall;
+            s.towersNeeded = Math.ceil(Decimal.valueOf(colo.worstShortfall) / perTower).intValue();
+            s.conflictDays = colo.conflictDays;
+            if (s.slotsNeeded > 0) {
+                s.recommendation = 'Add ' + s.slotsNeeded + ' blade slot(s) (about ' + s.towersNeeded
+                    + ' tower(s)) at ' + s.colo + ' before ' + s.firstShortfallDate.format()
+                    + ', or move pipeline demand to a colo with headroom.';
+            } else if (colo.minAvailable != null && colo.minAvailable <= 2) {
+                s.recommendation = 'Tight: as few as ' + colo.minAvailable + ' free slot(s). Avoid placing new demand here.';
+            } else {
+                s.recommendation = 'Headroom available.';
+            }
+            out.add(s);
+        }
+        return out;
+    }
+
+    public class ChargebackLine {
+        public String customer;
+        public Decimal bladeDays = 0;
+        public Decimal amount = 0;
+        public Map<String, Decimal> bladeDaysByColo = new Map<String, Decimal>();
+    }
+
+    /**
+     * Capacity-based chargeback: blade-days held (Allocated + Reserved) in the
+     * period, times each reservation's daily rate, per customer.
+     */
+    public static List<ChargebackLine> chargeback(Date startDate, Date endDate, String accountFilter) {
+        Date s = startDate != null ? startDate : Date.today().toStartOfMonth();
+        Date en = endDate != null && endDate >= s ? endDate : s.addMonths(1).addDays(-1);
+        Topology topo = loadTopology();
+        Map<String, ChargebackLine> byCustomer = new Map<String, ChargebackLine>();
+        for (Capacity_Reservation__c r : loadReservations(s, en, accountFilter)) {
+            if (!HOLDING.contains(r.Status__c) || r.Start_Date__c == null || r.End_Date__c == null) continue;
+            Date fromDay = r.Start_Date__c > s ? r.Start_Date__c : s;
+            Date toDay = r.End_Date__c < en ? r.End_Date__c : en;
+            Integer days = fromDay.daysBetween(toDay) + 1;
+            if (days <= 0) continue;
+            Decimal blades = r.Blade_Count__c != null ? r.Blade_Count__c : 0;
+            Decimal bd = blades * days;
+            String cust = r.Account__r != null ? r.Account__r.Name : 'Unassigned';
+            if (!byCustomer.containsKey(cust)) {
+                ChargebackLine l = new ChargebackLine();
+                l.customer = cust;
+                byCustomer.put(cust, l);
+            }
+            ChargebackLine line = byCustomer.get(cust);
+            line.bladeDays += bd;
+            line.amount += bd * (r.Daily_Rate__c != null ? r.Daily_Rate__c : 0);
+            Id towerId = topo.towers.containsKey(r.Asset__c) ? r.Asset__c : topo.bladeToTower.get(r.Asset__c);
+            String colo = towerId != null ? shortColo(topo.towers.get(towerId).coloName) : 'Unplaced';
+            line.bladeDaysByColo.put(colo, (line.bladeDaysByColo.containsKey(colo) ? line.bladeDaysByColo.get(colo) : 0) + bd);
+        }
+        List<ChargebackLine> lines = byCustomer.values();
+        for (Integer i = 0; i < lines.size(); i++) {
+            for (Integer j = i + 1; j < lines.size(); j++) {
+                if (lines[j].amount > lines[i].amount) {
+                    ChargebackLine tmp = lines[i]; lines[i] = lines[j]; lines[j] = tmp;
+                }
+            }
+        }
+        return lines;
+    }
+}
