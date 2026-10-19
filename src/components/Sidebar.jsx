@@ -11,6 +11,7 @@ import {
   Sparkles,
   ChevronDown,
   Calendar,
+  CalendarDays,
   TrendingUp,
   FileSpreadsheet,
   FileText,
@@ -59,6 +60,7 @@ const navItems = [
     label: 'Capacity',
     persona: 'Russell',
     children: [
+      { to: '/capacity/daily', icon: CalendarDays, label: 'Daily Capacity' },
       { to: '/capacity/allocations', icon: Calendar, label: 'Allocations' },
       { to: '/capacity/forecast', icon: TrendingUp, label: 'Forecast' },
     ],

@@ -15,6 +15,8 @@ const SUGGESTED_PROMPTS = [
   { label: 'EaaS Free Capacity', prompt: 'Where do we have free capacity for a new EaaS customer?' },
   { label: 'Spare Safety Stock', prompt: 'Are we below safety stock on spares anywhere?' },
   { label: 'RMA Shipping', prompt: "What's the shipping status of our open RMAs?" },
+  { label: 'Job Eligibility', prompt: 'Can we run a 2-blade, 40 kW verification job in Hsinchu for 30 days starting next week?' },
+  { label: 'TSMC Chargeback', prompt: "What's the capacity chargeback for TSMC this month?" },
 ];
 
 export default function AgentChat({ open, onClose, prefill, onPrefillConsumed }) {
