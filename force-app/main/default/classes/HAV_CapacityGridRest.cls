@@ -6,8 +6,9 @@
  *   view=shortfall   &start=&days=                            pipeline-informed shortfall per colo
  *   view=eligibility &node=&start=&end=&blades=&kw=           towers that can hold a job
  *   view=chargeback  &start=&end=&customer=                   blade-day chargeback per customer
+ *   view=customers                                            customers to book capacity for
  * POST /services/apexrest/hav/capacity-grid
- *   { towerId, accountId, opportunityId, jobName, startDate, endDate, bladeCount, powerKw, dailyRate }
+ *   { towerId, accountId | accountName, opportunityId, jobName, startDate, endDate, bladeCount, powerKw, dailyRate }
  *   creates a Reserved hold, rejected if capacity or power is short on any day.
  */
 @RestResource(urlMapping='/hav/capacity-grid/*')
@@ -28,6 +29,8 @@ global with sharing class HAV_CapacityGridRest {
             } else if (view == 'eligibility') {
                 body = HAV_CapacityGridService.checkEligibility(param(req, 'node', 'fleet'), startDate,
                     dateParam(req, 'end', null), intParam(req, 'blades', 1), decParam(req, 'kw', 0));
+            } else if (view == 'customers') {
+                body = customers();
             } else if (view == 'chargeback') {
                 body = HAV_CapacityGridService.chargeback(dateParam(req, 'start', null),
                     dateParam(req, 'end', null), param(req, 'customer', null));
@@ -46,6 +49,7 @@ global with sharing class HAV_CapacityGridRest {
     global class ReserveRequest {
         public Id towerId;
         public Id accountId;
+        public String accountName;
         public Id opportunityId;
         public String jobName;
         public Date startDate;
@@ -62,8 +66,14 @@ global with sharing class HAV_CapacityGridRest {
         try {
             ReserveRequest r = (ReserveRequest) JSON.deserialize(
                 RestContext.request.requestBody.toString(), ReserveRequest.class);
+            Id accountId = r.accountId;
+            if (accountId == null && String.isNotBlank(r.accountName)) {
+                String accountName = r.accountName.trim();
+                List<Account> match = [SELECT Id FROM Account WHERE Name = :accountName LIMIT 1];
+                if (!match.isEmpty()) accountId = match[0].Id;
+            }
             HAV_CapacityGridService.ReservationResult result = HAV_CapacityGridService.reserve(
-                r.towerId, r.accountId, r.opportunityId, r.jobName, r.startDate, r.endDate,
+                r.towerId, accountId, r.opportunityId, r.jobName, r.startDate, r.endDate,
                 r.bladeCount, r.powerKw, r.dailyRate);
             res.statusCode = result.success ? 201 : 409;
             res.responseBody = Blob.valueOf(JSON.serialize(result));
@@ -72,6 +82,22 @@ global with sharing class HAV_CapacityGridRest {
             res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, String>{
                 'error' => e.getMessage(), 'type' => e.getTypeName() }));
         }
+    }
+
+    /** Customers that hold or forecast HAV capacity, plus owners of installed blades. */
+    static List<Map<String, String>> customers() {
+        Map<String, Id> byName = new Map<String, Id>();
+        for (Capacity_Reservation__c r : [
+            SELECT Account__c, Account__r.Name FROM Capacity_Reservation__c
+            WHERE Account__c != null AND Account__r.Name != 'Siemens EDA' LIMIT 2000
+        ]) {
+            byName.put(r.Account__r.Name, r.Account__c);
+        }
+        List<String> names = new List<String>(byName.keySet());
+        names.sort();
+        List<Map<String, String>> out = new List<Map<String, String>>();
+        for (String n : names) out.add(new Map<String, String>{ 'id' => byName.get(n), 'name' => n });
+        return out;
     }
 
     static String param(RestRequest req, String name, String fallback) {

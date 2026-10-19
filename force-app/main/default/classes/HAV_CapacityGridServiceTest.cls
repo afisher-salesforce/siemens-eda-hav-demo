@@ -148,12 +148,21 @@ private class HAV_CapacityGridServiceTest {
 
         RestContext.request = new RestRequest();
         RestContext.response = new RestResponse();
+        RestContext.request.params.put('view', 'customers');
+        HAV_CapacityGridRest.doGet();
+        String customers = RestContext.response.responseBody.toString();
+        System.assert(customers.contains('Grid Test Customer') && customers.contains('Grid Pipeline Customer'), customers);
+
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
         Map<String, Object> body = new Map<String, Object>{
-            'towerId' => towerId('RACK-TC1-R02'), 'jobName' => 'REST job',
+            'towerId' => towerId('RACK-TC1-R02'), 'jobName' => 'REST job', 'accountName' => 'Grid Test Customer',
             'startDate' => String.valueOf(Date.today().addDays(1)), 'endDate' => String.valueOf(Date.today().addDays(3)),
             'bladeCount' => 1, 'powerKw' => 20 };
         RestContext.request.requestBody = Blob.valueOf(JSON.serialize(body));
         HAV_CapacityGridRest.doPost();
         System.assertEquals(201, RestContext.response.statusCode, RestContext.response.responseBody.toString());
+        System.assertEquals(1, [SELECT COUNT() FROM Capacity_Reservation__c WHERE Job_Name__c = 'REST job' AND Account__r.Name = 'Grid Test Customer'],
+            'Booked to the customer resolved by name');
     }
 }
