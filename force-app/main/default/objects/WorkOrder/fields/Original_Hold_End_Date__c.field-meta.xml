@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Original_Hold_End_Date__c</fullName>
+    <description>Move jobs: the source hold's end date before the move was planned. Restored if the work order is canceled.</description>
+    <label>Original Hold End Date</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>

@@ -1,0 +1,63 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "bladeCount" : {
+      "title" : "Blade Count",
+      "description" : "Blade slots the job needs, e.g. 2",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "customerName" : {
+      "title" : "Customer Name",
+      "description" : "Optional customer the job is for, e.g. Samsung; applies that customer's data-residency rule",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "durationDays" : {
+      "title" : "Duration Days",
+      "description" : "Optional duration in days when no end date is given; blank means 30",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "endDate" : {
+      "title" : "End Date",
+      "description" : "Optional end date YYYY-MM-DD",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "locationName" : {
+      "title" : "Location Name",
+      "description" : "Optional colo name to limit the search, e.g. San Jose",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "powerKw" : {
+      "title" : "Power Kw",
+      "description" : "Optional total power in kW; leave blank to estimate 20 kW per blade",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "region" : {
+      "title" : "Region",
+      "description" : "Optional region to limit the search: US-West, US-Central, EU-Germany, APAC-India, APAC-Korea, APAC-Taiwan, or a broad geography US, EU or APAC",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "startDate" : {
+      "title" : "Start Date",
+      "description" : "Optional start date YYYY-MM-DD; blank means today",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

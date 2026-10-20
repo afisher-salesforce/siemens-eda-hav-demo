@@ -1,0 +1,47 @@
+.cq-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+.cq-stat {
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+}
+.cq-bad {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+.cq-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #706e6b;
+}
+.cq-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+.cq-heading {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #706e6b;
+    margin: 1rem 0 0.25rem;
+}
+.cq-conflict {
+    border-left: 4px solid #ef4444;
+    background: #fef2f2;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+.cq-actions {
+    display: flex;
+    align-items: center;
+}
+.cq-region {
+    background: #f3f4f6;
+    color: #374151;
+}

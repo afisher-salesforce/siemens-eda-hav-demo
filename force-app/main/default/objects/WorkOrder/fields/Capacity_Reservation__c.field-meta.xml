@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Capacity_Reservation__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The hold this physical job serves (provision, move or decommission). The reservation stays the source of truth for capacity.</description>
+    <label>Capacity Reservation</label>
+    <referenceTo>Capacity_Reservation__c</referenceTo>
+    <relationshipLabel>Capacity Work Orders</relationshipLabel>
+    <relationshipName>Capacity_Work_Orders</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

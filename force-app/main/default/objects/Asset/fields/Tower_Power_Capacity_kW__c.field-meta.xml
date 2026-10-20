@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tower_Power_Capacity_kW__c</fullName>
+    <description>Power budget for this tower (kW). Gates job eligibility.</description>
+    <label>Tower Power Capacity (kW)</label>
+    <precision>8</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Number</type>
+</CustomField>

@@ -113,6 +113,28 @@ Remaining:
 2. Merge the `heroku` PR `feat/capabilities-v8-v9` (V8/V9 capability pages and EaaS chat buttons), then smoke-test the same four prompts through the React app's agent chat.
 3. The MCP `agentforce_ask` session is sticky, opened once per server. Restart the MCP server, or use a new Cowork session, before demoing the Claude surface on the new agent version.
 
+## Daily capacity model (built Oct 19 for the 10/21 dry run)
+
+Siemens asked for blade-level capacity by day, with real allocations and forward projections. Spare capacity should roll up the hierarchy, and capacity and power should gate job eligibility.
+
+- **Source of truth:** `Capacity_Reservation__c`. Statuses: Allocated (now), Reserved (committed future), Pipeline (from an opportunity, never consumes capacity), Released.
+- **Nothing daily is stored.** `HAV_CapacityGridService` computes the grid on request, rolling up colo > row > tower > blade.
+- **Towers** are rack assets with `Blade_Slots__c`, `Tower_Power_Capacity_kW__c` and `Row__c`. Row is a capacity attribute, *not* a `Parent_Asset__c` level. The React hierarchy code (`HAV_AssetService` and `HAV_CapacityEngine`, heroku-only) assumes blade → rack → facility.
+- **REST:** `/hav/capacity-grid` with `view=grid|shortfall|eligibility|chargeback`. POST creates a reservation gated by eligibility.
+- **Agent actions:** `HAV_Agent_CapacityForecast` (daily model), `HAV_Agent_JobEligibility` and `HAV_Agent_Chargeback`.
+- **Seed:** `scripts/seed-8-daily-capacity.apex`. Its log prints the agent's exact free-capacity answer (`CAPACITY |` lines).
+- **Permission set `HAV_Demo_User`** is generated from every field definition on both branches. Assign it, plus `HAV_Loan_To_Sale`, to any non-admin tester. V9 testing failed for a non-admin because `HAV_Admin` covers only 21 fields.
+- **Salesforce surface:** the `havDailyCapacity` LWC (via `HAV_CapacityGridController`) shows the same heatmap on an App Page and on Asset record pages. A tower or blade record starts at its tower; a facility starts at its colo. The App Page and the record-page placement are set up in Lightning App Builder (not in source). There's also a Capacity Reservations tab, page layout and list views (All / Allocated / Reserved / Pipeline / Booked in App).
+- **React (heroku): `/capacity/daily`** (`CapacityDailyView.jsx`, with `CapacityReservationPanel.jsx` and `CapacityChargebackPanel.jsx`). It shows a heatmap drill-down from colo to blade, the shortfall banner, a reservation flow gated by eligibility (POST to the REST endpoint; rejected with 409 if blocked) and a chargeback tab. REST `view=customers` and `accountName` on POST let the React app book against a customer without account IDs.
+
+## Placement policy, capacity work orders, colo page (built Oct 20 for the 10/26 dry run)
+
+- **Placement policy:** `HAV_PlacementPolicy`. Colo region = `Asset.HAV_Region__c` on Facility assets; customer rule = `Account.HAV_Data_Residency__c` (seed-9: Samsung Korea only, NVIDIA US only, Broadcom EU only). Rule source: BRE decision matrix `HAV_Residency_Policy` (input `Residency`, outputs `AllowedRegions`, `RuleNote`) via `Invocable.Action` `runDecisionMatrix`, falling back to `HAV_Residency_Rule__mdt`. Enforced inside `HAV_CapacityGridService.checkEligibility` (8-arg form), so reserve, move options, moves, REST and the agent all apply it; policy blocks sort last with `policyBlocked = true`. Grid takes an optional `region` filter.
+- **Capacity work orders:** `HAV_CapacityWorkService` + trigger `HAV_WorkOrderCapacity`. Reservation stays the source of truth; WorkOrder gets `Capacity_Reservation__c`, `Capacity_Job_Type__c` (Provision / Move / Decommission), `Target_Tower__c`, `Target_Reservation__c`, `Capacity_Planned_Date__c`, `Original_Hold_End_Date__c`. Allocated holds can't move instantly (`moveHold` refuses); `planMove` books the target from the move date, ends the source the day before, creates the Move WO. Completing a WO: provision → hold Allocated; move → target Allocated; decommission → end today. Canceling a move restores the source and releases the target. Status values are looked up from the org picklist (`completedStatus()` / `canceledStatus()`).
+- **Colo page:** LWC `havColoQueue` + `HAV_ColoQueueController` on the Facility asset record page (or App page with a colo picker): today, 30-day conflicts, starting soon (provision), ending soon (decommission), open capacity WOs with Mark complete.
+- **React:** region filter, residency in the reservation panel, Plan move in the day panel (`planCapacityMove`). Colo page and WO actions are Salesforce-only.
+- **Field Service:** deliberately not built; WOs are standard WorkOrder + line items with the tower as asset so FS can be layered on after field-ops discovery.
+
 ## Agent prompts that work live (tested Sept 29)
 
 - **HAV ops, works:**

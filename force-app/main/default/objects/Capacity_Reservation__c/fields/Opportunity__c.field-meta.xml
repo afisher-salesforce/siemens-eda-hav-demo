@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Opportunity__c</fullName>
+    <description>Opportunity driving this capacity need (pipeline demand and reservations).</description>
+    <label>Opportunity</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <referenceTo>Opportunity</referenceTo>
+    <relationshipLabel>Capacity Reservations</relationshipLabel>
+    <relationshipName>Capacity_Reservations</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

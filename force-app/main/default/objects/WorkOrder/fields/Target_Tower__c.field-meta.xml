@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Tower__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Move jobs: the tower the blades move to.</description>
+    <label>Target Tower</label>
+    <referenceTo>Asset</referenceTo>
+    <relationshipLabel>Move Target Work Orders</relationshipLabel>
+    <relationshipName>Move_Target_Work_Orders</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

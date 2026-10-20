@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#009999</headerColor>
+        <shouldOverrideOrgTheme>false</shouldOverrideOrgTheme>
+    </brand>
+    <description>Siemens EDA Hardware-Assisted Verification demo: daily blade capacity, reservations, EaaS, loan-to-sale and repair shipping, in demo-flow order.</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <label>Siemens EDA HAV</label>
+    <navType>Standard</navType>
+    <tabs>standard-Account</tabs>
+    <tabs>standard-Opportunity</tabs>
+    <tabs>Capacity_Reservation__c</tabs>
+    <tabs>standard-Asset</tabs>
+    <tabs>standard-Order</tabs>
+    <tabs>standard-WorkOrder</tabs>
+    <tabs>standard-Quote</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>
