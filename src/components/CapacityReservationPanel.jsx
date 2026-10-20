@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarPlus, Search, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { checkCapacityEligibility, getCapacityCustomers, reserveCapacity } from '../api/salesforce';
+import { checkCapacityEligibility, getCapacityCustomers, getCapacityPolicy, reserveCapacity } from '../api/salesforce';
 import { addDays, fmtDay, isoDay } from './capacityDates';
 
 /** Veloce Strato list price per unit per month / 30 — same basis as HAV_RevenueModel. */
@@ -30,10 +30,20 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
   const [results, setResults] = useState(null);
   const [message, setMessage] = useState(null);
   const [booking, setBooking] = useState(null);
+  const [policy, setPolicy] = useState(null);
 
   useEffect(() => {
     getCapacityCustomers().then(setCustomers).catch(() => setCustomers([]));
   }, []);
+
+  const accountId = (customers.find((c) => c.name === form.accountName) || {}).id;
+
+  // The customer's placement rule (data residency), shown above the results
+  useEffect(() => {
+    setPolicy(null);
+    if (!accountId) return;
+    getCapacityPolicy(accountId).then(setPolicy).catch(() => setPolicy(null));
+  }, [accountId]);
 
   // Reset results when the scope changes
   useEffect(() => {
@@ -69,6 +79,7 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
         end,
         blades: Number(form.blades) || 1,
         kw: Number(form.kw) || 0,
+        account: accountId,
       });
       setResults(r);
     } catch (err) {
@@ -96,7 +107,7 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
       if (onReserved) onReserved();
       // Re-check so the list reflects the new hold
       const r = await checkCapacityEligibility({
-        node: scopeKey, start: form.start, end, blades: Number(form.blades) || 1, kw: Number(form.kw) || 0,
+        node: scopeKey, start: form.start, end, blades: Number(form.blades) || 1, kw: Number(form.kw) || 0, account: accountId,
       });
       setResults(r);
     } catch (err) {
@@ -170,6 +181,16 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
           </div>
         </div>
 
+        {policy && policy.customer && (
+          <p className="text-xs text-th-secondary">
+            <span className="font-semibold">Placement policy:</span>{' '}
+            {policy.restricts
+              ? `${policy.customer} is "${policy.residency}", so only ${policy.allowedRegions} colos qualify${policy.note ? ` (${policy.note})` : ''}.`
+              : `${policy.customer} has no residency restriction.`}{' '}
+            <span className="text-th-faint">Rule source: {policy.source}.</span>
+          </p>
+        )}
+
         {message && (
           <div className={`text-sm rounded-md px-3 py-2 ${message.ok ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}`}>
             {message.text}
@@ -206,7 +227,10 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-red-500 text-xs">
-                          <XCircle size={13} /> Blocked from {fmtDay(el.firstBlockedDate)} by {el.blockedReason}
+                          <XCircle size={13} />{' '}
+                          {el.policyBlocked
+                            ? `Not allowed: ${el.blockedReason}`
+                            : `Blocked from ${fmtDay(el.firstBlockedDate)} by ${el.blockedReason}`}
                         </span>
                       )}
                     </td>

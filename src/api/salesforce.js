@@ -1255,8 +1255,18 @@ export async function getCapacityShortfall({ start, days = 90 } = {}) {
 }
 
 /** Towers that can hold a job (capacity and power gate every day). */
-export async function checkCapacityEligibility({ node = 'fleet', start, end, blades = 1, kw = 0 } = {}) {
-  return (await request(`/capacity-grid${qs({ view: 'eligibility', node, start, end, blades, kw })}`)) || [];
+export async function checkCapacityEligibility({ node = 'fleet', start, end, blades = 1, kw = 0, account, region } = {}) {
+  return (await request(`/capacity-grid${qs({ view: 'eligibility', node, start, end, blades, kw, account, region })}`)) || [];
+}
+
+/** HAV regions (colo geography) for the region filter. */
+export async function getCapacityRegions() {
+  return (await request(`/capacity-grid${qs({ view: 'regions' })}`)) || [];
+}
+
+/** A customer's placement rule (data residency) and its source (Business Rules Engine or custom metadata). */
+export async function getCapacityPolicy(account) {
+  return request(`/capacity-grid${qs({ view: 'policy', account })}`);
 }
 
 /** Capacity-based chargeback per customer for a period. */
@@ -1270,8 +1280,17 @@ export async function getCapacityDay({ node = 'fleet', day } = {}) {
 }
 
 /** Towers a hold could move to for the rest of its window (eligibility ignores the hold itself). */
-export async function getCapacityMoveOptions(holdId) {
-  return (await request(`/capacity-grid${qs({ view: 'moveOptions', hold: holdId })}`)) || [];
+export async function getCapacityMoveOptions(holdId, from) {
+  return (await request(`/capacity-grid${qs({ view: 'moveOptions', hold: holdId, from })}`)) || [];
+}
+
+/**
+ * In-use (Allocated) hold: plan a physical move on moveDate. Books the target
+ * tower from that date, frees the source from then, and creates a Move work
+ * order for the colo team. Rejected (409) if the target can't hold it.
+ */
+export async function planCapacityMove(holdId, towerId, moveDate) {
+  return request('/capacity-grid', { method: 'POST', body: JSON.stringify({ action: 'planMove', holdId, towerId, moveDate }) });
 }
 
 /** Move a hold to another tower; rejected (409) if that tower lacks capacity or power. */
@@ -1328,5 +1347,8 @@ export default {
   getCapacityDay,
   getCapacityMoveOptions,
   moveCapacityHold,
+  planCapacityMove,
+  getCapacityRegions,
+  getCapacityPolicy,
   releaseCapacityHold,
 };
