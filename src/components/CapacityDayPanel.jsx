@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarDays, X, AlertTriangle, ArrowRightLeft, Ban, CalendarPlus, ExternalLink, Loader2 } from 'lucide-react';
-import { getCapacityDay, getCapacityMoveOptions, moveCapacityHold, releaseCapacityHold } from '../api/salesforce';
+import { getCapacityDay, getCapacityMoveOptions, moveCapacityHold, planCapacityMove, releaseCapacityHold } from '../api/salesforce';
 import { useOrgUrl, salesforceRecordUrl } from './SalesforceLink';
-import { parseDay, fmtDay } from './capacityDates';
+import { parseDay, fmtDay, isoDay, addDays } from './capacityDates';
 
 /**
  * Day detail for one node on one date (same data and rules as the Salesforce
@@ -20,6 +20,8 @@ export default function CapacityDayPanel({ node, day, refreshToken = 0, onClose,
   const [moveFor, setMoveFor] = useState(null);
   const [options, setOptions] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [moveDate, setMoveDate] = useState(null);
+  const planMode = moveFor && moveFor.status === 'Allocated';
 
   useEffect(() => {
     let alive = true;
@@ -52,15 +54,29 @@ export default function CapacityDayPanel({ node, day, refreshToken = 0, onClose,
     ['Power', c.powerCap ? `${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW` : '--', c.powerConflict ? 'bad' : ''],
   ];
 
-  const startMove = async (h) => {
-    setMoveFor(h);
+  const loadOptions = async (h, from) => {
     setOptions(null);
     try {
-      setOptions(await getCapacityMoveOptions(h.id));
+      setOptions(await getCapacityMoveOptions(h.id, from));
     } catch (e) {
       setMessage({ ok: false, text: e.message });
       setOptions([]);
     }
+  };
+
+  // Reserved holds move now (paperwork). Allocated (in-use) holds are physical:
+  // plan the move on a date, which creates a Move work order.
+  const startMove = async (h) => {
+    setMoveFor(h);
+    const clicked = parseDay(day);
+    const from = h.status === 'Allocated' ? isoDay(clicked > today ? clicked : addDays(today, 7)) : null;
+    setMoveDate(from);
+    await loadOptions(h, from);
+  };
+
+  const changeMoveDate = async (value) => {
+    setMoveDate(value);
+    if (moveFor) await loadOptions(moveFor, value);
   };
 
   const run = async (fn) => {
@@ -189,7 +205,7 @@ export default function CapacityDayPanel({ node, day, refreshToken = 0, onClose,
                               disabled={busy}
                               className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-surface-border hover:border-siemens-teal/40 mr-1"
                             >
-                              <ArrowRightLeft size={12} /> Move
+                              <ArrowRightLeft size={12} /> {h.status === 'Allocated' ? 'Plan move' : 'Move'}
                             </button>
                           )}
                           {h.status !== 'Released' && (
@@ -216,12 +232,28 @@ export default function CapacityDayPanel({ node, day, refreshToken = 0, onClose,
               <div className="rounded-md border-l-4 border-blue-500 bg-blue-500/5 px-3 py-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-th-primary">
-                    Move {moveFor.name} ({moveFor.customer || 'no customer'}, {moveFor.blades} blade(s), {moveFor.kw || 0} kW) from {moveFor.tower}
+                    {planMode ? 'Plan the move of in-use hold' : 'Move'} {moveFor.name} ({moveFor.customer || 'no customer'}, {moveFor.blades} blade(s), {moveFor.kw || 0} kW) from {moveFor.tower}
                   </span>
                   <button type="button" onClick={() => setMoveFor(null)} className="text-xs text-th-muted hover:underline">
                     Cancel
                   </button>
                 </div>
+                <p className="text-[11px] text-th-muted">
+                  {planMode
+                    ? 'In use: the blades physically move on the date below. The target tower is booked from that date, this tower is freed from then, and a Move work order goes to the colo team.'
+                    : 'Reserved: nothing is installed yet, so the hold moves now.'}
+                </p>
+                {planMode && (
+                  <label className="inline-flex items-center gap-2 text-xs text-th-secondary">
+                    Move date
+                    <input
+                      type="date"
+                      value={moveDate || ''}
+                      onChange={(e) => changeMoveDate(e.target.value)}
+                      className="border border-surface-border rounded-md px-2 py-1 bg-surface-card"
+                    />
+                  </label>
+                )}
                 {options === null && (
                   <p className="text-xs text-th-muted flex items-center gap-1">
                     <Loader2 size={12} className="animate-spin" /> Checking every tower for the rest of this hold…
@@ -236,18 +268,27 @@ export default function CapacityDayPanel({ node, day, refreshToken = 0, onClose,
                   options.map((o) => (
                     <div key={o.towerKey} className="flex items-center justify-between border-b border-surface-border py-1.5">
                       <div>
-                        <div className="text-sm text-th-secondary">{o.towerName} · {o.colo} · {o.row}</div>
+                        <div className="text-sm text-th-secondary">
+                          {o.towerName} · {o.colo} · {o.row}
+                          {o.region ? ` · ${o.region}` : ''}
+                        </div>
                         <div className="text-[11px] text-th-muted">
                           at least {o.minFreeSlots} slot(s) and {Number(o.minFreePowerKw).toFixed(1)} kW free for the rest of the hold
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => run(() => moveCapacityHold(moveFor.id, o.towerKey.split(':')[1]))}
+                        onClick={() =>
+                          run(() =>
+                            planMode
+                              ? planCapacityMove(moveFor.id, o.towerKey.split(':')[1], moveDate)
+                              : moveCapacityHold(moveFor.id, o.towerKey.split(':')[1]),
+                          )
+                        }
                         disabled={busy}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-siemens-teal text-white hover:opacity-90"
                       >
-                        Move here
+                        {planMode ? 'Plan move here' : 'Move here'}
                       </button>
                     </div>
                   ))}

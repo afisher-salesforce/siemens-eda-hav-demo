@@ -14,7 +14,7 @@ import {
   Receipt,
   RefreshCw,
 } from 'lucide-react';
-import { getCapacityGrid, getCapacityShortfall, getCapacityCustomers } from '../api/salesforce';
+import { getCapacityGrid, getCapacityShortfall, getCapacityCustomers, getCapacityRegions } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { AgentChatContext } from './Layout';
 import CapacityReservationPanel from './CapacityReservationPanel';
@@ -113,6 +113,7 @@ function NodeBadges({ g, focusName }) {
         {g.minAfterPipeline >= 0 ? `${g.minAfterPipeline} free` : `short ${-g.minAfterPipeline}`}
       </span>
       {g.conflictDays > 0 && <span className="badge badge-red text-[10px]">conflict {g.conflictDays}d</span>}
+      {g.region && <span className="badge text-[10px] bg-gray-500/10 text-th-muted">{g.region}</span>}
       {focusName && g.focusDays > 0 && (
         <span className="badge text-[10px] bg-blue-500/10 text-blue-600">
           {g.focusPeak > 0 ? `${focusName} peak ${g.focusPeak}` : `${focusName} pipeline only`}
@@ -277,12 +278,19 @@ export default function CapacityDailyView() {
   const [selected, setSelected] = useState(null); // { node, label, level, day }
   const [reserveTarget, setReserveTarget] = useState(null); // { key, label, start }
   const [focusId, setFocusId] = useState('');
+  const [region, setRegion] = useState('');
 
   const current = trail[trail.length - 1];
   const { data: grid, loading, error } = useSalesforceData(
-    () => getCapacityGrid({ node: current.key, days, focus: focusId || undefined }),
-    [current.key, days, refreshToken, focusId],
+    () => getCapacityGrid({ node: current.key, days, focus: focusId || undefined, region: region || undefined }),
+    [current.key, days, refreshToken, focusId, region],
   );
+  const { data: regions } = useSalesforceData(() => getCapacityRegions(), []);
+  const changeRegion = (value) => {
+    setSelected(null);
+    setTrail([{ key: 'fleet', label: 'All colos', level: 'fleet' }]);
+    setRegion(value);
+  };
   const { data: customers } = useSalesforceData(() => getCapacityCustomers(), []);
   const focusName = focusId ? (customers || []).find((c) => c.id === focusId)?.name : undefined;
   const { data: shortfalls } = useSalesforceData(() => getCapacityShortfall({ days }), [days, refreshToken]);
@@ -340,6 +348,20 @@ export default function CapacityDailyView() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={region}
+            onChange={(e) => changeRegion(e.target.value)}
+            className="filter-tab pr-6"
+            title="Only colos in one region (geography / latency)"
+            aria-label="Region"
+          >
+            <option value="">All regions</option>
+            {(regions || []).map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
           <select
             value={focusId}
             onChange={(e) => setFocusId(e.target.value)}
