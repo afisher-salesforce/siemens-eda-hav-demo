@@ -1,7 +1,7 @@
 /**
  * Colo landing page (havColoQueue LWC): what one colo's team has to act on.
  *   - today's capacity and power for the colo
- *   - conflicts in the next 30 days, by tower (first and last day, how far over)
+ *   - conflicts in the next 90 days, by tower (first and last day, how far over)
  *   - holds starting soon (Reserved) and whether a provisioning work order exists
  *   - holds ending soon (Allocated) and whether a decommission work order exists
  *   - open capacity work orders on the colo's towers (provision, move in/out, decommission)
@@ -9,7 +9,8 @@
  */
 public with sharing class HAV_ColoQueueController {
 
-    public static final Integer CONFLICT_DAYS = 30;
+    /** Conflicts look as far ahead as the heatmap (90 days), so a colo sees them while there's time to act. */
+    public static final Integer CONFLICT_DAYS = 90;
 
     /** Colos (facilities that have capacity towers), for the App Page picker. */
     @AuraEnabled
@@ -68,7 +69,7 @@ public with sharing class HAV_ColoQueueController {
         out.put('today', g.days.isEmpty() ? null : g.days[0]);
         out.put('towers', towers.size());
 
-        // Conflicts in the next 30 days, per tower.
+        // Conflicts in the next CONFLICT_DAYS days, per tower.
         List<Map<String, Object>> conflicts = new List<Map<String, Object>>();
         for (HAV_CapacityGridService.Tower tw : towers) {
             Date first;
@@ -100,6 +101,7 @@ public with sharing class HAV_ColoQueueController {
             });
         }
         out.put('conflicts', conflicts);
+        out.put('conflictWindow', CONFLICT_DAYS);
 
         // Holds starting / ending soon.
         Date untilDate = todayDate.addDays(horizon - 1);
