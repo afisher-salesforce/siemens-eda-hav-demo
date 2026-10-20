@@ -19,6 +19,7 @@ import { useSalesforceData } from '../hooks/useSalesforceData';
 import { AgentChatContext } from './Layout';
 import CapacityReservationPanel from './CapacityReservationPanel';
 import CapacityChargebackPanel from './CapacityChargebackPanel';
+import CapacityDayPanel from './CapacityDayPanel';
 import { parseDay, fmtDay } from './capacityDates';
 
 const LEVEL_ICON = { fleet: Layers, colo: Building2, row: Rows3, tower: Server, blade: Cpu };
@@ -98,7 +99,7 @@ function NodeBadges({ g }) {
 
 /* ── heatmap ─────────────────────────────────────────────────────────────── */
 
-export function Heatmap({ grid, onDrill }) {
+export function Heatmap({ grid, onDrill, onCellClick, selected }) {
   const days = grid?.days || [];
   const rows = useMemo(() => {
     if (!grid) return [];
@@ -148,14 +149,25 @@ export function Heatmap({ grid, onDrill }) {
                 {drillable && <ChevronRight size={11} className="text-th-faint shrink-0" />}
               </button>
               <div className="flex">
-                {(r.days || []).map((c) => (
-                  <div
-                    key={c.day}
-                    className="w-[10px] h-[22px] shrink-0 border-r border-white/40"
-                    style={cellStyle(r.level, c)}
-                    title={cellTitle(r.label, r.level, c)}
-                  />
-                ))}
+                {(r.days || []).map((c) => {
+                  const inColumn = selected && selected.day === c.day;
+                  const isSelected = inColumn && selected.node === r.key;
+                  return (
+                    <div
+                      key={c.day}
+                      role="button"
+                      tabIndex={-1}
+                      onClick={() => onCellClick && onCellClick(r, c)}
+                      className="w-[10px] h-[22px] shrink-0 border-r border-white/40 cursor-pointer"
+                      style={{
+                        ...cellStyle(r.level, c),
+                        ...(inColumn ? { filter: 'brightness(0.85)' } : {}),
+                        ...(isSelected ? { outline: '2px solid #0b5cab', outlineOffset: '-2px', filter: 'none' } : {}),
+                      }}
+                      title={cellTitle(r.label, r.level, c)}
+                    />
+                  );
+                })}
               </div>
               <div className="pl-2 shrink-0">
                 <NodeBadges g={r} />
@@ -222,7 +234,7 @@ function Legend({ level }) {
           </span>
         </>
       )}
-      <span className="text-th-faint">Hover a cell for that day’s detail. Click a row to drill down.</span>
+      <span className="text-th-faint">Hover a cell for that day; click a cell for its detail and actions. Click a row name to drill down.</span>
     </div>
   );
 }
@@ -236,6 +248,8 @@ export default function CapacityDailyView() {
   const [trail, setTrail] = useState([{ key: 'fleet', label: 'All colos', level: 'fleet' }]);
   const [refreshToken, setRefreshToken] = useState(0);
   const [showReserve, setShowReserve] = useState(false);
+  const [selected, setSelected] = useState(null); // { node, label, level, day }
+  const [reserveTarget, setReserveTarget] = useState(null); // { key, label, start }
 
   const current = trail[trail.length - 1];
   const { data: grid, loading, error } = useSalesforceData(
@@ -244,8 +258,24 @@ export default function CapacityDailyView() {
   );
   const { data: shortfalls } = useSalesforceData(() => getCapacityShortfall({ days }), [days, refreshToken]);
 
-  const drill = (node) => setTrail((t) => [...t, { key: node.key, label: node.label, level: node.level }]);
-  const jumpTo = (i) => setTrail((t) => t.slice(0, i + 1));
+  const drill = (node) => {
+    setSelected(null);
+    setTrail((t) => [...t, { key: node.key, label: node.label, level: node.level }]);
+  };
+  const jumpTo = (i) => {
+    setSelected(null);
+    setTrail((t) => t.slice(0, i + 1));
+  };
+  const selectCell = (row, cell) => setSelected({ node: row.key, label: row.label, level: row.level, day: cell.day });
+  const reserveHere = () => {
+    const useSel = selected && selected.level !== 'blade';
+    setReserveTarget({
+      key: useSel ? selected.node : current.key,
+      label: useSel ? selected.label : current.label,
+      start: selected ? selected.day : undefined,
+    });
+    setShowReserve(true);
+  };
   const refresh = () => setRefreshToken((n) => n + 1);
 
   const today = grid?.days?.[0];
@@ -387,7 +417,10 @@ export default function CapacityDailyView() {
               </h2>
               <button
                 type="button"
-                onClick={() => setShowReserve((v) => !v)}
+                onClick={() => {
+                  setReserveTarget(null);
+                  setShowReserve((v) => !v);
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-siemens-teal text-white hover:opacity-90"
               >
                 <CalendarPlus size={13} /> {showReserve ? 'Hide reservation' : 'New reservation'}
@@ -396,7 +429,7 @@ export default function CapacityDailyView() {
             <div className="section-card-body space-y-4">
               {error && <div className="text-sm text-red-500">Could not load capacity: {error}</div>}
               {loading && !grid && <div className="skeleton h-40 w-full" />}
-              {grid && <Heatmap grid={grid} onDrill={drill} />}
+              {grid && <Heatmap grid={grid} onDrill={drill} onCellClick={selectCell} selected={selected} />}
               {grid && <Legend level={grid.level} />}
               {grid && current.level === 'tower' && (grid.children || []).length < (today?.total || 0) && (
                 <p className="text-[11px] text-th-muted">
@@ -407,8 +440,24 @@ export default function CapacityDailyView() {
             </div>
           </div>
 
+          {selected && (
+            <CapacityDayPanel
+              node={selected.node}
+              day={selected.day}
+              refreshToken={refreshToken}
+              onClose={() => setSelected(null)}
+              onChanged={refresh}
+              onReserveHere={reserveHere}
+            />
+          )}
+
           {showReserve && (
-            <CapacityReservationPanel scopeKey={current.key} scopeLabel={current.label} onReserved={refresh} />
+            <CapacityReservationPanel
+              scopeKey={reserveTarget ? reserveTarget.key : current.key}
+              scopeLabel={reserveTarget ? reserveTarget.label : current.label}
+              initialStart={reserveTarget ? reserveTarget.start : undefined}
+              onReserved={refresh}
+            />
           )}
         </>
       )}

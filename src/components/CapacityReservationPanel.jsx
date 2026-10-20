@@ -14,7 +14,7 @@ const inputCls =
  * every day) → reserve on an eligible tower. The server re-checks eligibility on
  * submit, so a stale screen can never double-book.
  */
-export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabel = 'All colos', onReserved }) {
+export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabel = 'All colos', initialStart, onReserved }) {
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState(() => ({
     accountName: '',
@@ -40,6 +40,11 @@ export default function CapacityReservationPanel({ scopeKey = 'fleet', scopeLabe
     setResults(null);
     setMessage(null);
   }, [scopeKey]);
+
+  // Pre-fill the start date when opened from a clicked day
+  useEffect(() => {
+    if (initialStart) setForm((f) => ({ ...f, start: initialStart }));
+  }, [initialStart]);
 
   const end = isoDay(addDays(new Date(`${form.start}T00:00:00`), Math.max(1, Number(form.duration) || 1) - 1));
 

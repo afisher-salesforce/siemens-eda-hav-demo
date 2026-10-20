@@ -1264,6 +1264,26 @@ export async function getCapacityChargeback({ start, end, customer } = {}) {
   return (await request(`/capacity-grid${qs({ view: 'chargeback', start, end, customer })}`)) || [];
 }
 
+/** One node on one day: totals, which towers conflict and by how much, and every hold. */
+export async function getCapacityDay({ node = 'fleet', day } = {}) {
+  return request(`/capacity-grid${qs({ view: 'day', node, day })}`);
+}
+
+/** Towers a hold could move to for the rest of its window (eligibility ignores the hold itself). */
+export async function getCapacityMoveOptions(holdId) {
+  return (await request(`/capacity-grid${qs({ view: 'moveOptions', hold: holdId })}`)) || [];
+}
+
+/** Move a hold to another tower; rejected (409) if that tower lacks capacity or power. */
+export async function moveCapacityHold(holdId, towerId) {
+  return request('/capacity-grid', { method: 'POST', body: JSON.stringify({ action: 'move', holdId, towerId }) });
+}
+
+/** Release a hold: it stops consuming capacity and is no longer charged. */
+export async function releaseCapacityHold(holdId) {
+  return request('/capacity-grid', { method: 'POST', body: JSON.stringify({ action: 'release', holdId }) });
+}
+
 /** Customers known to the capacity model, for the reservation form. */
 export async function getCapacityCustomers() {
   return (await request(`/capacity-grid${qs({ view: 'customers' })}`)) || [];
@@ -1305,4 +1325,8 @@ export default {
   getCapacityChargeback,
   getCapacityCustomers,
   reserveCapacity,
+  getCapacityDay,
+  getCapacityMoveOptions,
+  moveCapacityHold,
+  releaseCapacityHold,
 };
