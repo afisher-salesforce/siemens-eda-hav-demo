@@ -24,28 +24,45 @@ import { parseDay, fmtDay } from './capacityDates';
 const LEVEL_ICON = { fleet: Layers, colo: Building2, row: Rows3, tower: Server, blade: Cpu };
 const LEVEL_LABEL = { fleet: 'All colos', colo: 'Colo', row: 'Row', tower: 'Tower', blade: 'Blade' };
 
-/** Cell colour for one node on one day. */
+/**
+ * Colour rules (same as the Salesforce havDailyCapacity component):
+ *  - blade: in use / reserved / free.
+ *  - tower: a conflict (overbooked or over its power budget) fills the cell red.
+ *  - fleet / colo / row: colour by utilization; a conflict in any tower below
+ *    shows as a red stripe on top (plus the conflict badge), never a solid cell.
+ *  - aggregates: purple stripe underneath when short against pipeline.
+ */
+function utilizationColour(c) {
+  if (!c.total) return 'transparent';
+  if (c.available <= 0) return '#dc2626';
+  const used = (c.allocated + c.reserved) / c.total;
+  if (used >= 0.85) return '#f59e0b';
+  if (used >= 0.6) return '#0d9488';
+  if (used >= 0.3) return '#14b8a6';
+  return '#99f6e4';
+}
+
 function cellStyle(level, c) {
   const conflict = c.overbooked || c.powerConflict;
-  const shortVsPipeline = c.available - c.pipeline < 0;
-  let bg;
   if (level === 'blade') {
-    bg = c.allocated ? '#009999' : c.reserved ? '#f59e0b' : '#e5e7eb';
-  } else if (conflict || c.available < 0) {
-    bg = '#ef4444';
-  } else if (c.total === 0) {
-    bg = 'transparent';
-  } else {
-    const used = (c.allocated + c.reserved) / c.total;
-    if (c.available === 0) bg = '#dc2626';
-    else if (used >= 0.85) bg = '#f59e0b';
-    else if (used >= 0.6) bg = '#0d9488';
-    else if (used >= 0.3) bg = '#14b8a6';
-    else bg = '#99f6e4';
+    return { backgroundColor: c.allocated ? '#009999' : c.reserved ? '#f59e0b' : '#e5e7eb' };
   }
+  const shadows = [];
+  if (level !== 'tower' && conflict) shadows.push('inset 0 4px 0 #ef4444');
+  if (c.available - c.pipeline < 0) shadows.push('inset 0 -4px 0 #7c3aed');
   return {
-    backgroundColor: bg,
-    boxShadow: shortVsPipeline && level !== 'blade' ? 'inset 0 -4px 0 #7c3aed' : undefined,
+    backgroundColor: level === 'tower' && conflict ? '#ef4444' : utilizationColour(c),
+    boxShadow: shadows.length ? shadows.join(',') : undefined,
+  };
+}
+
+function powerStyle(level, c) {
+  const head = c.powerCap - c.powerCommitted;
+  const pct = c.powerCap ? head / c.powerCap : 0;
+  if (level === 'tower' && (c.powerConflict || head < 0)) return { backgroundColor: '#ef4444' };
+  return {
+    backgroundColor: head < 0 ? '#ef4444' : pct < 0.15 ? '#f59e0b' : pct < 0.4 ? '#fcd34d' : '#fef3c7',
+    boxShadow: c.powerConflict ? 'inset 0 4px 0 #ef4444' : undefined,
   };
 }
 
@@ -157,15 +174,13 @@ export function Heatmap({ grid, onDrill }) {
             <div className="flex">
               {days.map((c) => {
                 const head = c.powerCap - c.powerCommitted;
-                const pct = c.powerCap ? head / c.powerCap : 0;
-                const bg = c.powerConflict || head < 0 ? '#ef4444' : pct < 0.15 ? '#f59e0b' : pct < 0.4 ? '#fcd34d' : '#fef3c7';
                 return (
                   <div
                     key={c.day}
                     className="w-[10px] h-[14px] shrink-0 border-r border-white/40"
-                    style={{ backgroundColor: bg }}
+                    style={powerStyle(grid.level, c)}
                     title={`${fmtDay(c.day)} — ${head.toFixed(1)} kW free of ${Number(c.powerCap).toFixed(0)} kW${
-                      c.powerConflict ? ' (a tower is over its budget)' : ''
+                      c.powerConflict ? (grid.level === 'tower' ? ' (over this tower’s budget)' : ' (a tower below is over its budget)') : ''
                     }`}
                   />
                 );
@@ -182,7 +197,7 @@ function Legend({ level }) {
   const items =
     level === 'tower'
       ? [['#009999', 'Blade in use'], ['#f59e0b', 'Blade reserved'], ['#e5e7eb', 'Blade free']]
-      : [['#99f6e4', '<30% used'], ['#14b8a6', '30–60%'], ['#0d9488', '60–85%'], ['#f59e0b', '85%+'], ['#dc2626', 'Full'], ['#ef4444', 'Conflict']];
+      : [['#99f6e4', '<30% used'], ['#14b8a6', '30–60%'], ['#0d9488', '60–85%'], ['#f59e0b', '85%+'], ['#dc2626', 'Full']];
   return (
     <div className="flex items-center gap-3 flex-wrap text-[10px] text-th-muted">
       {items.map(([c, l]) => (
@@ -191,11 +206,21 @@ function Legend({ level }) {
           {l}
         </span>
       ))}
+      <span className="flex items-center gap-1">
+        <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
+        Tower conflict
+      </span>
       {level !== 'tower' && (
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-surface-card" style={{ boxShadow: 'inset 0 -4px 0 #7c3aed' }} />
-          Short vs pipeline
-        </span>
+        <>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#14b8a6', boxShadow: 'inset 0 4px 0 #ef4444' }} />
+            Conflict in a tower below
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm bg-surface-card" style={{ boxShadow: 'inset 0 -4px 0 #7c3aed' }} />
+            Short vs pipeline
+          </span>
+        </>
       )}
       <span className="text-th-faint">Hover a cell for that day’s detail. Click a row to drill down.</span>
     </div>
