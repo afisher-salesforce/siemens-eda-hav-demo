@@ -9,9 +9,9 @@
 public with sharing class HAV_CapacityGridController {
 
     @AuraEnabled
-    public static String getGrid(String nodeKey, Integer days) {
+    public static String getGrid(String nodeKey, Integer days, Id customerId) {
         return JSON.serialize(HAV_CapacityGridService.getGrid(
-            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', Date.today(), days));
+            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', Date.today(), days, customerId));
     }
 
     @AuraEnabled

@@ -237,3 +237,15 @@
     padding: 0.35rem 0;
     border-bottom: 1px solid #dddbda;
 }
+
+.hm-focus {
+    min-width: 13rem;
+}
+.hm-badge-focus {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.hm-focus-note {
+    font-size: 0.7rem;
+    color: #1d4ed8;
+}

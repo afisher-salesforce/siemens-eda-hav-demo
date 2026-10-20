@@ -1,6 +1,15 @@
 <template>
     <lightning-card title={cardTitle} icon-name="standard:calendar">
         <div slot="actions" class="hm-actions">
+            <lightning-combobox
+                class="hm-focus slds-m-right_small"
+                label="Focus on customer"
+                variant="label-hidden"
+                placeholder="All customers"
+                options={customerOptions}
+                value={focusId}
+                onchange={handleFocus}
+            ></lightning-combobox>
             <template for:each={windowOptions} for:item="w">
                 <lightning-button
                     key={w.key}
@@ -109,6 +118,9 @@
                                     <template lwc:if={r.showConflict}>
                                         <span class="slds-badge hm-badge-short">{r.conflict}</span>
                                     </template>
+                                    <template lwc:if={r.showFocus}>
+                                        <span class="slds-badge hm-badge-focus">{r.focusBadge}</span>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -139,6 +151,9 @@
                     <span><i class="hm-legend-short"></i>Short vs pipeline</span>
                     <span class="slds-text-color_weak">Hover a cell for that day; click a cell for its detail and actions. Click a row name to drill down.</span>
                 </div>
+                <template lwc:if={hasFocus}>
+                    <p class="hm-focus-note slds-m-top_x-small">{focusNote}</p>
+                </template>
 
 
                 <!-- Day detail: click any cell -->

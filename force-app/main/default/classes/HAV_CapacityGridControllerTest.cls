@@ -27,7 +27,7 @@ private class HAV_CapacityGridControllerTest {
     @isTest
     static void testGridAndShortfallJson() {
         Map<String, Object> grid = (Map<String, Object>) JSON.deserializeUntyped(
-            HAV_CapacityGridController.getGrid('fleet', 30));
+            HAV_CapacityGridController.getGrid('fleet', 30, null));
         System.assertEquals('fleet', grid.get('key'));
         System.assertEquals(30, ((List<Object>) grid.get('days')).size());
         List<Object> sf = (List<Object>) JSON.deserializeUntyped(HAV_CapacityGridController.getShortfall(30));

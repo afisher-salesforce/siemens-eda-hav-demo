@@ -11,6 +11,7 @@ import getGrid from '@salesforce/apex/HAV_CapacityGridController.getGrid';
 import getShortfall from '@salesforce/apex/HAV_CapacityGridController.getShortfall';
 import nodeForRecord from '@salesforce/apex/HAV_CapacityGridController.nodeForRecord';
 import getHolds from '@salesforce/apex/HAV_CapacityGridController.getHolds';
+import getCustomers from '@salesforce/apex/HAV_CapacityGridController.getCustomers';
 
 const LEVEL_LABEL = { fleet: 'All colos', colo: 'Colo', row: 'Row', tower: 'Tower', blade: 'Blade' };
 const LEVEL_ICON = {
@@ -63,6 +64,13 @@ function utilizationColour(c) {
     return '#99f6e4';
 }
 
+/** Customer focus: full colour where the customer holds blades, faded where only pipeline, dim elsewhere. */
+function focusOpacity(focusOn, c) {
+    if (!focusOn) return '';
+    if (c.focusHeld > 0) return '';
+    return c.focusPipeline > 0 ? 'opacity:0.55;' : 'opacity:0.18;';
+}
+
 function cellStyle(level, c) {
     const conflict = c.overbooked || c.powerConflict;
     const shortVsPipeline = c.available - c.pipeline < 0;
@@ -84,18 +92,32 @@ function powerStyle(level, c) {
     return `background-color:${bg};${c.powerConflict ? 'box-shadow:inset 0 4px 0 #ef4444;' : ''}`;
 }
 
-function cellTitle(label, level, c) {
+function cellTitle(label, level, c, focusName) {
     const d = parseDay(c.day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     const lines = [`${label} — ${d}`];
     if (level === 'blade') {
         lines.push(c.allocated ? 'In use (allocated)' : c.reserved ? 'Reserved' : 'Free');
+        if (c.holders) lines.push(`Customer: ${c.holders}`);
     } else {
         lines.push(`Slots: ${c.total} · in use ${c.allocated} · reserved ${c.reserved} · free ${c.available}`);
         if (c.pipeline) lines.push(`Pipeline demand: ${c.pipeline}${c.available - c.pipeline < 0 ? ` (short ${c.pipeline - c.available})` : ''}`);
-        if (c.powerCap) lines.push(`Power: ${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW`);
-        if (c.overbooked) lines.push('Overbooked: holds exceed a tower’s slots');
-        if (c.powerConflict) lines.push('Power over a tower’s budget');
+        if (c.powerCap) {
+            const head = c.powerCap - c.powerCommitted;
+            lines.push(`Power: ${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW (${head.toFixed(1)} kW free)`);
+        }
+        if (c.holders) lines.push(`Held by: ${c.holders}`);
+        if (c.conflictTowers) lines.push(`⚠ Conflict: ${c.conflictTowers}`);
+        else if (c.overbooked) lines.push('⚠ Overbooked: holds exceed a tower’s slots');
+        else if (c.powerConflict) lines.push('⚠ Power over a tower’s budget');
     }
+    if (focusName) {
+        lines.push(
+            c.focusHeld || c.focusPipeline
+                ? `${focusName}: ${c.focusHeld || 0} blade(s) held${c.focusPipeline ? `, ${c.focusPipeline} in pipeline` : ''}`
+                : `${focusName}: nothing this day`
+        );
+    }
+    lines.push('Click for the day’s detail and actions');
     return lines.join('\n');
 }
 
@@ -145,6 +167,10 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     loading = true;
     error;
     holdColumns = HOLD_COLUMNS;
+
+    // Customer focus (filter)
+    focusId = '';
+    customerOptions = [{ label: 'All customers', value: '' }];
     detailColumns = DETAIL_COLUMNS;
 
     // Day detail (click a cell)
@@ -160,6 +186,22 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     connectedCallback() {
         this.windowDays = Number(this.days) || 90;
         this.init();
+        getCustomers()
+            .then((rows) => {
+                this.customerOptions = [{ label: 'All customers', value: '' }, ...rows.map((r) => ({ label: r.name, value: r.id }))];
+            })
+            .catch(() => {});
+    }
+
+    get focusName() {
+        if (!this.focusId) return undefined;
+        const o = this.customerOptions.find((x) => x.value === this.focusId);
+        return o ? o.label : undefined;
+    }
+
+    handleFocus(event) {
+        this.focusId = event.detail.value || '';
+        this.load();
     }
 
     async init() {
@@ -186,7 +228,7 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
         try {
             const node = this.current;
             const [gridJson, shortJson] = await Promise.all([
-                getGrid({ nodeKey: node.key, days: this.windowDays }),
+                getGrid({ nodeKey: node.key, days: this.windowDays, customerId: this.focusId || null }),
                 getShortfall({ days: this.windowDays })
             ]);
             this.grid = JSON.parse(gridJson);
@@ -196,7 +238,10 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
             this.buildRows();
             if (node.level === 'tower' || node.level === 'row') {
                 const holds = await getHolds({ nodeKey: node.key, days: this.windowDays });
-                this.holds = holds.map((h) => ({ ...h, url: `/${h.id}` }));
+                const focusName = this.focusName;
+                this.holds = holds
+                    .filter((h) => !focusName || h.customer === focusName)
+                    .map((h) => ({ ...h, url: `/${h.id}` }));
             } else {
                 this.holds = [];
             }
@@ -210,6 +255,8 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     buildRows() {
         const g = this.grid;
         const all = [{ ...g, isSelf: true }, ...(g.children || [])];
+        const focusName = this.focusName;
+        const focusOn = !!focusName;
         this.rows = all.map((r) => {
             const drillable = !r.isSelf && r.level !== 'blade';
             const after = r.minAfterPipeline;
@@ -228,11 +275,13 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
                 badgeClass: after >= 0 ? 'slds-badge hm-badge-ok' : 'slds-badge hm-badge-short',
                 showConflict: r.conflictDays > 0,
                 conflict: `conflict ${r.conflictDays}d`,
+                showFocus: focusOn && r.focusDays > 0,
+                focusBadge: r.focusPeak > 0 ? `${focusName} peak ${r.focusPeak}` : `${focusName} pipeline only`,
                 cells: (r.days || []).map((c) => ({
                     key: c.day,
                     day: c.day,
-                    style: cellStyle(r.level, c),
-                    title: cellTitle(r.label, r.level, c),
+                    style: cellStyle(r.level, c) + focusOpacity(focusOn, c),
+                    title: cellTitle(r.label, r.level, c, focusName),
                     cls:
                         'hm-cell hm-click' +
                         (c.day === this.selectedDay ? ' hm-col-selected' : '') +
@@ -271,6 +320,14 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     }
     get hasPower() {
         return this.powerCells.length > 0;
+    }
+    get hasFocus() {
+        return !!this.focusId;
+    }
+    get focusNote() {
+        return this.focusName
+            ? `Showing ${this.focusName}: full colour where they hold blades, faded where they only have pipeline, dimmed elsewhere. Holds below are filtered to them; the day panel still shows every hold so conflicts can be fixed.`
+            : '';
     }
     get hasHolds() {
         return this.holds.length > 0;

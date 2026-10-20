@@ -266,4 +266,48 @@ private class HAV_CapacityGridServiceTest {
         HAV_CapacityGridRest.doPost();
         System.assertEquals(200, RestContext.response.statusCode);
     }
+
+    @isTest
+    static void testCustomerFocusAndHoverDetail() {
+        addConflict();
+        Id cust = [SELECT Id FROM Account WHERE Name = 'Grid Test Customer'].Id;
+        Id other = [SELECT Id FROM Account WHERE Name = 'Grid Pipeline Customer'].Id;
+
+        HAV_CapacityGridService.NodeGrid g = HAV_CapacityGridService.getGrid('fleet', Date.today(), 90, cust);
+        System.assertEquals(2, g.days[0].focusHeld, 'B1 + B2 today');
+        System.assertEquals(4, g.days[30].focusHeld, 'plus the 2-blade Expansion hold');
+        System.assertEquals(0, g.days[50].focusPipeline);
+        System.assertEquals(4, g.focusPeak);
+        System.assertEquals(61, g.focusDays, 'days 0..60');
+        System.assertEquals('Grid Test Customer 2', g.days[0].holders);
+        System.assertEquals('Grid Test Customer 4 · No customer 1', g.days[45].holders);
+        System.assertEquals(null, g.days[0].conflictTowers);
+        System.assertEquals('Rack R01 — TC1 (slots +1, power +10.0 kW)', g.days[45].conflictTowers);
+
+        HAV_CapacityGridService.NodeGrid p = HAV_CapacityGridService.getGrid('fleet', Date.today(), 90, other);
+        System.assertEquals(0, p.days[50].focusHeld);
+        System.assertEquals(6, p.days[50].focusPipeline, 'pipeline counts separately and never as held');
+        System.assertEquals(0, p.focusPeak);
+
+        HAV_CapacityGridService.NodeGrid none = HAV_CapacityGridService.getGrid('fleet', Date.today(), 90);
+        System.assertEquals(0, none.days[0].focusHeld, 'no focus -> zeros');
+
+        HAV_CapacityGridService.NodeGrid tower = HAV_CapacityGridService.getGrid('tower:' + towerId('RACK-TC1-R01'), Date.today(), 30, cust);
+        HAV_CapacityGridService.NodeGrid blade = tower.children[0];
+        System.assertEquals('blade', blade.level);
+        System.assertEquals('Grid Test Customer', blade.days[0].holders);
+        System.assertEquals(1, blade.days[0].focusHeld);
+
+        System.assertEquals('A 3 · C 3 · B 2 · +1 more', HAV_CapacityGridService.topHolders(
+            new Map<String, Integer>{ 'B' => 2, 'C' => 3, 'A' => 3, 'D' => 1 }, 3));
+        System.assertEquals(null, HAV_CapacityGridService.topHolders(new Map<String, Integer>(), 3));
+
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
+        RestContext.request.params.put('view', 'grid');
+        RestContext.request.params.put('focus', cust);
+        HAV_CapacityGridRest.doGet();
+        System.assertEquals(200, RestContext.response.statusCode);
+        System.assert(RestContext.response.responseBody.toString().contains('"focusPeak":4'));
+    }
 }

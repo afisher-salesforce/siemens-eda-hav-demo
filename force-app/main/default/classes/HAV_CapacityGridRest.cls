@@ -2,7 +2,7 @@
  * REST surface for the daily capacity model (React app + MCP).
  *
  * GET /services/apexrest/hav/capacity-grid?view=...
- *   view=grid        &node=<key>&start=YYYY-MM-DD&days=90     daily grid + one level of children
+ *   view=grid        &node=<key>&start=YYYY-MM-DD&days=90[&focus=<accountId>]  daily grid + one level of children
  *   view=shortfall   &start=&days=                            pipeline-informed shortfall per colo
  *   view=eligibility &node=&start=&end=&blades=&kw=           towers that can hold a job
  *   view=chargeback  &start=&end=&customer=                   blade-day chargeback per customer
@@ -41,7 +41,9 @@ global with sharing class HAV_CapacityGridRest {
                 body = HAV_CapacityGridService.chargeback(dateParam(req, 'start', null),
                     dateParam(req, 'end', null), param(req, 'customer', null));
             } else {
-                body = HAV_CapacityGridService.getGrid(param(req, 'node', 'fleet'), startDate, days);
+                String focus = param(req, 'focus', null);
+                body = HAV_CapacityGridService.getGrid(param(req, 'node', 'fleet'), startDate, days,
+                    focus != null ? Id.valueOf(focus) : null);
             }
             res.statusCode = 200;
             res.responseBody = Blob.valueOf(JSON.serialize(body));

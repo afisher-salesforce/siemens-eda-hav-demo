@@ -117,6 +117,13 @@ public with sharing class HAV_CapacityGridService {
         public Decimal powerCommitted = 0;
         public Boolean overbooked = false;
         public Boolean powerConflict = false;
+        /** Top customers holding capacity this day, e.g. "TSMC 5 · NVIDIA 3 · +1 more" (hover text). */
+        public String holders;
+        /** Aggregate levels: which towers below are in conflict this day, e.g. "Rack R01 — HSC1 (power +7.4 kW)". */
+        public String conflictTowers;
+        /** Customer focus: blades that customer holds (allocated + reserved) and its pipeline demand. */
+        public Integer focusHeld = 0;
+        public Integer focusPipeline = 0;
     }
 
     public class NodeGrid {
@@ -134,6 +141,9 @@ public with sharing class HAV_CapacityGridService {
         public Integer worstShortfall = 0;
         public Integer conflictDays = 0;
         public Decimal minPowerHeadroom;
+        /** Customer focus: peak blades held and days with any hold or pipeline for that customer. */
+        public Integer focusPeak = 0;
+        public Integer focusDays = 0;
     }
 
     /** Per-tower daily arrays computed once and reused for every node. */
@@ -148,13 +158,27 @@ public with sharing class HAV_CapacityGridService {
         public Map<Id, List<Decimal>> power = new Map<Id, List<Decimal>>();
         // Blade-level holds (reservations that target a specific blade)
         public Map<Id, List<String>> bladeState = new Map<Id, List<String>>();
+        public Map<Id, List<String>> bladeCustomer = new Map<Id, List<String>>();
+        // Per tower per day: customer name -> blades held (allocated + reserved). Built lazily.
+        public Map<Id, List<Map<String, Integer>>> holdersByTower = new Map<Id, List<Map<String, Integer>>>();
+        // Customer focus (optional)
+        public Id focusAccountId;
+        public Map<Id, List<Integer>> focusHeld = new Map<Id, List<Integer>>();
+        public Map<Id, List<Integer>> focusPipe = new Map<Id, List<Integer>>();
+        public Map<Id, List<Boolean>> bladeFocus = new Map<Id, List<Boolean>>();
 
         public Engine(Date startDate, Integer numDays) {
-            this(startDate, numDays, null);
+            this(startDate, numDays, null, null);
         }
 
         /** excludeId: a reservation to leave out (used when moving that hold). */
         public Engine(Date startDate, Integer numDays, Id excludeId) {
+            this(startDate, numDays, excludeId, null);
+        }
+
+        /** focusAccountId: a customer whose holds and pipeline are counted separately (customer filter). */
+        public Engine(Date startDate, Integer numDays, Id excludeId, Id focusAccountId) {
+            this.focusAccountId = focusAccountId;
             this.topo = HAV_CapacityGridService.loadTopology();
             this.startDate = startDate;
             this.numDays = numDays;
@@ -164,6 +188,10 @@ public with sharing class HAV_CapacityGridService {
                 resv.put(tid, HAV_CapacityGridService.zeros(numDays));
                 pipe.put(tid, HAV_CapacityGridService.zeros(numDays));
                 power.put(tid, HAV_CapacityGridService.zerosD(numDays));
+                if (focusAccountId != null) {
+                    focusHeld.put(tid, HAV_CapacityGridService.zeros(numDays));
+                    focusPipe.put(tid, HAV_CapacityGridService.zeros(numDays));
+                }
             }
             for (Capacity_Reservation__c r : reservations) {
                 if (excludeId != null && r.Id == excludeId) continue;
@@ -184,11 +212,42 @@ public with sharing class HAV_CapacityGridService {
                 List<Decimal> powerArr = power.get(towerId);
                 List<String> stateArr = isBlade ? bladeState.get(r.Asset__c) : null;
                 Boolean holds = HAV_CapacityGridService.HOLDING.contains(r.Status__c);
+                String customer = r.Account__r != null ? r.Account__r.Name : 'No customer';
+                Boolean isFocus = focusAccountId != null && r.Account__c == focusAccountId;
+                List<Map<String, Integer>> holderDays = null;
+                if (holds) {
+                    holderDays = holdersByTower.get(towerId);
+                    if (holderDays == null) {
+                        holderDays = new List<Map<String, Integer>>();
+                        for (Integer i = 0; i < numDays; i++) holderDays.add(null);
+                        holdersByTower.put(towerId, holderDays);
+                    }
+                }
+                List<String> custArr = null;
+                List<Boolean> focusArr = null;
+                if (isBlade && holds) {
+                    if (!bladeCustomer.containsKey(r.Asset__c)) bladeCustomer.put(r.Asset__c, new String[numDays]);
+                    custArr = bladeCustomer.get(r.Asset__c);
+                    if (focusAccountId != null) {
+                        if (!bladeFocus.containsKey(r.Asset__c)) bladeFocus.put(r.Asset__c, new Boolean[numDays]);
+                        focusArr = bladeFocus.get(r.Asset__c);
+                    }
+                }
+                List<Integer> focusArrT = isFocus ? (holds ? focusHeld.get(towerId) : focusPipe.get(towerId)) : null;
                 for (Integer i = first; i <= last; i++) {
                     slotsArr[i] = slotsArr[i] + blades;
+                    if (focusArrT != null) focusArrT[i] = focusArrT[i] + blades;
                     if (holds) {
                         powerArr[i] = powerArr[i] + kw;
                         if (stateArr != null) stateArr[i] = r.Status__c;
+                        if (custArr != null) custArr[i] = customer;
+                        if (focusArr != null) focusArr[i] = isFocus;
+                        Map<String, Integer> m = holderDays[i];
+                        if (m == null) {
+                            m = new Map<String, Integer>();
+                            holderDays[i] = m;
+                        }
+                        m.put(customer, (m.containsKey(customer) ? m.get(customer) : 0) + blades);
                     }
                 }
             }
@@ -226,20 +285,46 @@ public with sharing class HAV_CapacityGridService {
             for (Integer i = 0; i < numDays; i++) {
                 DayCell c = new DayCell();
                 c.day = startDate.addDays(i);
-                Integer worstTowerOver = 0;
+                Map<String, Integer> holders = new Map<String, Integer>();
+                List<String> conflicted = new List<String>();
                 for (Tower tw : towers) {
                     Integer a = alloc.get(tw.nodeId)[i];
                     Integer r = resv.get(tw.nodeId)[i];
+                    Decimal p = power.get(tw.nodeId)[i];
                     c.total += tw.slots;
                     c.allocated += a;
                     c.reserved += r;
                     c.pipeline += pipe.get(tw.nodeId)[i];
                     c.powerCap += tw.powerCap;
-                    c.powerCommitted += power.get(tw.nodeId)[i];
-                    if (a + r > tw.slots) c.overbooked = true;
-                    if (tw.powerCap > 0 && power.get(tw.nodeId)[i] > tw.powerCap) c.powerConflict = true;
+                    c.powerCommitted += p;
+                    Boolean slotOver = a + r > tw.slots;
+                    Boolean powerOver = tw.powerCap > 0 && p > tw.powerCap;
+                    if (slotOver) c.overbooked = true;
+                    if (powerOver) c.powerConflict = true;
+                    if (slotOver || powerOver) {
+                        List<String> why = new List<String>();
+                        if (slotOver) why.add('slots +' + (a + r - tw.slots));
+                        if (powerOver) why.add('power +' + (p - tw.powerCap).setScale(1) + ' kW');
+                        conflicted.add(tw.name + ' (' + String.join(why, ', ') + ')');
+                    }
+                    if (focusAccountId != null) {
+                        c.focusHeld += focusHeld.get(tw.nodeId)[i];
+                        c.focusPipeline += focusPipe.get(tw.nodeId)[i];
+                    }
+                    List<Map<String, Integer>> hd = holdersByTower.get(tw.nodeId);
+                    Map<String, Integer> m = hd != null ? hd[i] : null;
+                    if (m != null) {
+                        for (String k : m.keySet()) holders.put(k, (holders.containsKey(k) ? holders.get(k) : 0) + m.get(k));
+                    }
                 }
                 c.available = c.total - c.allocated - c.reserved;
+                c.holders = HAV_CapacityGridService.topHolders(holders, 3);
+                if (!conflicted.isEmpty()) {
+                    conflicted.sort();
+                    c.conflictTowers = conflicted.size() > 3
+                        ? String.join(new List<String>{ conflicted[0], conflicted[1], conflicted[2] }, '; ') + '; +' + (conflicted.size() - 3) + ' more'
+                        : String.join(conflicted, '; ');
+                }
                 g.days.add(c);
             }
             HAV_CapacityGridService.summarize(g);
@@ -260,6 +345,8 @@ public with sharing class HAV_CapacityGridService {
             g.level = 'blade';
             g.label = b != null ? b.Name + (b.Account != null ? ' (' + b.Account.Name + ')' : '') : String.valueOf(bladeId);
             List<String> st = bladeState.get(bladeId);
+            List<String> cust = bladeCustomer.get(bladeId);
+            List<Boolean> foc = bladeFocus.get(bladeId);
             for (Integer i = 0; i < numDays; i++) {
                 DayCell c = new DayCell();
                 c.day = startDate.addDays(i);
@@ -269,6 +356,8 @@ public with sharing class HAV_CapacityGridService {
                 if (s == 'Reserved') c.reserved = 1;
                 c.available = 1 - c.allocated - c.reserved;
                 if (b != null && b.Power_Draw_kW__c != null && s != null) c.powerCommitted = b.Power_Draw_kW__c;
+                if (cust != null && cust[i] != null) c.holders = cust[i];
+                if (foc != null && foc[i] == true) c.focusHeld = 1;
                 g.days.add(c);
             }
             HAV_CapacityGridService.summarize(g);
@@ -315,6 +404,8 @@ public with sharing class HAV_CapacityGridService {
                 g.worstShortfall = Math.max(g.worstShortfall, -afterPipeline);
             }
             if (c.overbooked || c.powerConflict) g.conflictDays++;
+            if (c.focusHeld > g.focusPeak) g.focusPeak = c.focusHeld;
+            if (c.focusHeld > 0 || c.focusPipeline > 0) g.focusDays++;
             Decimal headroom = c.powerCap - c.powerCommitted;
             if (c.powerCap > 0 && (g.minPowerHeadroom == null || headroom < g.minPowerHeadroom)) {
                 g.minPowerHeadroom = headroom;
@@ -328,6 +419,27 @@ public with sharing class HAV_CapacityGridService {
         return a;
     }
 
+    /** "TSMC 5 · NVIDIA 3 · +2 more", largest first (ties by name). */
+    public static String topHolders(Map<String, Integer> m, Integer n) {
+        if (m == null || m.isEmpty()) return null;
+        List<String> names = new List<String>(m.keySet());
+        names.sort();
+        List<String> picked = new List<String>();
+        Set<String> used = new Set<String>();
+        for (Integer k = 0; k < Math.min(n, names.size()); k++) {
+            String best;
+            for (String nm : names) {
+                if (used.contains(nm)) continue;
+                if (best == null || m.get(nm) > m.get(best)) best = nm;
+            }
+            used.add(best);
+            picked.add(best + ' ' + m.get(best));
+        }
+        String out = String.join(picked, ' · ');
+        if (names.size() > n) out += ' · +' + (names.size() - n) + ' more';
+        return out;
+    }
+
     public static List<Decimal> zerosD(Integer n) {
         List<Decimal> a = new Decimal[n];
         for (Integer i = 0; i < n; i++) a[i] = 0;
@@ -338,8 +450,13 @@ public with sharing class HAV_CapacityGridService {
 
     /** Daily grid for a node, with one level of children. */
     public static NodeGrid getGrid(String nodeKey, Date startDate, Integer numDays) {
+        return getGrid(nodeKey, startDate, numDays, null);
+    }
+
+    /** focusAccountId (optional): count that customer's holds and pipeline per cell (customer filter). */
+    public static NodeGrid getGrid(String nodeKey, Date startDate, Integer numDays, Id focusAccountId) {
         Engine e = new Engine(startDate != null ? startDate : Date.today(),
-            numDays != null && numDays > 0 ? Math.min(numDays, 366) : DEFAULT_DAYS);
+            numDays != null && numDays > 0 ? Math.min(numDays, 366) : DEFAULT_DAYS, null, focusAccountId);
         return e.build(String.isNotBlank(nodeKey) ? nodeKey : 'fleet', true);
     }
 
