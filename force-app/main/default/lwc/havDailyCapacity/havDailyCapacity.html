@@ -1,0 +1,156 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="standard:calendar">
+        <div slot="actions" class="hm-actions">
+            <template for:each={windowOptions} for:item="w">
+                <lightning-button
+                    key={w.key}
+                    label={w.label}
+                    variant={w.variant}
+                    data-value={w.value}
+                    onclick={handleWindow}
+                    class="slds-m-left_xx-small"
+                ></lightning-button>
+            </template>
+            <lightning-button-icon
+                icon-name="utility:refresh"
+                alternative-text="Refresh"
+                onclick={handleRefresh}
+                class="slds-m-left_x-small"
+            ></lightning-button-icon>
+        </div>
+
+        <div class="slds-p-horizontal_medium">
+            <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                Blade-slot capacity by day across colo → row → tower → blade, computed live from allocations,
+                reservations and pipeline demand. Capacity and power both gate whether a job can run.
+            </p>
+
+            <template lwc:if={error}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                    Could not load capacity: {error}
+                </div>
+            </template>
+
+            <!-- Expansion banner -->
+            <template lwc:if={hasAlerts}>
+                <div class="hm-banner slds-m-bottom_small">
+                    <div class="hm-banner-title">
+                        <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        Pipeline-informed expansion forecast
+                    </div>
+                    <template for:each={alerts} for:item="a">
+                        <p key={a.key} class="slds-text-body_regular">{a.text}</p>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Breadcrumb -->
+            <div class="hm-crumbs slds-m-bottom_small">
+                <template for:each={crumbs} for:item="c">
+                    <span key={c.key} class="hm-crumb">
+                        <template lwc:if={c.showSep}>
+                            <lightning-icon icon-name="utility:chevronright" size="xx-small" class="slds-m-horizontal_xx-small"></lightning-icon>
+                        </template>
+                        <template lwc:if={c.isLast}>
+                            <strong>{c.label}</strong>
+                        </template>
+                        <template lwc:else>
+                            <a data-index={c.index} onclick={handleCrumb}>{c.label}</a>
+                        </template>
+                    </span>
+                </template>
+                <span class="hm-level slds-m-left_small">{levelLabel}</span>
+            </div>
+
+            <template lwc:if={hasGrid}>
+                <!-- Metrics -->
+                <div class="hm-metrics slds-m-bottom_medium">
+                    <template for:each={metrics} for:item="m">
+                        <div key={m.key} class="hm-metric">
+                            <div class="hm-metric-label">{m.label}</div>
+                            <div class="hm-metric-value">{m.value}</div>
+                            <div class={m.subClass}>{m.sub}</div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Heatmap -->
+                <div class="hm-heading">{gridHeading}</div>
+                <div class="hm-scroll">
+                    <div class="hm-inner">
+                        <div class="hm-row hm-ticks">
+                            <div class="hm-label"></div>
+                            <template for:each={ticks} for:item="t">
+                                <div key={t.key} class="hm-tick"><span>{t.label}</span></div>
+                            </template>
+                        </div>
+                        <template for:each={rows} for:item="r">
+                            <div key={r.key} class={r.rowClass}>
+                                <div class={r.labelClass} data-key={r.nodeKey} onclick={handleDrill} title={r.label}>
+                                    <lightning-icon icon-name={r.icon} size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                                    <span class="slds-truncate">{r.label}</span>
+                                </div>
+                                <template for:each={r.cells} for:item="c">
+                                    <div key={c.key} class="hm-cell" style={c.style} title={c.title}></div>
+                                </template>
+                                <div class="hm-badges">
+                                    <template lwc:if={r.showBadge}>
+                                        <span class={r.badgeClass}>{r.badge}</span>
+                                    </template>
+                                    <template lwc:if={r.showConflict}>
+                                        <span class="slds-badge hm-badge-short">{r.conflict}</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        <template lwc:if={hasPower}>
+                            <div class="hm-row hm-power">
+                                <div class="hm-label">
+                                    <lightning-icon icon-name="utility:bolt" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                                    <span>Power headroom</span>
+                                </div>
+                                <template for:each={powerCells} for:item="p">
+                                    <div key={p.key} class="hm-cell hm-cell-power" style={p.style} title={p.title}></div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="hm-legend slds-m-top_small">
+                    <span><i style="background-color:#99f6e4"></i>&lt;30% used</span>
+                    <span><i style="background-color:#14b8a6"></i>30–60%</span>
+                    <span><i style="background-color:#0d9488"></i>60–85%</span>
+                    <span><i style="background-color:#f59e0b"></i>85%+ / blade reserved</span>
+                    <span><i style="background-color:#009999"></i>Blade in use</span>
+                    <span><i style="background-color:#dc2626"></i>Full</span>
+                    <span><i style="background-color:#ef4444"></i>Tower conflict</span>
+                    <span><i class="hm-legend-conflict"></i>Conflict in a tower below</span>
+                    <span><i class="hm-legend-short"></i>Short vs pipeline</span>
+                    <span class="slds-text-color_weak">Hover a cell for that day. Click a row to drill down.</span>
+                </div>
+
+                <!-- Holds on this row / tower -->
+                <template lwc:if={showHoldsSection}>
+                    <div class="hm-heading slds-m-top_medium">Holds in this window</div>
+                    <template lwc:if={hasHolds}>
+                        <lightning-datatable
+                            key-field="id"
+                            data={holds}
+                            columns={holdColumns}
+                            hide-checkbox-column
+                        ></lightning-datatable>
+                    </template>
+                    <template lwc:else>
+                        <p class="slds-text-color_weak">No holds in this window.</p>
+                    </template>
+                </template>
+            </template>
+
+            <template lwc:if={loading}>
+                <lightning-spinner alternative-text="Loading capacity" size="small"></lightning-spinner>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -124,6 +124,7 @@ Siemens asked for blade-level capacity by day, with real allocations and forward
 - **Agent actions:** `HAV_Agent_CapacityForecast` (daily model), `HAV_Agent_JobEligibility` and `HAV_Agent_Chargeback`.
 - **Seed:** `scripts/seed-8-daily-capacity.apex`. Its log prints the agent's exact free-capacity answer (`CAPACITY |` lines).
 - **Permission set `HAV_Demo_User`** is generated from every field definition on both branches. Assign it, plus `HAV_Loan_To_Sale`, to any non-admin tester. V9 testing failed for a non-admin because `HAV_Admin` covers only 21 fields.
+- **Salesforce surface:** the `havDailyCapacity` LWC (via `HAV_CapacityGridController`) shows the same heatmap on an App Page and on Asset record pages. A tower or blade record starts at its tower; a facility starts at its colo. The App Page and the record-page placement are set up in Lightning App Builder (not in source). There's also a Capacity Reservations tab, page layout and list views (All / Allocated / Reserved / Pipeline / Booked in App).
 - **React (heroku): `/capacity/daily`** (`CapacityDailyView.jsx`, with `CapacityReservationPanel.jsx` and `CapacityChargebackPanel.jsx`). It shows a heatmap drill-down from colo to blade, the shortfall banner, a reservation flow gated by eligibility (POST to the REST endpoint; rejected with 409 if blocked) and a chargeback tab. REST `view=customers` and `accountName` on POST let the React app book against a customer without account IDs.
 
 ## Agent prompts that work live (tested Sept 29)

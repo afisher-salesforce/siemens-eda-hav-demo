@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>HAV Daily Capacity</masterLabel>
+    <description>Daily blade-slot capacity heatmap (colo, row, tower, blade) with expansion forecast and holds. Same model as the Heroku app.</description>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AppPage,lightning__HomePage">
+            <property name="cardTitle" type="String" default="Daily Capacity" label="Card title"/>
+            <property name="days" type="Integer" default="90" label="Default window (days)"/>
+        </targetConfig>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>Asset</object>
+            </objects>
+            <property name="cardTitle" type="String" default="Daily Capacity" label="Card title"/>
+            <property name="days" type="Integer" default="90" label="Default window (days)"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>
