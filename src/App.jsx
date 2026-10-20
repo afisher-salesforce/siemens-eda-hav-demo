@@ -19,6 +19,7 @@ import SpareInventory from './components/SpareInventory';
 import FailureTimeline from './components/FailureTimeline';
 import AllocationTimeline from './components/AllocationTimeline';
 import CapacityForecast from './components/CapacityForecast';
+import CapacityDailyView from './components/CapacityDailyView';
 import LoanerConversionView from './components/LoanerConversionView';
 import ManufacturerPortalView from './components/ManufacturerPortalView';
 import VignetteIndex from './components/vignettes/VignetteIndex';
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/capacity" element={<CapacityView />} />
         <Route path="/capacity/allocations" element={<AllocationTimeline />} />
         <Route path="/capacity/forecast" element={<CapacityForecast />} />
+        <Route path="/capacity/daily" element={<CapacityDailyView />} />
         <Route path="/telemetry" element={<TelemetryView />} />
         <Route path="/financials" element={<FinancialsView />} />
         <Route path="/financials/cogs" element={<COGSReconciliation />} />

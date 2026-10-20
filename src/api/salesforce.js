@@ -1235,6 +1235,49 @@ export async function getDashboardExceptions() {
   return exceptions.slice(0, 6);
 }
 
+// ─── Daily capacity model (Capacity_Reservation__c → HAV_CapacityGridRest) ──
+
+function qs(params) {
+  const parts = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+  return parts.length ? `?${parts.join('&')}` : '';
+}
+
+/** Daily grid for a node ('fleet', 'colo:<id>', 'row:<id>:<row>', 'tower:<id>', 'blade:<id>') with one level of children. */
+export async function getCapacityGrid({ node = 'fleet', start, days = 90 } = {}) {
+  return request(`/capacity-grid${qs({ view: 'grid', node, start, days })}`);
+}
+
+/** Pipeline-informed shortfall per colo. */
+export async function getCapacityShortfall({ start, days = 90 } = {}) {
+  return (await request(`/capacity-grid${qs({ view: 'shortfall', start, days })}`)) || [];
+}
+
+/** Towers that can hold a job (capacity and power gate every day). */
+export async function checkCapacityEligibility({ node = 'fleet', start, end, blades = 1, kw = 0 } = {}) {
+  return (await request(`/capacity-grid${qs({ view: 'eligibility', node, start, end, blades, kw })}`)) || [];
+}
+
+/** Capacity-based chargeback per customer for a period. */
+export async function getCapacityChargeback({ start, end, customer } = {}) {
+  return (await request(`/capacity-grid${qs({ view: 'chargeback', start, end, customer })}`)) || [];
+}
+
+/** Customers known to the capacity model, for the reservation form. */
+export async function getCapacityCustomers() {
+  return (await request(`/capacity-grid${qs({ view: 'customers' })}`)) || [];
+}
+
+/**
+ * Create a Reserved hold on a tower. The server re-checks eligibility and
+ * rejects (409) if capacity or power is short on any day; the rejection
+ * message is thrown as the Error message.
+ */
+export async function reserveCapacity(body) {
+  return request('/capacity-grid', { method: 'POST', body: JSON.stringify(body) });
+}
+
 export default {
   getDashboardSummary,
   getAssets,
@@ -1256,4 +1299,10 @@ export default {
   createAssetRecord,
   convertLoanToSale,
   getDashboardExceptions,
+  getCapacityGrid,
+  getCapacityShortfall,
+  checkCapacityEligibility,
+  getCapacityChargeback,
+  getCapacityCustomers,
+  reserveCapacity,
 };

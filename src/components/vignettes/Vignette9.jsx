@@ -86,9 +86,9 @@ export default function Vignette9() {
               </div>
               <p className="text-th-secondary" style={{ lineHeight: 1.6 }}>
                 Live: EaaS as a lease type, the consumption fields on the asset, capacity and forecast, MRR by
-                lease type, spare counts, and RMA shipping state. Walk the operations side from the{' '}
-                <strong>Loaners</strong> board and the <strong>Capacity Forecast</strong>, then use the prompts
-                below.
+                lease type, spare counts, and RMA shipping state. Walk the operations side on the <strong>Daily Capacity</strong> view (Capacity → Daily Capacity):
+                capacity by day from colo to blade, the expansion forecast, a live reservation gated by capacity and
+                power, and chargeback. Then use the prompts below.
               </p>
             </div>
           ),
@@ -99,6 +99,8 @@ export default function Vignette9() {
         { agent: 'hav', label: '"What’s our revenue by lease type?"', prompt: "What's our revenue by lease type?" },
         { agent: 'hav', label: '"Are we below safety stock on spares anywhere?"', prompt: 'Are we below safety stock on spares anywhere?' },
         { agent: 'hav', label: '"What’s the shipping status of our open RMAs?"', prompt: "What's the shipping status of our open RMAs?" },
+        { agent: 'hav', label: '"Can we run a 2-blade, 40 kW job in Hsinchu for 30 days starting next week?"', prompt: 'Can we run a 2-blade, 40 kW verification job in Hsinchu for 30 days starting next week?' },
+        { agent: 'hav', label: '"What’s the capacity chargeback for TSMC this month?"', prompt: "What's the capacity chargeback for TSMC this month?" },
       ]}
     />
   );

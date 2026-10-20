@@ -28,6 +28,7 @@ const pageTitles = {
   '/workorders/spares': 'Spare Parts Inventory',
   '/capacity/allocations': 'Allocation Timeline',
   '/capacity/forecast': 'Capacity Forecast',
+  '/capacity/daily': 'Daily Capacity & Reservations',
   '/financials/cogs': 'COGS Reconciliation',
   '/capabilities': 'Solution Capabilities',
   '/capabilities/order-close': 'The Order That Almost Didn\'t Close',
