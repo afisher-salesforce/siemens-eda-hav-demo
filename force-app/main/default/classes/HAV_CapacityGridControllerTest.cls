@@ -55,4 +55,25 @@ private class HAV_CapacityGridControllerTest {
         System.assertEquals('Controller Test Customer', holds[0].get('customer'));
         System.assertEquals(1, HAV_CapacityGridController.getHolds('fleet', 30).size());
     }
+
+    @isTest
+    static void testDayDetailAndActions() {
+        Id towerId = byName('Rack R01 — CT1').Id;
+        Map<String, Object> day = (Map<String, Object>) JSON.deserializeUntyped(
+            HAV_CapacityGridController.getDayDetail('tower:' + towerId, String.valueOf(Date.today())));
+        System.assertEquals(1, ((List<Object>) day.get('holds')).size());
+        Id holdId = [SELECT Id FROM Capacity_Reservation__c LIMIT 1].Id;
+        System.assertNotEquals(null, HAV_CapacityGridController.getMoveOptions(holdId));
+        List<Object> elig = (List<Object>) JSON.deserializeUntyped(HAV_CapacityGridController.checkEligibility(
+            'tower:' + towerId, String.valueOf(Date.today().addDays(1)), String.valueOf(Date.today().addDays(5)), 1, 20));
+        System.assertEquals(1, elig.size());
+        Map<String, Object> booked = (Map<String, Object>) JSON.deserializeUntyped(HAV_CapacityGridController.reserve(
+            towerId, null, 'Ctrl booking', String.valueOf(Date.today().addDays(1)), String.valueOf(Date.today().addDays(5)), 1, 20, 100));
+        System.assertEquals(true, booked.get('success'), booked);
+        Map<String, Object> moved = (Map<String, Object>) JSON.deserializeUntyped(HAV_CapacityGridController.moveHold(holdId, towerId));
+        System.assertNotEquals(null, moved.get('message'));
+        Map<String, Object> rel = (Map<String, Object>) JSON.deserializeUntyped(HAV_CapacityGridController.releaseHold(holdId));
+        System.assertEquals(true, rel.get('success'));
+        System.assertEquals(1, HAV_CapacityGridController.getCustomers().size(), 'Controller Test Customer');
+    }
 }

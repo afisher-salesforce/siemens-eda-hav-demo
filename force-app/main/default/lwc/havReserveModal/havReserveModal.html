@@ -1,0 +1,82 @@
+<template>
+    <lightning-modal-header label="Reserve capacity"></lightning-modal-header>
+    <lightning-modal-body>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+            Capacity and power must be free on every day of the window. The server re-checks before saving.
+        </p>
+        <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-combobox label="Customer" options={customerOptions} value={accountId}
+                    data-field="accountId" onchange={handleField}></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2">
+                <lightning-input label="Job / project" value={jobName} data-field="jobName"
+                    onchange={handleField} placeholder="e.g. SoC pre-silicon regression"></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-5">
+                <lightning-input type="number" label="Blades" min="1" value={blades} data-field="blades"
+                    onchange={handleField}></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-5">
+                <lightning-input type="number" label="Power (kW)" min="0" value={kw} data-field="kw"
+                    onchange={handleField}></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-5">
+                <lightning-input type="date" label="Start" value={start} data-field="start"
+                    onchange={handleField}></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-5">
+                <lightning-input type="number" label="Days" min="1" value={days} data-field="days"
+                    onchange={handleField}></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-5">
+                <lightning-input type="number" label="Rate / blade-day" step="0.01" value={dailyRate}
+                    data-field="dailyRate" onchange={handleField}></lightning-input>
+            </div>
+        </div>
+        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-top_small">
+            <span class="slds-text-body_small">{summary}</span>
+            <lightning-button variant="brand" label="Check eligibility" onclick={handleCheck}
+                disabled={checking}></lightning-button>
+        </div>
+        <template lwc:if={message}>
+            <p class={messageClass}>{message}</p>
+        </template>
+        <template lwc:if={hasResults}>
+            <p class="slds-m-top_small"><strong>{eligibleCount}</strong> of {rows.length} tower(s) eligible</p>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_x-small">
+                <thead>
+                    <tr>
+                        <th>Tower</th>
+                        <th>Colo / row</th>
+                        <th>Min free slots</th>
+                        <th>Min free kW</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={rows} for:item="r">
+                        <tr key={r.towerKey}>
+                            <td>{r.towerName}</td>
+                            <td>{r.colo} · {r.row}</td>
+                            <td>{r.minFreeSlots}</td>
+                            <td>{r.freeKw}</td>
+                            <td class={r.statusClass}>{r.status}</td>
+                            <td>
+                                <lightning-button label="Reserve here" data-key={r.towerKey}
+                                    onclick={handleReserve} disabled={r.notEligible}></lightning-button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template lwc:if={checking}>
+            <lightning-spinner alternative-text="Checking" size="small"></lightning-spinner>
+        </template>
+    </lightning-modal-body>
+    <lightning-modal-footer>
+        <lightning-button label="Close" onclick={handleCancel}></lightning-button>
+    </lightning-modal-footer>
+</template>

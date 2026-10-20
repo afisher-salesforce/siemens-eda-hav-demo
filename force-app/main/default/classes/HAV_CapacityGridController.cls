@@ -79,4 +79,48 @@ public with sharing class HAV_CapacityGridController {
         }
         return out;
     }
+
+    // ── P0 interactivity: day detail and actions (same rules as REST / React) ──
+
+    static Date toDate(String v, Date fallback) {
+        return String.isNotBlank(v) ? Date.valueOf(v) : fallback;
+    }
+
+    @AuraEnabled
+    public static String getDayDetail(String nodeKey, String day) {
+        return JSON.serialize(HAV_CapacityGridService.dayDetail(nodeKey, toDate(day, Date.today())));
+    }
+
+    @AuraEnabled
+    public static String getMoveOptions(Id holdId) {
+        return JSON.serialize(HAV_CapacityGridService.moveOptions(holdId));
+    }
+
+    @AuraEnabled
+    public static String moveHold(Id holdId, Id towerId) {
+        return JSON.serialize(HAV_CapacityGridService.moveHold(holdId, towerId));
+    }
+
+    @AuraEnabled
+    public static String releaseHold(Id holdId) {
+        return JSON.serialize(HAV_CapacityGridService.releaseHold(holdId));
+    }
+
+    @AuraEnabled
+    public static String checkEligibility(String nodeKey, String startDate, String endDate, Integer blades, Decimal kw) {
+        return JSON.serialize(HAV_CapacityGridService.checkEligibility(
+            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', toDate(startDate, Date.today()), toDate(endDate, null), blades, kw));
+    }
+
+    @AuraEnabled
+    public static String reserve(Id towerId, Id accountId, String jobName, String startDate, String endDate,
+                                 Integer blades, Decimal kw, Decimal dailyRate) {
+        return JSON.serialize(HAV_CapacityGridService.reserve(towerId, accountId, null, jobName,
+            toDate(startDate, null), toDate(endDate, null), blades, kw, dailyRate));
+    }
+
+    @AuraEnabled
+    public static List<Map<String, String>> getCustomers() {
+        return HAV_CapacityGridRest.customers();
+    }
 }

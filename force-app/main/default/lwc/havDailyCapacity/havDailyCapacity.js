@@ -1,4 +1,12 @@
 import { LightningElement, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import LightningConfirm from 'lightning/confirm';
+import HavReserveModal from 'c/havReserveModal';
+import getDayDetail from '@salesforce/apex/HAV_CapacityGridController.getDayDetail';
+import getMoveOptions from '@salesforce/apex/HAV_CapacityGridController.getMoveOptions';
+import moveHold from '@salesforce/apex/HAV_CapacityGridController.moveHold';
+import releaseHold from '@salesforce/apex/HAV_CapacityGridController.releaseHold';
 import getGrid from '@salesforce/apex/HAV_CapacityGridController.getGrid';
 import getShortfall from '@salesforce/apex/HAV_CapacityGridController.getShortfall';
 import nodeForRecord from '@salesforce/apex/HAV_CapacityGridController.nodeForRecord';
@@ -91,13 +99,35 @@ function cellTitle(label, level, c) {
     return lines.join('\n');
 }
 
+const DETAIL_COLUMNS = [
+    { label: 'Hold', fieldName: 'name' },
+    { label: 'Status', fieldName: 'status' },
+    { label: 'Customer', fieldName: 'customer' },
+    { label: 'Job / project', fieldName: 'job' },
+    { label: 'Tower', fieldName: 'tower' },
+    { label: 'Blades', fieldName: 'blades', type: 'number', initialWidth: 80 },
+    { label: 'kW', fieldName: 'kw', type: 'number', initialWidth: 80 },
+    { label: 'Start', fieldName: 'startDate', type: 'date-local' },
+    { label: 'End', fieldName: 'endDate', type: 'date-local' },
+    { type: 'action', typeAttributes: { rowActions: getRowActions } }
+];
+
+/** Row actions per hold: Move and Release only for holds that consume capacity. */
+function getRowActions(row, doneCallback) {
+    const actions = [];
+    if (row.canMove) actions.push({ label: 'Move to another tower…', name: 'move', iconName: 'utility:move' });
+    if (row.canRelease) actions.push({ label: 'Release', name: 'release', iconName: 'utility:close' });
+    actions.push({ label: 'Open record', name: 'open', iconName: 'utility:open' });
+    doneCallback(actions);
+}
+
 function errorMessage(e) {
     if (!e) return 'Unknown error';
     if (e.body && e.body.message) return e.body.message;
     return e.message || String(e);
 }
 
-export default class HavDailyCapacity extends LightningElement {
+export default class HavDailyCapacity extends NavigationMixin(LightningElement) {
     /** Asset record page: start at that tower / colo. */
     @api recordId;
     /** App Builder property: default window in days. */
@@ -115,6 +145,17 @@ export default class HavDailyCapacity extends LightningElement {
     loading = true;
     error;
     holdColumns = HOLD_COLUMNS;
+    detailColumns = DETAIL_COLUMNS;
+
+    // Day detail (click a cell)
+    selectedNode;
+    selectedDay;
+    detail;
+    detailLoading = false;
+    moveFor;
+    moveOptions = [];
+    moveLoading = false;
+    busy = false;
 
     connectedCallback() {
         this.windowDays = Number(this.days) || 90;
@@ -189,8 +230,13 @@ export default class HavDailyCapacity extends LightningElement {
                 conflict: `conflict ${r.conflictDays}d`,
                 cells: (r.days || []).map((c) => ({
                     key: c.day,
+                    day: c.day,
                     style: cellStyle(r.level, c),
-                    title: cellTitle(r.label, r.level, c)
+                    title: cellTitle(r.label, r.level, c),
+                    cls:
+                        'hm-cell hm-click' +
+                        (c.day === this.selectedDay ? ' hm-col-selected' : '') +
+                        (c.day === this.selectedDay && r.key === this.selectedNode ? ' hm-cell-selected' : '')
                 }))
             };
         });
@@ -286,6 +332,10 @@ export default class HavDailyCapacity extends LightningElement {
     // ── handlers ────────────────────────────────────────────────────────
     handleDrill(event) {
         const key = event.currentTarget.dataset.key;
+        this.detail = undefined;
+        this.selectedNode = undefined;
+        this.selectedDay = undefined;
+        this.moveFor = undefined;
         const row = this.rows.find((r) => r.nodeKey === key && r.drillable);
         if (!row) return;
         this.trail = [...this.trail, { key: row.nodeKey, label: row.rawLabel, level: row.level }];
@@ -294,6 +344,10 @@ export default class HavDailyCapacity extends LightningElement {
 
     handleCrumb(event) {
         const i = Number(event.currentTarget.dataset.index);
+        this.detail = undefined;
+        this.selectedNode = undefined;
+        this.selectedDay = undefined;
+        this.moveFor = undefined;
         if (i === this.trail.length - 1) return;
         this.trail = this.trail.slice(0, i + 1);
         this.load();
@@ -305,6 +359,168 @@ export default class HavDailyCapacity extends LightningElement {
     }
 
     handleRefresh() {
-        this.load();
+        this.refreshAll();
+    }
+
+    async refreshAll() {
+        await this.load();
+        if (this.selectedDay) await this.loadDetail();
+    }
+
+    // ── day detail ──────────────────────────────────────────────────────
+    handleCellClick(event) {
+        const { node, day } = event.currentTarget.dataset;
+        this.selectedNode = node;
+        this.selectedDay = day;
+        this.moveFor = undefined;
+        this.buildRows();
+        this.loadDetail();
+    }
+
+    handleCloseDetail() {
+        this.selectedNode = undefined;
+        this.selectedDay = undefined;
+        this.detail = undefined;
+        this.moveFor = undefined;
+        this.buildRows();
+    }
+
+    async loadDetail() {
+        this.detailLoading = true;
+        try {
+            const d = JSON.parse(await getDayDetail({ nodeKey: this.selectedNode, day: this.selectedDay }));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const c = d.cell || {};
+            this.detail = {
+                title: `${d.label} — ${parseDay(d.day).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}`,
+                level: d.level,
+                stats: [
+                    { key: 'slots', label: 'Slots', value: c.total },
+                    { key: 'use', label: 'In use', value: c.allocated },
+                    { key: 'res', label: 'Reserved', value: c.reserved },
+                    { key: 'free', label: 'Free', value: c.available, cls: c.available <= 0 ? 'hm-stat-bad' : '' },
+                    {
+                        key: 'pipe',
+                        label: 'Pipeline',
+                        value: c.pipeline,
+                        cls: c.available - c.pipeline < 0 ? 'hm-stat-short' : ''
+                    },
+                    {
+                        key: 'pwr',
+                        label: 'Power',
+                        value: c.powerCap ? `${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW` : '--',
+                        cls: c.powerConflict ? 'hm-stat-bad' : ''
+                    }
+                ].map((x) => ({ cls: '', ...x, cls2: `hm-stat ${x.cls || ''}` })),
+                conflicts: (d.conflicts || []).map((x) => ({ key: x.towerKey, text: x.summary })),
+                holds: (d.holds || []).map((h) => ({
+                    ...h,
+                    canMove: h.holdsCapacity && parseDay(h.endDate) >= today,
+                    canRelease: h.status !== 'Released'
+                }))
+            };
+        } catch (e) {
+            this.toast('Could not load day detail', errorMessage(e), 'error');
+        } finally {
+            this.detailLoading = false;
+        }
+    }
+
+    get hasDetail() {
+        return !!this.detail;
+    }
+    get hasDetailConflicts() {
+        return this.detail && this.detail.conflicts.length > 0;
+    }
+    get hasDetailHolds() {
+        return this.detail && this.detail.holds.length > 0;
+    }
+    get hasMoveOptions() {
+        return this.moveOptions.length > 0;
+    }
+    get moveTitle() {
+        const h = this.moveFor;
+        return h ? `Move ${h.name} (${h.customer || 'no customer'}, ${h.blades} blade(s), ${h.kw || 0} kW) from ${h.tower}` : '';
+    }
+
+    async handleRowAction(event) {
+        const action = event.detail.action.name;
+        const row = event.detail.row;
+        if (action === 'open') {
+            this[NavigationMixin.Navigate]({
+                type: 'standard__recordPage',
+                attributes: { recordId: row.id, objectApiName: 'Capacity_Reservation__c', actionName: 'view' }
+            });
+        } else if (action === 'move') {
+            this.moveFor = row;
+            this.moveLoading = true;
+            this.moveOptions = [];
+            try {
+                const opts = JSON.parse(await getMoveOptions({ holdId: row.id }));
+                this.moveOptions = opts.map((o) => ({
+                    key: o.towerKey,
+                    towerId: o.towerKey.split(':')[1],
+                    label: `${o.towerName} · ${o.colo} · ${o.row}`,
+                    detail: `at least ${o.minFreeSlots} slot(s) and ${Number(o.minFreePowerKw).toFixed(1)} kW free for the rest of the hold`
+                }));
+            } catch (e) {
+                this.toast('Could not load move options', errorMessage(e), 'error');
+            } finally {
+                this.moveLoading = false;
+            }
+        } else if (action === 'release') {
+            const ok = await LightningConfirm.open({
+                message: `Release ${row.name} (${row.customer || 'no customer'}, ${row.blades} blade(s) on ${row.tower})? It stops holding capacity and is no longer charged.`,
+                label: 'Release hold',
+                theme: 'warning'
+            });
+            if (!ok) return;
+            await this.runAction(() => releaseHold({ holdId: row.id }));
+        }
+    }
+
+    async handleMoveHere(event) {
+        const towerId = event.currentTarget.dataset.tower;
+        const holdId = this.moveFor.id;
+        await this.runAction(() => moveHold({ holdId, towerId }));
+        this.moveFor = undefined;
+    }
+
+    handleCancelMove() {
+        this.moveFor = undefined;
+    }
+
+    async runAction(fn) {
+        this.busy = true;
+        try {
+            const res = JSON.parse(await fn());
+            this.toast(res.success ? 'Done' : 'Not done', res.message, res.success ? 'success' : 'warning');
+            if (res.success) await this.refreshAll();
+        } catch (e) {
+            this.toast('Action failed', errorMessage(e), 'error');
+        } finally {
+            this.busy = false;
+        }
+    }
+
+    // ── reserve ─────────────────────────────────────────────────────────
+    async handleReserve(event) {
+        const fromDay = event.currentTarget.dataset.fromday === 'true';
+        const useSelected = fromDay && this.selectedNode && !this.selectedNode.startsWith('blade:');
+        const result = await HavReserveModal.open({
+            size: 'large',
+            nodeKey: useSelected ? this.selectedNode : this.current.key,
+            nodeLabel: useSelected && this.detail ? this.detail.title.split(' — ')[0] : this.current.label,
+            startDate: fromDay ? this.selectedDay : undefined
+        });
+        if (result && result.success) {
+            this.toast('Reserved', result.message, 'success');
+            await this.refreshAll();
+        }
+    }
+
+    toast(title, message, variant) {
+        this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
 }

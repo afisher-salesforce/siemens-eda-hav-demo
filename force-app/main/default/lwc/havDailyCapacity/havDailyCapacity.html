@@ -11,6 +11,14 @@
                     class="slds-m-left_xx-small"
                 ></lightning-button>
             </template>
+            <lightning-button
+                label="New reservation"
+                icon-name="utility:add"
+                variant="brand"
+                data-fromday="false"
+                onclick={handleReserve}
+                class="slds-m-left_small"
+            ></lightning-button>
             <lightning-button-icon
                 icon-name="utility:refresh"
                 alternative-text="Refresh"
@@ -91,7 +99,8 @@
                                     <span class="slds-truncate">{r.label}</span>
                                 </div>
                                 <template for:each={r.cells} for:item="c">
-                                    <div key={c.key} class="hm-cell" style={c.style} title={c.title}></div>
+                                    <div key={c.key} class={c.cls} style={c.style} title={c.title}
+                                        data-node={r.nodeKey} data-day={c.day} onclick={handleCellClick}></div>
                                 </template>
                                 <div class="hm-badges">
                                     <template lwc:if={r.showBadge}>
@@ -128,8 +137,80 @@
                     <span><i style="background-color:#ef4444"></i>Tower conflict</span>
                     <span><i class="hm-legend-conflict"></i>Conflict in a tower below</span>
                     <span><i class="hm-legend-short"></i>Short vs pipeline</span>
-                    <span class="slds-text-color_weak">Hover a cell for that day. Click a row to drill down.</span>
+                    <span class="slds-text-color_weak">Hover a cell for that day; click a cell for its detail and actions. Click a row name to drill down.</span>
                 </div>
+
+
+                <!-- Day detail: click any cell -->
+                <template lwc:if={hasDetail}>
+                    <div class="hm-detail slds-m-top_medium">
+                        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+                            <div class="hm-detail-title">
+                                <lightning-icon icon-name="utility:event" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                {detail.title}
+                            </div>
+                            <div>
+                                <lightning-button label="Reserve capacity here" icon-name="utility:add" data-fromday="true"
+                                    onclick={handleReserve} disabled={busy}></lightning-button>
+                                <lightning-button-icon icon-name="utility:close" alternative-text="Close day detail"
+                                    onclick={handleCloseDetail} class="slds-m-left_x-small"></lightning-button-icon>
+                            </div>
+                        </div>
+                        <div class="hm-stats slds-m-bottom_small">
+                            <template for:each={detail.stats} for:item="st">
+                                <div key={st.key} class={st.cls2}>
+                                    <div class="hm-metric-label">{st.label}</div>
+                                    <div class="hm-stat-value">{st.value}</div>
+                                </div>
+                            </template>
+                        </div>
+                        <template lwc:if={hasDetailConflicts}>
+                            <div class="hm-conflicts slds-m-bottom_small">
+                                <div class="hm-banner-title">Conflicts this day</div>
+                                <template for:each={detail.conflicts} for:item="cf">
+                                    <p key={cf.key}>{cf.text}</p>
+                                </template>
+                                <p class="slds-text-body_small slds-text-color_weak">Use a hold's row menu to move it to a tower with room, or release it.</p>
+                            </div>
+                        </template>
+                        <template lwc:if={hasDetailHolds}>
+                            <lightning-datatable key-field="id" data={detail.holds} columns={detailColumns}
+                                hide-checkbox-column onrowaction={handleRowAction}></lightning-datatable>
+                        </template>
+                        <template lwc:else>
+                            <p class="slds-text-color_weak">No holds on this day.</p>
+                        </template>
+                        <template lwc:if={moveFor}>
+                            <div class="hm-move slds-m-top_small">
+                                <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                                    <strong>{moveTitle}</strong>
+                                    <lightning-button variant="base" label="Cancel" onclick={handleCancelMove}></lightning-button>
+                                </div>
+                                <template lwc:if={moveLoading}>
+                                    <p class="slds-text-color_weak">Checking every tower for the rest of this hold…</p>
+                                </template>
+                                <template lwc:elseif={hasMoveOptions}>
+                                    <template for:each={moveOptions} for:item="o">
+                                        <div key={o.key} class="hm-move-option">
+                                            <div>
+                                                <div>{o.label}</div>
+                                                <div class="slds-text-body_small slds-text-color_weak">{o.detail}</div>
+                                            </div>
+                                            <lightning-button label="Move here" variant="brand" data-tower={o.towerId}
+                                                onclick={handleMoveHere} disabled={busy}></lightning-button>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template lwc:else>
+                                    <p class="slds-text-color_error">No other tower can hold this for the rest of its window. Release it, shorten it, or add capacity.</p>
+                                </template>
+                            </div>
+                        </template>
+                        <template lwc:if={detailLoading}>
+                            <lightning-spinner alternative-text="Loading day" size="small"></lightning-spinner>
+                        </template>
+                    </div>
+                </template>
 
                 <!-- Holds on this row / tower -->
                 <template lwc:if={showHoldsSection}>

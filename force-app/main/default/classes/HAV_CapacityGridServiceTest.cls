@@ -165,4 +165,105 @@ private class HAV_CapacityGridServiceTest {
         System.assertEquals(1, [SELECT COUNT() FROM Capacity_Reservation__c WHERE Job_Name__c = 'REST job' AND Account__r.Name = 'Grid Test Customer'],
             'Booked to the customer resolved by name');
     }
+
+    /** Adds a hold that overbooks T1 (5 of 4 slots) and pushes it over power (70 of 60 kW) on days +40..+50. */
+    static Capacity_Reservation__c addConflict() {
+        Capacity_Reservation__c c = new Capacity_Reservation__c(Asset__c = towerId('RACK-TC1-R01'),
+            Status__c = 'Reserved', Start_Date__c = Date.today().addDays(40), End_Date__c = Date.today().addDays(50),
+            Blade_Count__c = 1, Power_kW__c = 10, Job_Name__c = 'Overflow');
+        insert c;
+        return c;
+    }
+
+    @isTest
+    static void testDayDetailPinpointsConflict() {
+        addConflict();
+        Date d = Date.today().addDays(45);
+        HAV_CapacityGridService.DayDetail tower = HAV_CapacityGridService.dayDetail('tower:' + towerId('RACK-TC1-R01'), d);
+        System.assertEquals(1, tower.conflicts.size());
+        System.assertEquals(1, tower.conflicts[0].overSlots);
+        System.assertEquals(10, tower.conflicts[0].overKw);
+        System.assert(tower.conflicts[0].summary.contains('5 of 4 slots held (1 over)'), tower.conflicts[0].summary);
+        System.assertEquals(4, tower.holds.size(), 'B1, B2, Expansion, Overflow (pipeline is on T2)');
+        HAV_CapacityGridService.DayDetail fleet = HAV_CapacityGridService.dayDetail('fleet', d);
+        System.assertEquals(1, fleet.conflicts.size());
+        System.assertEquals(5, fleet.holds.size(), 'Fleet includes the T2 pipeline hold');
+        Boolean sawPipeline = false;
+        for (HAV_CapacityGridService.DayHold h : fleet.holds) {
+            if (h.status == 'Pipeline') { sawPipeline = true; System.assert(!h.holdsCapacity); }
+        }
+        System.assert(sawPipeline);
+        HAV_CapacityGridService.DayDetail blade = HAV_CapacityGridService.dayDetail(
+            'blade:' + [SELECT Id FROM Asset WHERE Name = 'VS-TC1-001'].Id, d);
+        System.assertEquals('blade', blade.level);
+    }
+
+    @isTest
+    static void testEligibilityIgnoresTheHoldBeingMoved() {
+        Id expansion = [SELECT Id FROM Capacity_Reservation__c WHERE Job_Name__c = 'Expansion'].Id;
+        Id t1 = towerId('RACK-TC1-R01');
+        Date s = Date.today().addDays(30);
+        Date e = Date.today().addDays(60);
+        System.assert(!HAV_CapacityGridService.checkEligibility('tower:' + t1, s, e, 2, 20)[0].eligible, 'T1 is full with the hold');
+        System.assert(HAV_CapacityGridService.checkEligibility('tower:' + t1, s, e, 2, 20, expansion)[0].eligible, 'Ignoring itself, it fits');
+    }
+
+    @isTest
+    static void testMoveResolvesConflictAndReleaseFrees() {
+        Capacity_Reservation__c c = addConflict();
+        Id t1 = towerId('RACK-TC1-R01');
+        Id t2 = towerId('RACK-TC1-R02');
+        List<HAV_CapacityGridService.Eligibility> opts = HAV_CapacityGridService.moveOptions(c.Id);
+        System.assertEquals(1, opts.size(), 'Only T2; the current tower is excluded');
+        System.assertEquals('tower:' + t2, opts[0].towerKey);
+
+        HAV_CapacityGridService.ReservationResult blocked = HAV_CapacityGridService.moveHold(
+            [SELECT Id FROM Capacity_Reservation__c WHERE Job_Name__c = 'B1 run'].Id, t1);
+        System.assert(blocked.success || blocked.message.startsWith('Not eligible'), blocked.message);
+
+        HAV_CapacityGridService.ReservationResult moved = HAV_CapacityGridService.moveHold(c.Id, t2);
+        System.assert(moved.success, moved.message);
+        System.assertEquals(0, HAV_CapacityGridService.dayDetail('tower:' + t1, Date.today().addDays(45)).conflicts.size(),
+            'Conflict gone after the move');
+
+        HAV_CapacityGridService.ReservationResult rel = HAV_CapacityGridService.releaseHold(c.Id);
+        System.assert(rel.success, rel.message);
+        System.assertEquals('Released', [SELECT Status__c FROM Capacity_Reservation__c WHERE Id = :c.Id].Status__c);
+        System.assertEquals(4, HAV_CapacityGridService.dayDetail('fleet', Date.today().addDays(45)).holds.size(),
+            'Released hold no longer listed');
+        System.assert(!HAV_CapacityGridService.releaseHold(null).success);
+        System.assert(!HAV_CapacityGridService.moveHold(null, t2).success);
+    }
+
+    @isTest
+    static void testRestDayMoveRelease() {
+        Capacity_Reservation__c c = addConflict();
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
+        RestContext.request.params.put('view', 'day');
+        RestContext.request.params.put('node', 'tower:' + towerId('RACK-TC1-R01'));
+        RestContext.request.params.put('day', String.valueOf(Date.today().addDays(45)));
+        HAV_CapacityGridRest.doGet();
+        System.assert(RestContext.response.responseBody.toString().contains('1 over'), RestContext.response.responseBody.toString());
+
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
+        RestContext.request.params.put('view', 'moveOptions');
+        RestContext.request.params.put('hold', c.Id);
+        HAV_CapacityGridRest.doGet();
+        System.assertEquals(200, RestContext.response.statusCode);
+
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
+        RestContext.request.requestBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{
+            'action' => 'move', 'holdId' => c.Id, 'towerId' => towerId('RACK-TC1-R02') }));
+        HAV_CapacityGridRest.doPost();
+        System.assertEquals(200, RestContext.response.statusCode, RestContext.response.responseBody.toString());
+
+        RestContext.request = new RestRequest();
+        RestContext.response = new RestResponse();
+        RestContext.request.requestBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'action' => 'release', 'holdId' => c.Id }));
+        HAV_CapacityGridRest.doPost();
+        System.assertEquals(200, RestContext.response.statusCode);
+    }
 }

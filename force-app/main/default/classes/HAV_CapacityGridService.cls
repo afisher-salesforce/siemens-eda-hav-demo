@@ -150,6 +150,11 @@ public with sharing class HAV_CapacityGridService {
         public Map<Id, List<String>> bladeState = new Map<Id, List<String>>();
 
         public Engine(Date startDate, Integer numDays) {
+            this(startDate, numDays, null);
+        }
+
+        /** excludeId: a reservation to leave out (used when moving that hold). */
+        public Engine(Date startDate, Integer numDays, Id excludeId) {
             this.topo = HAV_CapacityGridService.loadTopology();
             this.startDate = startDate;
             this.numDays = numDays;
@@ -161,6 +166,7 @@ public with sharing class HAV_CapacityGridService {
                 power.put(tid, HAV_CapacityGridService.zerosD(numDays));
             }
             for (Capacity_Reservation__c r : reservations) {
+                if (excludeId != null && r.Id == excludeId) continue;
                 Id towerId = towerFor(r.Asset__c);
                 if (towerId == null || r.Start_Date__c == null || r.End_Date__c == null) continue;
                 Integer blades = r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 0;
@@ -356,12 +362,18 @@ public with sharing class HAV_CapacityGridService {
      */
     public static List<Eligibility> checkEligibility(String nodeKey, Date startDate, Date endDate,
                                                      Integer bladeCount, Decimal powerKw) {
+        return checkEligibility(nodeKey, startDate, endDate, bladeCount, powerKw, null);
+    }
+
+    /** Same as above, ignoring one existing hold (so a hold being moved doesn't block itself). */
+    public static List<Eligibility> checkEligibility(String nodeKey, Date startDate, Date endDate,
+                                                     Integer bladeCount, Decimal powerKw, Id excludeId) {
         Date s = startDate != null ? startDate : Date.today();
         Date en = endDate != null && endDate >= s ? endDate : s.addDays(DEFAULT_DAYS - 1);
         Integer n = Math.min(s.daysBetween(en) + 1, 366);
         Integer need = bladeCount != null && bladeCount > 0 ? bladeCount : 1;
         Decimal kw = powerKw != null ? powerKw : 0;
-        Engine e = new Engine(s, n);
+        Engine e = new Engine(s, n, excludeId);
         List<Eligibility> eligible = new List<Eligibility>();
         List<Eligibility> blocked = new List<Eligibility>();
         for (Tower tw : e.towersUnder(String.isNotBlank(nodeKey) ? nodeKey : 'fleet')) {
@@ -531,5 +543,182 @@ public with sharing class HAV_CapacityGridService {
             }
         }
         return lines;
+    }
+
+    // ── Day detail and hold actions (P0 interactivity) ──────────────────────
+
+    public class DayHold {
+        public Id id;
+        public String name;
+        public String status;
+        public String customer;
+        public String opportunity;
+        public String job;
+        public String node;
+        public String tower;
+        public Id towerId;
+        public Integer blades;
+        public Decimal kw;
+        public Date startDate;
+        public Date endDate;
+        public Boolean holdsCapacity;
+    }
+
+    public class TowerConflict {
+        public String towerKey;
+        public String tower;
+        public Integer slots;
+        public Integer held;
+        public Integer overSlots;
+        public Decimal powerCap;
+        public Decimal powerHeld;
+        public Decimal overKw;
+        public String summary;
+    }
+
+    public class DayDetail {
+        public String nodeKey;
+        public String label;
+        public String level;
+        public Date day;
+        public DayCell cell;
+        public List<TowerConflict> conflicts = new List<TowerConflict>();
+        public List<DayHold> holds = new List<DayHold>();
+    }
+
+    /** Everything about one node on one day: totals, which towers conflict and by how much, and every hold. */
+    public static DayDetail dayDetail(String nodeKey, Date day) {
+        String key = String.isNotBlank(nodeKey) ? nodeKey : 'fleet';
+        Date d = day != null ? day : Date.today();
+        Engine e = new Engine(d, 1);
+        NodeGrid g = e.build(key, false);
+        DayDetail out = new DayDetail();
+        out.nodeKey = key;
+        out.label = g.label;
+        out.level = g.level;
+        out.day = d;
+        out.cell = g.days.isEmpty() ? null : g.days[0];
+
+        Set<Id> towerIds = new Set<Id>();
+        Id bladeId = key.startsWith('blade:') ? Id.valueOf(key.substringAfter(':')) : null;
+        if (bladeId != null) {
+            Id t = e.topo.bladeToTower.get(bladeId);
+            if (t != null) towerIds.add(t);
+        } else {
+            for (Tower tw : e.towersUnder(key)) towerIds.add(tw.nodeId);
+        }
+        for (Id tid : towerIds) {
+            Tower tw = e.topo.towers.get(tid);
+            Integer held = e.alloc.get(tid)[0] + e.resv.get(tid)[0];
+            Decimal kw = e.power.get(tid)[0];
+            Boolean over = held > tw.slots;
+            Boolean hot = tw.powerCap > 0 && kw > tw.powerCap;
+            if (!over && !hot) continue;
+            TowerConflict c = new TowerConflict();
+            c.towerKey = 'tower:' + tid;
+            c.tower = tw.name;
+            c.slots = tw.slots;
+            c.held = held;
+            c.overSlots = Math.max(0, held - tw.slots);
+            c.powerCap = tw.powerCap;
+            c.powerHeld = kw;
+            c.overKw = hot ? (kw - tw.powerCap) : 0;
+            List<String> parts = new List<String>();
+            if (over) parts.add(held + ' of ' + tw.slots + ' slots held (' + c.overSlots + ' over)');
+            if (hot) parts.add(kw.setScale(1) + ' of ' + tw.powerCap.setScale(0) + ' kW (' + c.overKw.setScale(1) + ' kW over)');
+            c.summary = tw.name + ': ' + String.join(parts, '; ');
+            out.conflicts.add(c);
+        }
+        for (Capacity_Reservation__c r : e.reservations) {
+            Id tid = e.towerFor(r.Asset__c);
+            if (tid == null || !towerIds.contains(tid)) continue;
+            if (bladeId != null && r.Asset__c != bladeId && r.Asset__c != tid) continue;
+            DayHold h = new DayHold();
+            h.id = r.Id;
+            h.name = r.Name;
+            h.status = r.Status__c;
+            h.customer = r.Account__r != null ? r.Account__r.Name : null;
+            h.opportunity = r.Opportunity__r != null ? r.Opportunity__r.Name : null;
+            h.job = r.Job_Name__c;
+            h.node = r.Asset__r != null ? r.Asset__r.Name : null;
+            h.towerId = tid;
+            h.tower = e.topo.towers.get(tid).name;
+            h.blades = r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 0;
+            h.kw = r.Power_kW__c;
+            h.startDate = r.Start_Date__c;
+            h.endDate = r.End_Date__c;
+            h.holdsCapacity = HOLDING.contains(r.Status__c);
+            out.holds.add(h);
+        }
+        return out;
+    }
+
+    static Capacity_Reservation__c loadHold(Id holdId) {
+        List<Capacity_Reservation__c> rows = [
+            SELECT Id, Name, Status__c, Asset__c, Start_Date__c, End_Date__c, Blade_Count__c, Power_kW__c
+            FROM Capacity_Reservation__c WHERE Id = :holdId LIMIT 1
+        ];
+        return rows.isEmpty() ? null : rows[0];
+    }
+
+    /** The window a move has to fit: from today (or the hold's start, if later) to its end. */
+    static Date moveStart(Capacity_Reservation__c r) {
+        return r.Start_Date__c != null && r.Start_Date__c > Date.today() ? r.Start_Date__c : Date.today();
+    }
+
+    /** Towers this hold could move to (eligible for its blades and power for the rest of its window), excluding its current tower. */
+    public static List<Eligibility> moveOptions(Id holdId) {
+        Capacity_Reservation__c r = loadHold(holdId);
+        if (r == null || r.End_Date__c == null || r.End_Date__c < Date.today()) return new List<Eligibility>();
+        Topology topo = loadTopology();
+        Id currentTower = topo.towers.containsKey(r.Asset__c) ? r.Asset__c : topo.bladeToTower.get(r.Asset__c);
+        List<Eligibility> out = new List<Eligibility>();
+        for (Eligibility el : checkEligibility('fleet', moveStart(r), r.End_Date__c,
+                r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id)) {
+            if (el.eligible && el.towerKey != 'tower:' + currentTower) out.add(el);
+        }
+        return out;
+    }
+
+    /** Move a hold to another tower, gated by eligibility (ignoring the hold itself). */
+    public static ReservationResult moveHold(Id holdId, Id towerId) {
+        ReservationResult res = new ReservationResult();
+        res.success = false;
+        Capacity_Reservation__c r = loadHold(holdId);
+        if (r == null || towerId == null) {
+            res.message = 'Hold or target tower not found.';
+            return res;
+        }
+        List<Eligibility> check = checkEligibility('tower:' + towerId, moveStart(r), r.End_Date__c,
+            r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id);
+        if (check.isEmpty() || !check[0].eligible) {
+            res.message = check.isEmpty() ? 'Not a capacity tower.'
+                : 'Not eligible: ' + check[0].towerName + ' is blocked from '
+                    + check[0].firstBlockedDate.format() + ' by ' + check[0].blockedReason + '.';
+            return res;
+        }
+        r.Asset__c = towerId;
+        update r;
+        res.success = true;
+        res.reservationId = r.Id;
+        res.message = 'Moved ' + r.Name + ' to ' + check[0].towerName + '.';
+        return res;
+    }
+
+    /** Release a hold (it stops consuming capacity and is no longer charged). */
+    public static ReservationResult releaseHold(Id holdId) {
+        ReservationResult res = new ReservationResult();
+        Capacity_Reservation__c r = loadHold(holdId);
+        if (r == null) {
+            res.success = false;
+            res.message = 'Hold not found.';
+            return res;
+        }
+        r.Status__c = 'Released';
+        update r;
+        res.success = true;
+        res.reservationId = r.Id;
+        res.message = 'Released ' + r.Name + '.';
+        return res;
     }
 }

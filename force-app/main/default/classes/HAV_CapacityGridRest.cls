@@ -7,7 +7,9 @@
  *   view=eligibility &node=&start=&end=&blades=&kw=           towers that can hold a job
  *   view=chargeback  &start=&end=&customer=                   blade-day chargeback per customer
  *   view=customers                                            customers to book capacity for
- * POST /services/apexrest/hav/capacity-grid
+ *   view=day         &node=&day=YYYY-MM-DD                     one node on one day: totals, conflicts, holds
+ *   view=moveOptions &hold=<reservationId>                     towers a hold can move to
+ * POST /services/apexrest/hav/capacity-grid   (action = reserve | move | release)
  *   { towerId, accountId | accountName, opportunityId, jobName, startDate, endDate, bladeCount, powerKw, dailyRate }
  *   creates a Reserved hold, rejected if capacity or power is short on any day.
  */
@@ -29,6 +31,10 @@ global with sharing class HAV_CapacityGridRest {
             } else if (view == 'eligibility') {
                 body = HAV_CapacityGridService.checkEligibility(param(req, 'node', 'fleet'), startDate,
                     dateParam(req, 'end', null), intParam(req, 'blades', 1), decParam(req, 'kw', 0));
+            } else if (view == 'day') {
+                body = HAV_CapacityGridService.dayDetail(param(req, 'node', 'fleet'), dateParam(req, 'day', Date.today()));
+            } else if (view == 'moveOptions') {
+                body = HAV_CapacityGridService.moveOptions(Id.valueOf(param(req, 'hold', null)));
             } else if (view == 'customers') {
                 body = customers();
             } else if (view == 'chargeback') {
@@ -47,6 +53,9 @@ global with sharing class HAV_CapacityGridRest {
     }
 
     global class ReserveRequest {
+        /** 'reserve' (default), 'move' or 'release'. */
+        public String action;
+        public Id holdId;
         public Id towerId;
         public Id accountId;
         public String accountName;
@@ -66,6 +75,14 @@ global with sharing class HAV_CapacityGridRest {
         try {
             ReserveRequest r = (ReserveRequest) JSON.deserialize(
                 RestContext.request.requestBody.toString(), ReserveRequest.class);
+            if (r.action == 'move' || r.action == 'release') {
+                HAV_CapacityGridService.ReservationResult act = r.action == 'move'
+                    ? HAV_CapacityGridService.moveHold(r.holdId, r.towerId)
+                    : HAV_CapacityGridService.releaseHold(r.holdId);
+                res.statusCode = act.success ? 200 : 409;
+                res.responseBody = Blob.valueOf(JSON.serialize(act));
+                return;
+            }
             Id accountId = r.accountId;
             if (accountId == null && String.isNotBlank(r.accountName)) {
                 String accountName = r.accountName.trim();
@@ -85,7 +102,7 @@ global with sharing class HAV_CapacityGridRest {
     }
 
     /** Customers that hold or forecast HAV capacity, plus owners of installed blades. */
-    static List<Map<String, String>> customers() {
+    public static List<Map<String, String>> customers() {
         Map<String, Id> byName = new Map<String, Id>();
         for (Capacity_Reservation__c r : [
             SELECT Account__c, Account__r.Name FROM Capacity_Reservation__c
