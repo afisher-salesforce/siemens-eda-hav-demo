@@ -1245,8 +1245,8 @@ function qs(params) {
 }
 
 /** Daily grid for a node ('fleet', 'colo:<id>', 'row:<id>:<row>', 'tower:<id>', 'blade:<id>') with one level of children. */
-export async function getCapacityGrid({ node = 'fleet', start, days = 90 } = {}) {
-  return request(`/capacity-grid${qs({ view: 'grid', node, start, days })}`);
+export async function getCapacityGrid({ node = 'fleet', start, days = 90, focus } = {}) {
+  return request(`/capacity-grid${qs({ view: 'grid', node, start, days, focus })}`);
 }
 
 /** Pipeline-informed shortfall per colo. */
