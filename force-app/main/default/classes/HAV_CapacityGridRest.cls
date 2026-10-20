@@ -2,14 +2,17 @@
  * REST surface for the daily capacity model (React app + MCP).
  *
  * GET /services/apexrest/hav/capacity-grid?view=...
- *   view=grid        &node=<key>&start=YYYY-MM-DD&days=90[&focus=<accountId>]  daily grid + one level of children
+ *   view=grid        &node=<key>&start=YYYY-MM-DD&days=90[&focus=<accountId>][&region=<HAV region>]  daily grid + one level of children
  *   view=shortfall   &start=&days=                            pipeline-informed shortfall per colo
- *   view=eligibility &node=&start=&end=&blades=&kw=           towers that can hold a job
+ *   view=eligibility &node=&start=&end=&blades=&kw=[&account=][&region=]  towers that can hold a job (policy applied for account)
+ *   view=regions                                              HAV regions
+ *   view=policy      &account=<accountId>                      the customer's placement rule and its source
  *   view=chargeback  &start=&end=&customer=                   blade-day chargeback per customer
  *   view=customers                                            customers to book capacity for
  *   view=day         &node=&day=YYYY-MM-DD                     one node on one day: totals, conflicts, holds
- *   view=moveOptions &hold=<reservationId>                     towers a hold can move to
- * POST /services/apexrest/hav/capacity-grid   (action = reserve | move | release)
+ *   view=moveOptions &hold=<reservationId>[&from=YYYY-MM-DD]   towers a hold can move to (from a planned move date)
+ * POST /services/apexrest/hav/capacity-grid   (action = reserve | move | release | planMove)
+ *   planMove: { holdId, towerId, moveDate } for in-use holds; creates a Move work order
  *   { towerId, accountId | accountName, opportunityId, jobName, startDate, endDate, bladeCount, powerKw, dailyRate }
  *   creates a Reserved hold, rejected if capacity or power is short on any day.
  */
@@ -29,12 +32,19 @@ global with sharing class HAV_CapacityGridRest {
             if (view == 'shortfall') {
                 body = HAV_CapacityGridService.shortfallForecast(startDate, days, null);
             } else if (view == 'eligibility') {
+                String acct = param(req, 'account', null);
                 body = HAV_CapacityGridService.checkEligibility(param(req, 'node', 'fleet'), startDate,
-                    dateParam(req, 'end', null), intParam(req, 'blades', 1), decParam(req, 'kw', 0));
+                    dateParam(req, 'end', null), intParam(req, 'blades', 1), decParam(req, 'kw', 0),
+                    null, acct != null ? Id.valueOf(acct) : null, param(req, 'region', null));
             } else if (view == 'day') {
                 body = HAV_CapacityGridService.dayDetail(param(req, 'node', 'fleet'), dateParam(req, 'day', Date.today()));
             } else if (view == 'moveOptions') {
-                body = HAV_CapacityGridService.moveOptions(Id.valueOf(param(req, 'hold', null)));
+                body = HAV_CapacityGridService.moveOptions(Id.valueOf(param(req, 'hold', null)), dateParam(req, 'from', null));
+            } else if (view == 'regions') {
+                body = HAV_CapacityGridService.regions();
+            } else if (view == 'policy') {
+                String acct = param(req, 'account', null);
+                body = HAV_PlacementPolicy.describe(acct != null ? Id.valueOf(acct) : null);
             } else if (view == 'customers') {
                 body = customers();
             } else if (view == 'chargeback') {
@@ -43,7 +53,7 @@ global with sharing class HAV_CapacityGridRest {
             } else {
                 String focus = param(req, 'focus', null);
                 body = HAV_CapacityGridService.getGrid(param(req, 'node', 'fleet'), startDate, days,
-                    focus != null ? Id.valueOf(focus) : null);
+                    focus != null ? Id.valueOf(focus) : null, param(req, 'region', null));
             }
             res.statusCode = 200;
             res.responseBody = Blob.valueOf(JSON.serialize(body));
@@ -68,6 +78,7 @@ global with sharing class HAV_CapacityGridRest {
         public Integer bladeCount;
         public Decimal powerKw;
         public Decimal dailyRate;
+        public Date moveDate;
     }
 
     @HttpPost
@@ -77,6 +88,12 @@ global with sharing class HAV_CapacityGridRest {
         try {
             ReserveRequest r = (ReserveRequest) JSON.deserialize(
                 RestContext.request.requestBody.toString(), ReserveRequest.class);
+            if (r.action == 'planMove') {
+                HAV_CapacityWorkService.WorkResult w = HAV_CapacityWorkService.planMove(r.holdId, r.towerId, r.moveDate);
+                res.statusCode = w.success ? 200 : 409;
+                res.responseBody = Blob.valueOf(JSON.serialize(w));
+                return;
+            }
             if (r.action == 'move' || r.action == 'release') {
                 HAV_CapacityGridService.ReservationResult act = r.action == 'move'
                     ? HAV_CapacityGridService.moveHold(r.holdId, r.towerId)

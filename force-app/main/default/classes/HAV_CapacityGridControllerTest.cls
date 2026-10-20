@@ -27,7 +27,7 @@ private class HAV_CapacityGridControllerTest {
     @isTest
     static void testGridAndShortfallJson() {
         Map<String, Object> grid = (Map<String, Object>) JSON.deserializeUntyped(
-            HAV_CapacityGridController.getGrid('fleet', 30, null));
+            HAV_CapacityGridController.getGrid('fleet', 30, null, null));
         System.assertEquals('fleet', grid.get('key'));
         System.assertEquals(30, ((List<Object>) grid.get('days')).size());
         List<Object> sf = (List<Object>) JSON.deserializeUntyped(HAV_CapacityGridController.getShortfall(30));
@@ -63,9 +63,9 @@ private class HAV_CapacityGridControllerTest {
             HAV_CapacityGridController.getDayDetail('tower:' + towerId, String.valueOf(Date.today())));
         System.assertEquals(1, ((List<Object>) day.get('holds')).size());
         Id holdId = [SELECT Id FROM Capacity_Reservation__c LIMIT 1].Id;
-        System.assertNotEquals(null, HAV_CapacityGridController.getMoveOptions(holdId));
+        System.assertNotEquals(null, HAV_CapacityGridController.getMoveOptions(holdId, null));
         List<Object> elig = (List<Object>) JSON.deserializeUntyped(HAV_CapacityGridController.checkEligibility(
-            'tower:' + towerId, String.valueOf(Date.today().addDays(1)), String.valueOf(Date.today().addDays(5)), 1, 20));
+            'tower:' + towerId, String.valueOf(Date.today().addDays(1)), String.valueOf(Date.today().addDays(5)), 1, 20, null, null));
         System.assertEquals(1, elig.size());
         Map<String, Object> booked = (Map<String, Object>) JSON.deserializeUntyped(HAV_CapacityGridController.reserve(
             towerId, null, 'Ctrl booking', String.valueOf(Date.today().addDays(1)), String.valueOf(Date.today().addDays(5)), 1, 20, 100));
@@ -75,5 +75,9 @@ private class HAV_CapacityGridControllerTest {
         Map<String, Object> rel = (Map<String, Object>) JSON.deserializeUntyped(HAV_CapacityGridController.releaseHold(holdId));
         System.assertEquals(true, rel.get('success'));
         System.assertEquals(1, HAV_CapacityGridController.getCustomers().size(), 'Controller Test Customer');
+        System.assert(HAV_CapacityGridController.getRegions().contains('APAC-Taiwan'));
+        System.assertEquals(false, HAV_CapacityGridController.getPolicy(null).get('restricts'));
+        Id acct = [SELECT Id FROM Account LIMIT 1].Id;
+        System.assertEquals(false, HAV_CapacityGridController.getPolicy(acct).get('restricts'), 'blank residency = any region');
     }
 }

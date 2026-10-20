@@ -219,7 +219,8 @@ private class HAV_CapacityGridServiceTest {
 
         HAV_CapacityGridService.ReservationResult blocked = HAV_CapacityGridService.moveHold(
             [SELECT Id FROM Capacity_Reservation__c WHERE Job_Name__c = 'B1 run'].Id, t1);
-        System.assert(blocked.success || blocked.message.startsWith('Not eligible'), blocked.message);
+        System.assertEquals(false, blocked.success, 'B1 run is Allocated: in-use holds are planned moves, not instant');
+        System.assert(blocked.message.contains('Plan the move'), blocked.message);
 
         HAV_CapacityGridService.ReservationResult moved = HAV_CapacityGridService.moveHold(c.Id, t2);
         System.assert(moved.success, moved.message);

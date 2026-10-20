@@ -1,0 +1,28 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "customerName" : {
+      "title" : "Customer Name",
+      "description" : "Optional customer name, e.g. TSMC",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "endDate" : {
+      "title" : "End Date",
+      "description" : "Optional period end YYYY-MM-DD; blank means end of the start month",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "startDate" : {
+      "title" : "Start Date",
+      "description" : "Optional period start YYYY-MM-DD; blank means first day of this month",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

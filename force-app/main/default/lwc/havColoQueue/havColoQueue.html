@@ -1,0 +1,96 @@
+<template>
+    <lightning-card title={title} icon-name="standard:work_order">
+        <div slot="actions" class="cq-actions">
+            <template lwc:if={showChangeColo}>
+                <lightning-button variant="base" label="Change colo" onclick={handleChangeColo} class="slds-m-right_small"></lightning-button>
+            </template>
+            <template for:each={horizonOptions} for:item="h">
+                <lightning-button key={h.key} label={h.label} variant={h.variant} data-value={h.value}
+                    onclick={handleHorizon} class="slds-m-left_xx-small"></lightning-button>
+            </template>
+            <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" onclick={handleRefresh}
+                class="slds-m-left_x-small"></lightning-button-icon>
+        </div>
+
+        <div class="slds-p-horizontal_medium">
+            <template lwc:if={error}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                    Could not load the colo queue: {error}
+                </div>
+            </template>
+
+            <template lwc:if={needsColo}>
+                <p class="slds-text-color_weak slds-m-bottom_small">Pick a colo to see what its team needs to act on.</p>
+                <lightning-combobox label="Colo" options={colos} onchange={handleColo} placeholder="Select a colo"
+                    class="slds-size_1-of-2"></lightning-combobox>
+            </template>
+
+            <template lwc:if={data}>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                    What this colo's team needs to act on: conflicts to resolve, capacity to provision before it
+                    starts, holds to decommission, and open work orders. Work orders are children of the capacity
+                    hold, which stays the source of truth.
+                    <template lwc:if={data.region}>
+                        <span class="slds-badge cq-region slds-m-left_x-small">{data.region}</span>
+                    </template>
+                </p>
+
+                <div class="cq-stats">
+                    <template for:each={stats} for:item="s">
+                        <div key={s.key} class={s.cls}>
+                            <div class="cq-label">{s.label}</div>
+                            <div class="cq-value">{s.value}</div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="cq-heading">{conflictHeading}</div>
+                <template lwc:if={hasConflicts}>
+                    <template for:each={conflicts} for:item="c">
+                        <div key={c.towerKey} class="cq-conflict">
+                            <a data-id={c.towerId} onclick={handleTower}>{c.summary}</a>
+                            <span class="slds-text-body_small slds-text-color_weak"> · resolve from the HAV Daily Capacity day panel</span>
+                        </div>
+                    </template>
+                </template>
+                <template lwc:else>
+                    <p class="slds-text-color_weak">No conflicts in the next 30 days.</p>
+                </template>
+
+                <div class="cq-heading">{startingHeading}</div>
+                <template lwc:if={hasStarting}>
+                    <lightning-datatable key-field="id" data={starting} columns={startingColumns} hide-checkbox-column
+                        onrowaction={handleStartingAction}></lightning-datatable>
+                </template>
+                <template lwc:else>
+                    <p class="slds-text-color_weak">Nothing starting in this window.</p>
+                </template>
+
+                <div class="cq-heading">{endingHeading}</div>
+                <template lwc:if={hasEnding}>
+                    <lightning-datatable key-field="id" data={ending} columns={endingColumns} hide-checkbox-column
+                        onrowaction={handleEndingAction}></lightning-datatable>
+                </template>
+                <template lwc:else>
+                    <p class="slds-text-color_weak">Nothing ending in this window.</p>
+                </template>
+
+                <div class="cq-heading">{woHeading}</div>
+                <template lwc:if={hasWorkOrders}>
+                    <lightning-datatable key-field="id" data={workOrders} columns={woColumns} hide-checkbox-column
+                        onrowaction={handleWoAction}></lightning-datatable>
+                </template>
+                <template lwc:else>
+                    <p class="slds-text-color_weak">No open capacity work orders.</p>
+                </template>
+            </template>
+
+            <template lwc:if={loading}>
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </template>
+            <template lwc:if={busy}>
+                <lightning-spinner alternative-text="Working" size="small"></lightning-spinner>
+            </template>
+        </div>
+    </lightning-card>
+</template>

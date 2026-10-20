@@ -12,6 +12,9 @@ import getShortfall from '@salesforce/apex/HAV_CapacityGridController.getShortfa
 import nodeForRecord from '@salesforce/apex/HAV_CapacityGridController.nodeForRecord';
 import getHolds from '@salesforce/apex/HAV_CapacityGridController.getHolds';
 import getCustomers from '@salesforce/apex/HAV_CapacityGridController.getCustomers';
+import getRegions from '@salesforce/apex/HAV_CapacityGridController.getRegions';
+import planMove from '@salesforce/apex/HAV_CapacityGridController.planMove';
+import createWorkOrder from '@salesforce/apex/HAV_CapacityGridController.createWorkOrder';
 
 const LEVEL_LABEL = { fleet: 'All colos', colo: 'Colo', row: 'Row', tower: 'Tower', blade: 'Blade' };
 const LEVEL_ICON = {
@@ -134,10 +137,20 @@ const DETAIL_COLUMNS = [
     { type: 'action', typeAttributes: { rowActions: getRowActions } }
 ];
 
-/** Row actions per hold: Move and Release only for holds that consume capacity. */
+/**
+ * Row actions per hold. A Reserved hold is paperwork: move it instantly. An
+ * Allocated (in-use) hold is physical: plan the move, which creates a Move
+ * work order. Provision / decommission work orders for the colo team.
+ */
 function getRowActions(row, doneCallback) {
     const actions = [];
-    if (row.canMove) actions.push({ label: 'Move to another tower…', name: 'move', iconName: 'utility:move' });
+    if (row.canMove && row.status === 'Allocated') {
+        actions.push({ label: 'Plan move (work order)…', name: 'planmove', iconName: 'utility:move' });
+    } else if (row.canMove) {
+        actions.push({ label: 'Move to another tower…', name: 'move', iconName: 'utility:move' });
+    }
+    if (row.canProvision) actions.push({ label: 'Create provisioning work order', name: 'provision', iconName: 'utility:work_order_type' });
+    if (row.canDecommission) actions.push({ label: 'Create decommission work order', name: 'decommission', iconName: 'utility:work_order_type' });
     if (row.canRelease) actions.push({ label: 'Release', name: 'release', iconName: 'utility:close' });
     actions.push({ label: 'Open record', name: 'open', iconName: 'utility:open' });
     doneCallback(actions);
@@ -168,6 +181,10 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     error;
     holdColumns = HOLD_COLUMNS;
 
+    // Region filter (geography / latency)
+    region = '';
+    regionOptions = [{ label: 'All regions', value: '' }];
+
     // Customer focus (filter)
     focusId = '';
     customerOptions = [{ label: 'All customers', value: '' }];
@@ -186,6 +203,11 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     connectedCallback() {
         this.windowDays = Number(this.days) || 90;
         this.init();
+        getRegions()
+            .then((rows) => {
+                this.regionOptions = [{ label: 'All regions', value: '' }, ...rows.map((r) => ({ label: r, value: r }))];
+            })
+            .catch(() => {});
         getCustomers()
             .then((rows) => {
                 this.customerOptions = [{ label: 'All customers', value: '' }, ...rows.map((r) => ({ label: r.name, value: r.id }))];
@@ -197,6 +219,13 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
         if (!this.focusId) return undefined;
         const o = this.customerOptions.find((x) => x.value === this.focusId);
         return o ? o.label : undefined;
+    }
+
+    handleRegion(event) {
+        this.region = event.detail.value || '';
+        this.trail = [{ key: 'fleet', label: 'All colos', level: 'fleet' }];
+        this.handleCloseDetail();
+        this.load();
     }
 
     handleFocus(event) {
@@ -228,7 +257,7 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
         try {
             const node = this.current;
             const [gridJson, shortJson] = await Promise.all([
-                getGrid({ nodeKey: node.key, days: this.windowDays, customerId: this.focusId || null }),
+                getGrid({ nodeKey: node.key, days: this.windowDays, customerId: this.focusId || null, region: this.region || null }),
                 getShortfall({ days: this.windowDays })
             ]);
             this.grid = JSON.parse(gridJson);
@@ -275,6 +304,8 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
                 badgeClass: after >= 0 ? 'slds-badge hm-badge-ok' : 'slds-badge hm-badge-short',
                 showConflict: r.conflictDays > 0,
                 conflict: `conflict ${r.conflictDays}d`,
+                showRegion: !!r.region,
+                regionLabel: r.region,
                 showFocus: focusOn && r.focusDays > 0,
                 focusBadge: r.focusPeak > 0 ? `${focusName} peak ${r.focusPeak}` : `${focusName} pipeline only`,
                 cells: (r.days || []).map((c) => ({
@@ -474,6 +505,8 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
                 holds: (d.holds || []).map((h) => ({
                     ...h,
                     canMove: h.holdsCapacity && parseDay(h.endDate) >= today,
+                    canProvision: h.status === 'Reserved' && parseDay(h.endDate) >= today,
+                    canDecommission: h.status === 'Allocated' && parseDay(h.endDate) >= today,
                     canRelease: h.status !== 'Released'
                 }))
             };
@@ -498,7 +531,57 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     }
     get moveTitle() {
         const h = this.moveFor;
-        return h ? `Move ${h.name} (${h.customer || 'no customer'}, ${h.blades} blade(s), ${h.kw || 0} kW) from ${h.tower}` : '';
+        if (!h) return '';
+        const what = `${h.name} (${h.customer || 'no customer'}, ${h.blades} blade(s), ${h.kw || 0} kW) from ${h.tower}`;
+        return this.isPlanMove ? `Plan the move of in-use hold ${what}` : `Move ${what}`;
+    }
+    get isPlanMove() {
+        return this.moveMode === 'plan';
+    }
+    get moveButtonLabel() {
+        return this.isPlanMove ? 'Plan move here' : 'Move here';
+    }
+    get moveHint() {
+        return this.isPlanMove
+            ? 'In use: the blades physically move on the date below. The target tower is booked from that date, this tower is freed from then, and a Move work order goes to the colo team.'
+            : 'Reserved: nothing is installed yet, so the hold moves now.';
+    }
+
+    moveMode = 'instant';
+    moveDate;
+
+    defaultMoveDate() {
+        const t = new Date();
+        t.setHours(0, 0, 0, 0);
+        const sel = this.selectedDay ? parseDay(this.selectedDay) : null;
+        const pick = sel && sel > t ? sel : new Date(t.getFullYear(), t.getMonth(), t.getDate() + 7);
+        const p = (n) => String(n).padStart(2, '0');
+        return `${pick.getFullYear()}-${p(pick.getMonth() + 1)}-${p(pick.getDate())}`;
+    }
+
+    async loadMoveOptions() {
+        this.moveLoading = true;
+        this.moveOptions = [];
+        try {
+            const opts = JSON.parse(
+                await getMoveOptions({ holdId: this.moveFor.id, fromDate: this.isPlanMove ? this.moveDate : null })
+            );
+            this.moveOptions = opts.map((o) => ({
+                key: o.towerKey,
+                towerId: o.towerKey.split(':')[1],
+                label: `${o.towerName} · ${o.colo} · ${o.row}${o.region ? ' · ' + o.region : ''}`,
+                detail: `at least ${o.minFreeSlots} slot(s) and ${Number(o.minFreePowerKw).toFixed(1)} kW free for the rest of the hold`
+            }));
+        } catch (e) {
+            this.toast('Could not load move options', errorMessage(e), 'error');
+        } finally {
+            this.moveLoading = false;
+        }
+    }
+
+    handleMoveDate(event) {
+        this.moveDate = event.detail.value;
+        if (this.moveFor) this.loadMoveOptions();
     }
 
     async handleRowAction(event) {
@@ -509,23 +592,15 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
                 type: 'standard__recordPage',
                 attributes: { recordId: row.id, objectApiName: 'Capacity_Reservation__c', actionName: 'view' }
             });
-        } else if (action === 'move') {
+        } else if (action === 'move' || action === 'planmove') {
             this.moveFor = row;
-            this.moveLoading = true;
-            this.moveOptions = [];
-            try {
-                const opts = JSON.parse(await getMoveOptions({ holdId: row.id }));
-                this.moveOptions = opts.map((o) => ({
-                    key: o.towerKey,
-                    towerId: o.towerKey.split(':')[1],
-                    label: `${o.towerName} · ${o.colo} · ${o.row}`,
-                    detail: `at least ${o.minFreeSlots} slot(s) and ${Number(o.minFreePowerKw).toFixed(1)} kW free for the rest of the hold`
-                }));
-            } catch (e) {
-                this.toast('Could not load move options', errorMessage(e), 'error');
-            } finally {
-                this.moveLoading = false;
-            }
+            this.moveMode = action === 'planmove' ? 'plan' : 'instant';
+            this.moveDate = this.defaultMoveDate();
+            await this.loadMoveOptions();
+        } else if (action === 'provision' || action === 'decommission') {
+            await this.runAction(() =>
+                createWorkOrder({ holdId: row.id, jobType: action === 'provision' ? 'Provision' : 'Decommission' })
+            );
         } else if (action === 'release') {
             const ok = await LightningConfirm.open({
                 message: `Release ${row.name} (${row.customer || 'no customer'}, ${row.blades} blade(s) on ${row.tower})? It stops holding capacity and is no longer charged.`,
@@ -540,7 +615,12 @@ export default class HavDailyCapacity extends NavigationMixin(LightningElement) 
     async handleMoveHere(event) {
         const towerId = event.currentTarget.dataset.tower;
         const holdId = this.moveFor.id;
-        await this.runAction(() => moveHold({ holdId, towerId }));
+        if (this.isPlanMove) {
+            const moveDate = this.moveDate;
+            await this.runAction(() => planMove({ holdId, towerId, moveDate }));
+        } else {
+            await this.runAction(() => moveHold({ holdId, towerId }));
+        }
         this.moveFor = undefined;
     }
 

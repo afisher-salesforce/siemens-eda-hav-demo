@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Reservation__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Move jobs: the new hold on the target tower. It becomes Allocated when the work order completes.</description>
+    <label>Target Reservation</label>
+    <referenceTo>Capacity_Reservation__c</referenceTo>
+    <relationshipLabel>Move Target Work Orders</relationshipLabel>
+    <relationshipName>Move_Target_Work_Orders</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

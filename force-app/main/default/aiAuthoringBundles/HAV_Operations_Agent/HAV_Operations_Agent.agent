@@ -176,6 +176,10 @@ topic capacity_planning:
           description: "Optional duration in days when no end date is given; blank means 30"
         locationName: string
           description: "Optional colo name to limit the search, e.g. San Jose"
+        customerName: string
+          description: "Optional customer the job is for, e.g. Samsung; applies that customer's data-residency rule"
+        region: string
+          description: "Optional region to limit the search: US-West, US-Central, EU-Germany, APAC-India, APAC-Korea, APAC-Taiwan, or a broad geography US, EU or APAC"
       outputs:
         result: string
           description: "Eligible towers and why others are blocked"
@@ -200,6 +204,10 @@ topic capacity_planning:
         numbers, then mention any shortfall, conflict and the expansion recommendation.
         When the user asks whether a job or customer request can run (blades, power, dates), call
         the do_check_eligibility action with those values and report eligible towers and blocks.
+        If the user names a customer, pass customerName so the customer's data-residency rule applies,
+        and quote the "Placement policy" line (rule and rule source). If the user names a region or
+        geography (for example Korea, Taiwan, US, EU, or low latency to a region), pass region.
+        A colo excluded by data residency is a policy block, not a capacity shortage: say so.
 
       if @variables.capacity_result != "":
         | {!@variables.capacity_result}
@@ -215,6 +223,8 @@ topic capacity_planning:
         with endDate = ...
         with durationDays = ...
         with locationName = ...
+        with customerName = ...
+        with region = ...
         set @variables.eligibility_result = @outputs.result
 
 topic financial_operations:

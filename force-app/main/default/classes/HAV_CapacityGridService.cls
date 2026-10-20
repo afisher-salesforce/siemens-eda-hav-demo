@@ -34,6 +34,8 @@ public with sharing class HAV_CapacityGridService {
         public Id coloId;
         public String coloName;
         public String row;
+        /** HAV_Region__c of the colo (Facility asset), e.g. APAC-Taiwan. */
+        public String region;
         public Integer slots;
         public Decimal powerCap;
         public List<Asset> blades = new List<Asset>();
@@ -50,7 +52,7 @@ public with sharing class HAV_CapacityGridService {
         Topology t = new Topology();
         for (Asset a : [
             SELECT Id, Name, Blade_Slots__c, Tower_Power_Capacity_kW__c, Row__c,
-                   Parent_Asset__c, Parent_Asset__r.Name
+                   Parent_Asset__c, Parent_Asset__r.Name, Parent_Asset__r.HAV_Region__c
             FROM Asset
             WHERE Blade_Slots__c != null AND Blade_Slots__c > 0
             ORDER BY Name
@@ -61,6 +63,7 @@ public with sharing class HAV_CapacityGridService {
             tw.coloId = a.Parent_Asset__c;
             tw.coloName = a.Parent_Asset__r != null ? a.Parent_Asset__r.Name : 'Unassigned colo';
             tw.row = String.isNotBlank(a.Row__c) ? a.Row__c : 'Row (unassigned)';
+            tw.region = a.Parent_Asset__r != null ? a.Parent_Asset__r.HAV_Region__c : null;
             tw.slots = a.Blade_Slots__c.intValue();
             tw.powerCap = a.Tower_Power_Capacity_kW__c != null ? a.Tower_Power_Capacity_kW__c : 0;
             t.towers.put(tw.nodeId, tw);
@@ -130,6 +133,8 @@ public with sharing class HAV_CapacityGridService {
         public String key;
         public String level;
         public String label;
+        /** Colo level: the colo's HAV region. */
+        public String region;
         public List<DayCell> days = new List<DayCell>();
         public List<NodeGrid> children = new List<NodeGrid>();
         // Summary over the window
@@ -166,6 +171,8 @@ public with sharing class HAV_CapacityGridService {
         public Map<Id, List<Integer>> focusHeld = new Map<Id, List<Integer>>();
         public Map<Id, List<Integer>> focusPipe = new Map<Id, List<Integer>>();
         public Map<Id, List<Boolean>> bladeFocus = new Map<Id, List<Boolean>>();
+        /** Optional: only towers in colos of this HAV region (geography / latency filter). */
+        public String regionFilter;
 
         public Engine(Date startDate, Integer numDays) {
             this(startDate, numDays, null, null);
@@ -263,6 +270,7 @@ public with sharing class HAV_CapacityGridService {
         public List<Tower> towersUnder(String key) {
             List<Tower> out = new List<Tower>();
             for (Tower tw : topo.towers.values()) {
+                if (String.isNotBlank(regionFilter) && tw.region != regionFilter) continue;
                 if (key == 'fleet'
                     || key == 'colo:' + tw.coloId
                     || key == 'row:' + tw.coloId + ':' + tw.row
@@ -282,6 +290,7 @@ public with sharing class HAV_CapacityGridService {
             List<Tower> towers = towersUnder(key);
             g.level = key == 'fleet' ? 'fleet' : key.substringBefore(':');
             g.label = labelFor(key, towers);
+            if (key.startsWith('colo:') && !towers.isEmpty()) g.region = towers[0].region;
             for (Integer i = 0; i < numDays; i++) {
                 DayCell c = new DayCell();
                 c.day = startDate.addDays(i);
@@ -455,9 +464,26 @@ public with sharing class HAV_CapacityGridService {
 
     /** focusAccountId (optional): count that customer's holds and pipeline per cell (customer filter). */
     public static NodeGrid getGrid(String nodeKey, Date startDate, Integer numDays, Id focusAccountId) {
+        return getGrid(nodeKey, startDate, numDays, focusAccountId, null);
+    }
+
+    /** region (optional): only colos in that HAV region, so totals and children match the filter. */
+    public static NodeGrid getGrid(String nodeKey, Date startDate, Integer numDays, Id focusAccountId, String region) {
         Engine e = new Engine(startDate != null ? startDate : Date.today(),
             numDays != null && numDays > 0 ? Math.min(numDays, 366) : DEFAULT_DAYS, null, focusAccountId);
-        return e.build(String.isNotBlank(nodeKey) ? nodeKey : 'fleet', true);
+        e.regionFilter = String.isNotBlank(region) ? region : null;
+        NodeGrid g = e.build(String.isNotBlank(nodeKey) ? nodeKey : 'fleet', true);
+        if (e.regionFilter != null && g.level == 'fleet') g.label = 'All colos in ' + e.regionFilter;
+        return g;
+    }
+
+    /** HAV regions, in picklist order. */
+    public static List<String> regions() {
+        List<String> out = new List<String>();
+        for (Schema.PicklistEntry pe : Asset.HAV_Region__c.getDescribe().getPicklistValues()) {
+            if (pe.isActive()) out.add(pe.getValue());
+        }
+        return out;
     }
 
     public class Eligibility {
@@ -465,7 +491,10 @@ public with sharing class HAV_CapacityGridService {
         public String towerName;
         public String colo;
         public String row;
+        public String region;
         public Boolean eligible;
+        /** True when the placement policy (data residency), not capacity or power, blocks this tower. */
+        public Boolean policyBlocked = false;
         public Integer minFreeSlots;
         public Decimal minFreePowerKw;
         public Date firstBlockedDate;
@@ -485,12 +514,27 @@ public with sharing class HAV_CapacityGridService {
     /** Same as above, ignoring one existing hold (so a hold being moved doesn't block itself). */
     public static List<Eligibility> checkEligibility(String nodeKey, Date startDate, Date endDate,
                                                      Integer bladeCount, Decimal powerKw, Id excludeId) {
+        return checkEligibility(nodeKey, startDate, endDate, bladeCount, powerKw, excludeId, null, null);
+    }
+
+    /**
+     * Full form. accountId (optional) applies that customer's placement policy
+     * (data residency) via HAV_PlacementPolicy; region (optional) limits the
+     * search to colos in one HAV region. Order: eligible (most headroom first),
+     * then blocked by capacity or power, then blocked by policy.
+     */
+    public static List<Eligibility> checkEligibility(String nodeKey, Date startDate, Date endDate,
+                                                     Integer bladeCount, Decimal powerKw, Id excludeId,
+                                                     Id accountId, String region) {
+        HAV_PlacementPolicy.Rule rule = HAV_PlacementPolicy.forAccount(accountId);
+        List<Eligibility> policyBlocked = new List<Eligibility>();
         Date s = startDate != null ? startDate : Date.today();
         Date en = endDate != null && endDate >= s ? endDate : s.addDays(DEFAULT_DAYS - 1);
         Integer n = Math.min(s.daysBetween(en) + 1, 366);
         Integer need = bladeCount != null && bladeCount > 0 ? bladeCount : 1;
         Decimal kw = powerKw != null ? powerKw : 0;
         Engine e = new Engine(s, n, excludeId);
+        e.regionFilter = String.isNotBlank(region) ? region : null;
         List<Eligibility> eligible = new List<Eligibility>();
         List<Eligibility> blocked = new List<Eligibility>();
         for (Tower tw : e.towersUnder(String.isNotBlank(nodeKey) ? nodeKey : 'fleet')) {
@@ -499,6 +543,7 @@ public with sharing class HAV_CapacityGridService {
             el.towerName = tw.name;
             el.colo = shortColo(tw.coloName);
             el.row = tw.row;
+            el.region = tw.region;
             el.eligible = true;
             for (Integer i = 0; i < n; i++) {
                 Integer free = tw.slots - e.alloc.get(tw.nodeId)[i] - e.resv.get(tw.nodeId)[i];
@@ -513,10 +558,22 @@ public with sharing class HAV_CapacityGridService {
                         : 'power (' + freeKw.setScale(1) + ' of ' + kw.setScale(1) + ' kW free)';
                 }
             }
-            if (el.eligible) eligible.add(el); else blocked.add(el);
+            String policyReason = HAV_PlacementPolicy.blockReason(rule, tw.region);
+            if (policyReason != null) {
+                el.eligible = false;
+                el.policyBlocked = true;
+                el.firstBlockedDate = s;
+                el.blockedReason = policyReason;
+                policyBlocked.add(el);
+            } else if (el.eligible) {
+                eligible.add(el);
+            } else {
+                blocked.add(el);
+            }
         }
         sortByHeadroom(eligible);
         eligible.addAll(blocked);
+        eligible.addAll(policyBlocked);
         return eligible;
     }
 
@@ -549,7 +606,8 @@ public with sharing class HAV_CapacityGridService {
             res.message = 'A tower, a start date and an end date on or after the start are required.';
             return res;
         }
-        List<Eligibility> check = checkEligibility('tower:' + towerId, startDate, endDate, bladeCount, powerKw);
+        List<Eligibility> check = checkEligibility('tower:' + towerId, startDate, endDate, bladeCount, powerKw,
+            null, accountId, null);
         if (check.isEmpty()) {
             res.message = 'Not a capacity tower: ' + towerId;
             return res;
@@ -770,9 +828,10 @@ public with sharing class HAV_CapacityGridService {
         return out;
     }
 
-    static Capacity_Reservation__c loadHold(Id holdId) {
+    public static Capacity_Reservation__c loadHold(Id holdId) {
         List<Capacity_Reservation__c> rows = [
-            SELECT Id, Name, Status__c, Asset__c, Start_Date__c, End_Date__c, Blade_Count__c, Power_kW__c
+            SELECT Id, Name, Status__c, Asset__c, Account__c, Account__r.Name, Opportunity__c, Job_Name__c,
+                   Start_Date__c, End_Date__c, Blade_Count__c, Power_kW__c, Daily_Rate__c
             FROM Capacity_Reservation__c WHERE Id = :holdId LIMIT 1
         ];
         return rows.isEmpty() ? null : rows[0];
@@ -785,13 +844,24 @@ public with sharing class HAV_CapacityGridService {
 
     /** Towers this hold could move to (eligible for its blades and power for the rest of its window), excluding its current tower. */
     public static List<Eligibility> moveOptions(Id holdId) {
+        return moveOptions(holdId, null);
+    }
+
+    /**
+     * fromDate (optional): for a planned move of an in-use hold, the move date;
+     * the target must fit from then to the hold's end. The customer's placement
+     * policy applies, so a Korea-only hold is only offered Korean towers.
+     */
+    public static List<Eligibility> moveOptions(Id holdId, Date fromDate) {
         Capacity_Reservation__c r = loadHold(holdId);
         if (r == null || r.End_Date__c == null || r.End_Date__c < Date.today()) return new List<Eligibility>();
+        Date s = fromDate != null && fromDate > moveStart(r) ? fromDate : moveStart(r);
+        if (s > r.End_Date__c) return new List<Eligibility>();
         Topology topo = loadTopology();
         Id currentTower = topo.towers.containsKey(r.Asset__c) ? r.Asset__c : topo.bladeToTower.get(r.Asset__c);
         List<Eligibility> out = new List<Eligibility>();
-        for (Eligibility el : checkEligibility('fleet', moveStart(r), r.End_Date__c,
-                r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id)) {
+        for (Eligibility el : checkEligibility('fleet', s, r.End_Date__c,
+                r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id, r.Account__c, null)) {
             if (el.eligible && el.towerKey != 'tower:' + currentTower) out.add(el);
         }
         return out;
@@ -806,8 +876,13 @@ public with sharing class HAV_CapacityGridService {
             res.message = 'Hold or target tower not found.';
             return res;
         }
+        if (r.Status__c == 'Allocated') {
+            res.message = r.Name + ' is in use (Allocated): moving it is physical work. Plan the move instead, '
+                + 'which creates a move work order.';
+            return res;
+        }
         List<Eligibility> check = checkEligibility('tower:' + towerId, moveStart(r), r.End_Date__c,
-            r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id);
+            r.Blade_Count__c != null ? r.Blade_Count__c.intValue() : 1, r.Power_kW__c, r.Id, r.Account__c, null);
         if (check.isEmpty() || !check[0].eligible) {
             res.message = check.isEmpty() ? 'Not a capacity tower.'
                 : 'Not eligible: ' + check[0].towerName + ' is blocked from '

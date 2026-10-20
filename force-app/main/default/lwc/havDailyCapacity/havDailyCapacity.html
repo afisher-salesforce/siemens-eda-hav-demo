@@ -2,6 +2,15 @@
     <lightning-card title={cardTitle} icon-name="standard:calendar">
         <div slot="actions" class="hm-actions">
             <lightning-combobox
+                class="hm-focus slds-m-right_x-small"
+                label="Region"
+                variant="label-hidden"
+                placeholder="All regions"
+                options={regionOptions}
+                value={region}
+                onchange={handleRegion}
+            ></lightning-combobox>
+            <lightning-combobox
                 class="hm-focus slds-m-right_small"
                 label="Focus on customer"
                 variant="label-hidden"
@@ -118,6 +127,9 @@
                                     <template lwc:if={r.showConflict}>
                                         <span class="slds-badge hm-badge-short">{r.conflict}</span>
                                     </template>
+                                    <template lwc:if={r.showRegion}>
+                                        <span class="slds-badge hm-badge-region">{r.regionLabel}</span>
+                                    </template>
                                     <template lwc:if={r.showFocus}>
                                         <span class="slds-badge hm-badge-focus">{r.focusBadge}</span>
                                     </template>
@@ -185,7 +197,7 @@
                                 <template for:each={detail.conflicts} for:item="cf">
                                     <p key={cf.key}>{cf.text}</p>
                                 </template>
-                                <p class="slds-text-body_small slds-text-color_weak">Use a hold's row menu to move it to a tower with room, or release it.</p>
+                                <p class="slds-text-body_small slds-text-color_weak">Use a hold's row menu to move it to a tower with room (in-use holds: plan a move), or release it.</p>
                             </div>
                         </template>
                         <template lwc:if={hasDetailHolds}>
@@ -201,6 +213,11 @@
                                     <strong>{moveTitle}</strong>
                                     <lightning-button variant="base" label="Cancel" onclick={handleCancelMove}></lightning-button>
                                 </div>
+                                <p class="slds-text-body_small slds-text-color_weak slds-m-vertical_xx-small">{moveHint}</p>
+                                <template lwc:if={isPlanMove}>
+                                    <lightning-input type="date" label="Move date" value={moveDate} onchange={handleMoveDate}
+                                        class="hm-move-date"></lightning-input>
+                                </template>
                                 <template lwc:if={moveLoading}>
                                     <p class="slds-text-color_weak">Checking every tower for the rest of this hold…</p>
                                 </template>
@@ -211,7 +228,7 @@
                                                 <div>{o.label}</div>
                                                 <div class="slds-text-body_small slds-text-color_weak">{o.detail}</div>
                                             </div>
-                                            <lightning-button label="Move here" variant="brand" data-tower={o.towerId}
+                                            <lightning-button label={moveButtonLabel} variant="brand" data-tower={o.towerId}
                                                 onclick={handleMoveHere} disabled={busy}></lightning-button>
                                         </div>
                                     </template>

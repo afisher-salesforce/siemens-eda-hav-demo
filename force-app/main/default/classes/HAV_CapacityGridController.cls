@@ -9,9 +9,20 @@
 public with sharing class HAV_CapacityGridController {
 
     @AuraEnabled
-    public static String getGrid(String nodeKey, Integer days, Id customerId) {
+    public static String getGrid(String nodeKey, Integer days, Id customerId, String region) {
         return JSON.serialize(HAV_CapacityGridService.getGrid(
-            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', Date.today(), days, customerId));
+            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', Date.today(), days, customerId, region));
+    }
+
+    @AuraEnabled
+    public static List<String> getRegions() {
+        return HAV_CapacityGridService.regions();
+    }
+
+    /** The customer's placement rule (data residency) and where it comes from (Business Rules Engine or custom metadata). */
+    @AuraEnabled
+    public static Map<String, Object> getPolicy(Id accountId) {
+        return HAV_PlacementPolicy.describe(accountId);
     }
 
     @AuraEnabled
@@ -92,8 +103,20 @@ public with sharing class HAV_CapacityGridController {
     }
 
     @AuraEnabled
-    public static String getMoveOptions(Id holdId) {
-        return JSON.serialize(HAV_CapacityGridService.moveOptions(holdId));
+    public static String getMoveOptions(Id holdId, String fromDate) {
+        return JSON.serialize(HAV_CapacityGridService.moveOptions(holdId, toDate(fromDate, null)));
+    }
+
+    /** In-use hold: plan a physical move (books the target from moveDate, creates a Move work order). */
+    @AuraEnabled
+    public static String planMove(Id holdId, Id towerId, String moveDate) {
+        return JSON.serialize(HAV_CapacityWorkService.planMove(holdId, towerId, toDate(moveDate, null)));
+    }
+
+    /** jobType: Provision (Reserved holds) or Decommission (Allocated holds). */
+    @AuraEnabled
+    public static String createWorkOrder(Id holdId, String jobType) {
+        return HAV_ColoQueueController.createWorkOrder(holdId, jobType);
     }
 
     @AuraEnabled
@@ -107,9 +130,11 @@ public with sharing class HAV_CapacityGridController {
     }
 
     @AuraEnabled
-    public static String checkEligibility(String nodeKey, String startDate, String endDate, Integer blades, Decimal kw) {
+    public static String checkEligibility(String nodeKey, String startDate, String endDate, Integer blades, Decimal kw,
+                                          Id accountId, String region) {
         return JSON.serialize(HAV_CapacityGridService.checkEligibility(
-            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', toDate(startDate, Date.today()), toDate(endDate, null), blades, kw));
+            String.isNotBlank(nodeKey) ? nodeKey : 'fleet', toDate(startDate, Date.today()), toDate(endDate, null), blades, kw,
+            null, accountId, String.isNotBlank(region) ? region : null));
     }
 
     @AuraEnabled

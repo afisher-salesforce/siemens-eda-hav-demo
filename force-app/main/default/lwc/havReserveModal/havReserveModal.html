@@ -34,6 +34,9 @@
                     data-field="dailyRate" onchange={handleField}></lightning-input>
             </div>
         </div>
+        <template lwc:if={hasPolicy}>
+            <p class="slds-m-top_small slds-text-body_small">{policyText}</p>
+        </template>
         <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-top_small">
             <span class="slds-text-body_small">{summary}</span>
             <lightning-button variant="brand" label="Check eligibility" onclick={handleCheck}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>HAV_Data_Residency__c</fullName>
+    <description>Where this customer's EaaS workloads may run. Blank = Any region. The allowed regions per value come from the placement policy (Business Rules Engine decision matrix HAV_Residency_Policy, or the HAV Residency Rule custom metadata).</description>
+    <label>HAV Data Residency</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Any region</fullName>
+                <default>false</default>
+                <label>Any region</label>
+            </value>
+            <value>
+                <fullName>US only</fullName>
+                <default>false</default>
+                <label>US only</label>
+            </value>
+            <value>
+                <fullName>EU only</fullName>
+                <default>false</default>
+                <label>EU only</label>
+            </value>
+            <value>
+                <fullName>APAC only</fullName>
+                <default>false</default>
+                <label>APAC only</label>
+            </value>
+            <value>
+                <fullName>Korea only</fullName>
+                <default>false</default>
+                <label>Korea only</label>
+            </value>
+            <value>
+                <fullName>Taiwan only</fullName>
+                <default>false</default>
+                <label>Taiwan only</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -2,7 +2,9 @@
  * Agentforce Invocable Action: can this job run, and where?
  * Checks every tower (optionally within one colo) for enough free blade slots
  * AND power on every day of the requested window, using the daily capacity
- * model. Capacity and power both gate eligibility. Read-only: it does not
+ * model. Capacity and power both gate eligibility, and when a customer is
+ * named, that customer's placement policy (data residency, from the Business
+ * Rules Engine or custom metadata) also gates it. Read-only: it does not
  * create a reservation.
  */
 public with sharing class HAV_Agent_JobEligibility {
@@ -20,6 +22,10 @@ public with sharing class HAV_Agent_JobEligibility {
         public String durationDays;
         @InvocableVariable(description='Optional colo name to limit the search (e.g. San Jose).')
         public String locationName;
+        @InvocableVariable(description='Optional customer name (e.g. Samsung). Applies that customer\'s data-residency rule.')
+        public String customerName;
+        @InvocableVariable(description='Optional HAV region (US-West, US-Central, EU-Germany, APAC-India, APAC-Korea, APAC-Taiwan) or a broad geography (US, EU, APAC).')
+        public String region;
     }
 
     public class Output {
@@ -42,10 +48,29 @@ public with sharing class HAV_Agent_JobEligibility {
             Date e = parse(inp.endDate, s.addDays(dur - 1));
             if (e < s) e = s;
 
+            Id accountId = null;
+            String customer = null;
+            if (String.isNotBlank(inp.customerName)) {
+                String term = '%' + inp.customerName.trim() + '%';
+                List<Account> match = [SELECT Id, Name FROM Account WHERE Name LIKE :term ORDER BY Name LIMIT 1];
+                if (!match.isEmpty()) {
+                    accountId = match[0].Id;
+                    customer = match[0].Name;
+                }
+            }
+            String region = normalizeRegion(inp.region);
+            // Broad geography ("US", "EU", "APAC") = a group of regions, from the same rule table.
+            Set<String> regionGroup = null;
+            if (region == null && String.isNotBlank(inp.region)) {
+                HAV_PlacementPolicy.Rule g = HAV_PlacementPolicy.forResidency(
+                    inp.region.trim().replaceAll('(?i)\\s*only$', '') + ' only');
+                if (g.restricts()) regionGroup = g.allowedRegions;
+            }
             List<HAV_CapacityGridService.Eligibility> all =
-                HAV_CapacityGridService.checkEligibility('fleet', s, e, blades, kw);
+                HAV_CapacityGridService.checkEligibility('fleet', s, e, blades, kw, null, accountId, region);
             List<HAV_CapacityGridService.Eligibility> scoped = new List<HAV_CapacityGridService.Eligibility>();
             for (HAV_CapacityGridService.Eligibility el : all) {
+                if (regionGroup != null && !regionGroup.contains(el.region)) continue;
                 if (String.isBlank(inp.locationName) || (el.colo != null && el.colo.containsIgnoreCase(inp.locationName.trim()))) {
                     scoped.add(el);
                 }
@@ -53,7 +78,20 @@ public with sharing class HAV_Agent_JobEligibility {
             List<String> lines = new List<String>();
             lines.add('Job eligibility for ' + blades + ' blade(s), ' + kw.setScale(1) + ' kW, '
                 + s.format() + ' to ' + e.format()
-                + (String.isNotBlank(inp.locationName) ? ' in ' + inp.locationName : '') + ':');
+                + (customer != null ? ' for ' + customer : '')
+                + (String.isNotBlank(inp.locationName) ? ' in ' + inp.locationName : '')
+                + (region != null ? ' (region ' + region + ')' : '')
+                + (regionGroup != null ? ' (regions ' + String.join(new List<String>(regionGroup), ', ') + ')' : '') + ':');
+            if (String.isNotBlank(inp.customerName) && customer == null) {
+                lines.add('Customer "' + inp.customerName + '" not found; no residency rule applied.');
+            }
+            if (accountId != null) {
+                HAV_PlacementPolicy.Rule rule = HAV_PlacementPolicy.forAccount(accountId);
+                lines.add(rule.restricts()
+                    ? 'Placement policy: ' + customer + ' is "' + rule.residency + '", so only ' + rule.allowedLabel()
+                        + ' colos qualify' + (rule.note != null ? ' (' + rule.note + ')' : '') + '. Rule source: ' + rule.source + '.'
+                    : 'Placement policy: ' + customer + ' has no residency restriction. Rule source: ' + rule.source + '.');
+            }
             if (scoped.isEmpty()) {
                 lines.add('No capacity towers found' + (String.isNotBlank(inp.locationName) ? ' in "' + inp.locationName + '"' : '') + '.');
                 out.result = String.join(lines, '\n');
@@ -71,8 +109,17 @@ public with sharing class HAV_Agent_JobEligibility {
             }
             Map<String, Integer> blockedByColo = new Map<String, Integer>();
             List<String> blockedLines = new List<String>();
+            Set<String> policyColos = new Set<String>();
             for (HAV_CapacityGridService.Eligibility el : scoped) {
-                if (el.eligible) continue;
+                if (el.policyBlocked == true) policyColos.add(el.colo);
+            }
+            if (!policyColos.isEmpty()) {
+                List<String> pc = new List<String>(policyColos);
+                pc.sort();
+                lines.add('✗ Excluded by data residency: ' + String.join(pc, ', ') + '.');
+            }
+            for (HAV_CapacityGridService.Eligibility el : scoped) {
+                if (el.eligible || el.policyBlocked == true) continue;
                 blockedByColo.put(el.colo, (blockedByColo.containsKey(el.colo) ? blockedByColo.get(el.colo) : 0) + 1);
                 if (blockedLines.size() < 6) {
                     blockedLines.add('✗ ' + el.towerName + ' (' + el.colo + '): blocked from '
@@ -89,6 +136,17 @@ public with sharing class HAV_Agent_JobEligibility {
             out.result = 'Error checking job eligibility: ' + ex.getMessage();
         }
         return new List<Output>{ out };
+    }
+
+    /** "korea", "APAC-Korea", "apac korea" -> "APAC-Korea"; unknown -> null. */
+    public static String normalizeRegion(String value) {
+        if (String.isBlank(value)) return null;
+        String v = value.trim().toLowerCase().replaceAll('[^a-z]', '');
+        for (String r : HAV_CapacityGridService.regions()) {
+            String k = r.toLowerCase().replaceAll('[^a-z]', '');
+            if (k == v || k.endsWith(v) || k.replace('apac', '').replace('us', '').replace('eu', '') == v) return r;
+        }
+        return null;
     }
 
     public static Integer toInt(String value, Integer fallback) {

@@ -3,6 +3,7 @@ import LightningModal from 'lightning/modal';
 import checkEligibility from '@salesforce/apex/HAV_CapacityGridController.checkEligibility';
 import reserve from '@salesforce/apex/HAV_CapacityGridController.reserve';
 import getCustomers from '@salesforce/apex/HAV_CapacityGridController.getCustomers';
+import getPolicy from '@salesforce/apex/HAV_CapacityGridController.getPolicy';
 
 /** Veloce Strato list price per unit per month / 30, the same basis as HAV_RevenueModel. */
 const DEFAULT_DAILY_RATE = 6666.67;
@@ -45,6 +46,7 @@ export default class HavReserveModal extends LightningModal {
     messageClass = 'slds-text-color_error';
     checking = false;
     booking = false;
+    policy;
 
     connectedCallback() {
         const tomorrow = new Date();
@@ -75,7 +77,11 @@ export default class HavReserveModal extends LightningModal {
         return (this.results || []).map((r) => ({
             ...r,
             freeKw: Number(r.minFreePowerKw).toFixed(1),
-            status: r.eligible ? 'Eligible' : `Blocked from ${r.firstBlockedDate} by ${r.blockedReason}`,
+            status: r.eligible
+                ? 'Eligible'
+                : r.policyBlocked
+                  ? `Not allowed: ${r.blockedReason}`
+                  : `Blocked from ${r.firstBlockedDate} by ${r.blockedReason}`,
             statusClass: r.eligible ? 'slds-text-color_success' : 'slds-text-color_error',
             notEligible: !r.eligible
         }));
@@ -86,8 +92,30 @@ export default class HavReserveModal extends LightningModal {
         const value = event.detail.value;
         this[field] = value;
         if (field === 'kw') this.kwTouched = true;
+        if (field === 'accountId') this.loadPolicy();
         if (field === 'blades' && !this.kwTouched) this.kw = (Number(value) || 0) * 20;
         this.results = undefined;
+    }
+
+    get hasPolicy() {
+        return !!(this.policy && this.policy.customer);
+    }
+    get policyText() {
+        const p = this.policy;
+        if (!p || !p.customer) return '';
+        return p.restricts
+            ? `Placement policy: ${p.customer} is "${p.residency}", so only ${p.allowedRegions} colos qualify${p.note ? ` (${p.note})` : ''}. Rule source: ${p.source}.`
+            : `Placement policy: ${p.customer} has no residency restriction. Rule source: ${p.source}.`;
+    }
+
+    async loadPolicy() {
+        this.policy = undefined;
+        if (!this.accountId) return;
+        try {
+            this.policy = await getPolicy({ accountId: this.accountId });
+        } catch (e) {
+            this.policy = undefined;
+        }
     }
 
     async handleCheck() {
@@ -99,7 +127,9 @@ export default class HavReserveModal extends LightningModal {
                 startDate: this.start,
                 endDate: this.endDate,
                 blades: Number(this.blades) || 1,
-                kw: Number(this.kw) || 0
+                kw: Number(this.kw) || 0,
+                accountId: this.accountId || null,
+                region: null
             });
             this.results = JSON.parse(json);
         } catch (e) {
