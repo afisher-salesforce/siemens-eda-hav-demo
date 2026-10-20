@@ -14,7 +14,7 @@ import {
   Receipt,
   RefreshCw,
 } from 'lucide-react';
-import { getCapacityGrid, getCapacityShortfall } from '../api/salesforce';
+import { getCapacityGrid, getCapacityShortfall, getCapacityCustomers } from '../api/salesforce';
 import { useSalesforceData } from '../hooks/useSalesforceData';
 import { AgentChatContext } from './Layout';
 import CapacityReservationPanel from './CapacityReservationPanel';
@@ -43,6 +43,12 @@ function utilizationColour(c) {
   return '#99f6e4';
 }
 
+/** Customer focus: full colour where the customer holds blades, faded where only pipeline, dim elsewhere. */
+function focusOpacity(focusName, c) {
+  if (!focusName || c.focusHeld > 0) return {};
+  return { opacity: c.focusPipeline > 0 ? 0.55 : 0.18 };
+}
+
 function cellStyle(level, c) {
   const conflict = c.overbooked || c.powerConflict;
   if (level === 'blade') {
@@ -67,25 +73,39 @@ function powerStyle(level, c) {
   };
 }
 
-function cellTitle(label, level, c) {
+function cellTitle(label, level, c, focusName) {
   const lines = [
     `${label} — ${fmtDay(c.day, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}`,
   ];
   if (level === 'blade') {
     lines.push(c.allocated ? 'In use (allocated)' : c.reserved ? 'Reserved' : 'Free');
+    if (c.holders) lines.push(`Customer: ${c.holders}`);
   } else {
     lines.push(`Slots: ${c.total} · in use ${c.allocated} · reserved ${c.reserved} · free ${c.available}`);
     if (c.pipeline) {
       lines.push(`Pipeline demand: ${c.pipeline}${c.available - c.pipeline < 0 ? ` (short ${c.pipeline - c.available})` : ''}`);
     }
-    if (c.powerCap) lines.push(`Power: ${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW`);
-    if (c.overbooked) lines.push('⚠ Overbooked: holds exceed a tower’s slots');
-    if (c.powerConflict) lines.push('⚠ Power over a tower’s budget');
+    if (c.powerCap) {
+      const head = c.powerCap - c.powerCommitted;
+      lines.push(`Power: ${Number(c.powerCommitted).toFixed(1)} / ${Number(c.powerCap).toFixed(0)} kW (${head.toFixed(1)} kW free)`);
+    }
+    if (c.holders) lines.push(`Held by: ${c.holders}`);
+    if (c.conflictTowers) lines.push(`⚠ Conflict: ${c.conflictTowers}`);
+    else if (c.overbooked) lines.push('⚠ Overbooked: holds exceed a tower’s slots');
+    else if (c.powerConflict) lines.push('⚠ Power over a tower’s budget');
   }
+  if (focusName) {
+    lines.push(
+      c.focusHeld || c.focusPipeline
+        ? `${focusName}: ${c.focusHeld || 0} blade(s) held${c.focusPipeline ? `, ${c.focusPipeline} in pipeline` : ''}`
+        : `${focusName}: nothing this day`,
+    );
+  }
+  lines.push('Click for the day’s detail and actions');
   return lines.join('\n');
 }
 
-function NodeBadges({ g }) {
+function NodeBadges({ g, focusName }) {
   if (!g || g.level === 'blade') return null;
   return (
     <span className="flex items-center gap-1 flex-wrap">
@@ -93,13 +113,18 @@ function NodeBadges({ g }) {
         {g.minAfterPipeline >= 0 ? `${g.minAfterPipeline} free` : `short ${-g.minAfterPipeline}`}
       </span>
       {g.conflictDays > 0 && <span className="badge badge-red text-[10px]">conflict {g.conflictDays}d</span>}
+      {focusName && g.focusDays > 0 && (
+        <span className="badge text-[10px] bg-blue-500/10 text-blue-600">
+          {g.focusPeak > 0 ? `${focusName} peak ${g.focusPeak}` : `${focusName} pipeline only`}
+        </span>
+      )}
     </span>
   );
 }
 
 /* ── heatmap ─────────────────────────────────────────────────────────────── */
 
-export function Heatmap({ grid, onDrill, onCellClick, selected }) {
+export function Heatmap({ grid, onDrill, onCellClick, selected, focusName }) {
   const days = grid?.days || [];
   const rows = useMemo(() => {
     if (!grid) return [];
@@ -161,16 +186,17 @@ export function Heatmap({ grid, onDrill, onCellClick, selected }) {
                       className="w-[10px] h-[22px] shrink-0 border-r border-white/40 cursor-pointer"
                       style={{
                         ...cellStyle(r.level, c),
+                        ...focusOpacity(focusName, c),
                         ...(inColumn ? { filter: 'brightness(0.85)' } : {}),
                         ...(isSelected ? { outline: '2px solid #0b5cab', outlineOffset: '-2px', filter: 'none' } : {}),
                       }}
-                      title={cellTitle(r.label, r.level, c)}
+                      title={cellTitle(r.label, r.level, c, focusName)}
                     />
                   );
                 })}
               </div>
               <div className="pl-2 shrink-0">
-                <NodeBadges g={r} />
+                <NodeBadges g={r} focusName={focusName} />
               </div>
             </div>
           );
@@ -250,12 +276,15 @@ export default function CapacityDailyView() {
   const [showReserve, setShowReserve] = useState(false);
   const [selected, setSelected] = useState(null); // { node, label, level, day }
   const [reserveTarget, setReserveTarget] = useState(null); // { key, label, start }
+  const [focusId, setFocusId] = useState('');
 
   const current = trail[trail.length - 1];
   const { data: grid, loading, error } = useSalesforceData(
-    () => getCapacityGrid({ node: current.key, days }),
-    [current.key, days, refreshToken],
+    () => getCapacityGrid({ node: current.key, days, focus: focusId || undefined }),
+    [current.key, days, refreshToken, focusId],
   );
+  const { data: customers } = useSalesforceData(() => getCapacityCustomers(), []);
+  const focusName = focusId ? (customers || []).find((c) => c.id === focusId)?.name : undefined;
   const { data: shortfalls } = useSalesforceData(() => getCapacityShortfall({ days }), [days, refreshToken]);
 
   const drill = (node) => {
@@ -311,6 +340,20 @@ export default function CapacityDailyView() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={focusId}
+            onChange={(e) => setFocusId(e.target.value)}
+            className="filter-tab pr-6"
+            title="Focus the heatmap on one customer"
+            aria-label="Focus on customer"
+          >
+            <option value="">All customers</option>
+            {(customers || []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           {[30, 60, 90].map((d) => (
             <button
               key={d}
@@ -429,8 +472,16 @@ export default function CapacityDailyView() {
             <div className="section-card-body space-y-4">
               {error && <div className="text-sm text-red-500">Could not load capacity: {error}</div>}
               {loading && !grid && <div className="skeleton h-40 w-full" />}
-              {grid && <Heatmap grid={grid} onDrill={drill} onCellClick={selectCell} selected={selected} />}
+              {grid && (
+                <Heatmap grid={grid} onDrill={drill} onCellClick={selectCell} selected={selected} focusName={focusName} />
+              )}
               {grid && <Legend level={grid.level} />}
+              {focusName && (
+                <p className="text-[11px] text-blue-600">
+                  Showing {focusName}: full colour where they hold blades, faded where they only have pipeline, dimmed
+                  elsewhere. The day panel still shows every hold so conflicts can be fixed.
+                </p>
+              )}
               {grid && current.level === 'tower' && (grid.children || []).length < (today?.total || 0) && (
                 <p className="text-[11px] text-th-muted">
                   {(today?.total || 0) - (grid.children || []).length} slot(s) in this tower have no blade installed.
