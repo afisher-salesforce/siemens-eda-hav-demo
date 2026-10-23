@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -114,21 +114,30 @@ function NavTooltip({ label, visible }) {
 
 export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOpenTradeChat, onPeekEnter, onPeekLeave }) {
   const location = useLocation();
-  const [expandedParent, setExpandedParent] = useState(null);
+  // Per-group open/closed choice. A group with no explicit choice is open when
+  // the current route is inside it. (Previously one global "expandedParent"
+  // overrode the route, so after opening any other group the Capacity group
+  // would not open on click and Daily Capacity could not be reached.)
+  const [openGroups, setOpenGroups] = useState({});
   const [hoveredItem, setHoveredItem] = useState(null);
 
   // Effective width: show expanded when not collapsed or when peeking
   const isExpanded = !collapsed || peeking;
 
   // Auto-expand if we're on a child route
-  const currentParent = navItems.find(
-    (item) =>
-      item.children &&
-      (location.pathname === item.to ||
-        item.children.some((c) => location.pathname === c.to))
-  );
+  const inGroup = (item) =>
+    location.pathname === item.to ||
+    location.pathname.startsWith(`${item.to}/`) ||
+    item.children.some((c) => location.pathname === c.to);
+  const currentParent = navItems.find((item) => item.children && inGroup(item));
+  const currentParentTo = currentParent ? currentParent.to : null;
 
-  const effectiveExpanded = expandedParent || (currentParent ? currentParent.to : null);
+  // Navigating into a group always opens it, even if it was closed by hand earlier.
+  useEffect(() => {
+    if (currentParentTo) setOpenGroups((g) => (g[currentParentTo] ? g : { ...g, [currentParentTo]: true }));
+  }, [location.pathname, currentParentTo]);
+
+  const isGroupOpen = (to) => (to in openGroups ? openGroups[to] : to === currentParentTo);
 
   // Show tooltips only when collapsed AND not peeking
   const showTooltips = collapsed && !peeking;
@@ -174,10 +183,8 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
         {navItems.map(({ to, icon: Icon, label, children, persona }) => {
           const hasChildren = children && children.length > 0;
-          const isActive =
-            location.pathname === to ||
-            (hasChildren && children.some((c) => location.pathname === c.to));
-          const isChildExpanded = isExpanded && effectiveExpanded === to;
+          const isActive = location.pathname === to || (hasChildren && to === currentParentTo);
+          const isChildExpanded = isExpanded && hasChildren && isGroupOpen(to);
 
           // Calculate max-height for child container animation
           const childMaxHeight = isChildExpanded && hasChildren ? children.length * 36 + 8 : 0;
@@ -191,7 +198,7 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
               >
                 <NavLink
                   to={to}
-                  end={to === '/'}
+                  end={to === '/' || hasChildren}
                   className={({ isActive: linkActive }) =>
                     `flex items-center flex-1 h-10 px-3 rounded-md text-sm transition-all duration-150 ${
                       linkActive
@@ -218,9 +225,10 @@ export default function Sidebar({ collapsed, peeking, onToggle, onOpenChat, onOp
                 </NavLink>
                 {hasChildren && (
                   <button
-                    onClick={() =>
-                      setExpandedParent(isChildExpanded ? null : to)
-                    }
+                    type="button"
+                    aria-label={isChildExpanded ? `Collapse ${label}` : `Expand ${label}`}
+                    aria-expanded={isChildExpanded}
+                    onClick={() => setOpenGroups((g) => ({ ...g, [to]: !isChildExpanded }))}
                     className={`p-1 text-th-muted hover:text-th-secondary transition-all duration-200 ${
                       isExpanded ? 'opacity-100 w-6' : 'opacity-0 w-0 overflow-hidden'
                     }`}
