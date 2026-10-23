@@ -5,7 +5,9 @@
 //    SEL1 APAC-Korea, HSC1 APAC-Taiwan.
 // 2. Data residency on three customers (Account.HAV_Data_Residency__c):
 //    Samsung Semiconductor = Korea only, NVIDIA = US only, Broadcom = EU only.
-//    Everyone else stays blank (any region). Existing holds already comply.
+//    Everyone else stays blank (any region). Two seed-2 inbound holds do NOT comply
+//    (PM-SJ1-008 Broadcom in San Jose, PM-HSC1-010 Samsung in Hsinchu): run
+//    scripts/fix-inbound-residency.apex after this script.
 // 3. One in-use hold ending soon, so the colo page has a decommission to plan:
 //    Qualcomm, 1 blade at AUS1, ends in 9 days.
 // 4. A provisioning work order for Samsung's Reserved hold at SEL1, so the colo

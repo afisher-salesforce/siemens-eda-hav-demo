@@ -198,7 +198,8 @@ export default class HavColoQueue extends NavigationMixin(LightningElement) {
         return `Open capacity work orders (${this.workOrders.length})`;
     }
     get conflictHeading() {
-        return `Conflicts in the next 30 days (${this.conflicts.length})`;
+        const w = (this.data && this.data.conflictWindow) || 30;
+        return `Conflicts in the next ${w} days (${this.conflicts.length})`;
     }
 
     // ── handlers ────────────────────────────────────────────────────────
