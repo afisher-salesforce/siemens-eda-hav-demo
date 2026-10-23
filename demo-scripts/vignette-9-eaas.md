@@ -1,18 +1,20 @@
 # Vignette 9 — Emulation-as-a-Service: Capacity You Can Sell, Schedule and Charge For
 
-**Duration:** ~28 minutes (core path 20) | **Personas:** HAV operations lead, capacity / colo SMEs, finance (allocation) | **Version:** v2, 10/20 (daily capacity, residency policy, capacity work orders, colo page)
+**Duration:** ~28 minutes of demo inside a 60-minute session | **Heroes:** capacity planner, colo operations, finance manager, services leader | **Version:** v3, 10/23 (Story Builder structure: four demo cases, tell-show-tell; see `v9-story-package.md`)
 
 ## Narrative Setup
-> "Emulation-as-a-Service turns a hardware sale into a consumption business. The customer doesn't buy a box — they reserve blade capacity in a colo for a job, and pay for what they hold. That makes capacity the product. Today the answer to 'can we take this job?' lives in a spreadsheet and in two people's heads. Let's show the same answer as a live system: capacity by day at every level of the fleet, rules about where a customer is allowed to run, the colo work that makes a reservation real, and the chargeback that comes out the other end. One set of records, two surfaces — Salesforce, where the business runs, and the ops app — and an agent on top."
+> "Every request we talked about on the last slide runs into the same problem: capacity lives in spreadsheets and inboxes, so everyone finds out too late. For the next half hour we follow one request, 2 blades and 40 kW for 30 days, through four steps: **See** where capacity is free, **Decide** where this customer may run, **Act** on the colo work, and **Charge** for what was held. Each time, we'll start with how it works today and end with what changed."
 
 ## Before you present (10 minutes, morning of)
 - [ ] **Readiness check** (every line OK or INFO):
   `sf apex run --target-org siemens-eda-hav-l15viz --file scripts/check-demo-state.apex | grep USER_DEBUG | grep CHECK`
   A TODO on the R01 conflict or tester holds means someone changed demo data: re-run `seed-8`, then `seed-9` (dates then shift; see "Dates" below).
+- [ ] **On Salesforce VPN.** The React app is internal-only: off VPN it shows a Heroku "Access Denied" page and nothing reaches the app. Load `/capacity/daily` once before you start.
 - [ ] **Incognito window** for Salesforce (avoids stale Lightning cache), logged into the **Siemens EDA HAV** app.
 - [ ] Tabs open: **HAV Daily Capacity**; **Facility — Seoul Colo (SEL1)** asset; **Lookup Tables → HAV_Residency_Policy → V1 → Matrix** (only if you'll do the live rule edit); the React app at `/capacity/daily`; Agentforce panel (HAV Operations Agent).
 - [ ] **Dates:** the seed ran 10/19, so the shortfall dates are "before 12/3" (Hsinchu) and "before 12/18" (Seoul) and the R01 conflict starts **Dec 18**. If you re-seed, every date moves by the days since 10/19; the numbers don't.
-- [ ] Decide in advance whether you'll do the **destructive beats** (Move in Act 2, Plan move / Mark complete in Act 4). If yes, budget 3 minutes after the session for the reset at the bottom.
+- [ ] **Once, before Monday:** run `scripts/fix-inbound-residency.apex` (the two inbound holds used in case 3 belonged to Broadcom and Samsung, which break their own residency rules). Re-run it after any `seed-8`.
+- [ ] Decide in advance whether you'll do the **destructive beats** (Move in case 1, create job / Plan move in case 3). If yes, budget 3 minutes after the session for the reset at the bottom.
 
 ## Live vs. Illustrative (say it once, early)
 - **Live:** daily capacity computed from reservations (allocated, reserved, pipeline) at colo → row → tower → blade; capacity **and** power gating; conflicts; the pipeline shortfall forecast; reservations; residency rules from the Business Rules Engine; work orders and their effect on capacity; chargeback; the agent.
@@ -21,78 +23,101 @@
 
 ---
 
-## Act 1 — The question the spreadsheet answers today (2 min)
-**Open:** **HAV Daily Capacity** (first tab in the Siemens EDA HAV app), All colos, 90 days.
+## Say this, not that
+blade, tower, row, colo (not Asset) · hold or reservation (not record) · in use / reserved / forecast (not Allocated / Reserved / Pipeline) · likely deals (not opportunities) · "where this customer may run" (not eligibility) · "a rules table the operations team owns" (not Business Rules Engine, decision matrix) · colo job or work order · the assistant (not Agentforce). Keep Field Service and licensing out.
 
-**Talk track:**
-- "Every cell is one day for one colo: blade slots in use, reserved, free, and pipeline demand from open opportunities. Nothing here is stored as a daily number; it's computed from the reservations every time, so it can't drift."
-- Point at the purple banner: "Before anyone asked, it's already telling us where demand outruns capacity: **add 3 blade slots at Hsinchu before 12/3**, **1 at Seoul before 12/18**. That's the pipeline-informed expansion forecast, from real opportunities."
-- Point at the colo badges: "San Jose has **12 free**, Austin 9, Bangalore 7, Munich 6. Seoul is **short 1** and Hsinchu **short 3** once pipeline lands. The red stripe on top means a tower below is in conflict."
+---
 
-## Act 2 — Find a conflict and fix it (6 min)
-**Click:** Hsinchu → Row A → **Rack R01 — HSC1**.
+## Case 1 — See: capacity by day (7 min) · Hero: capacity planner · Map step 3
+**Tell — today:** "Today the planner opens a spreadsheet someone updated last week, and finds out about a clash when the colo calls."
 
-**Talk track:**
-- "We're at a single tower now: two TSMC blades in use, and from **Dec 18** the tower turns red. Lowest power headroom is **−7 kW**. Capacity and power both gate a job; this tower has a free slot but not the power."
-- **Hover** a red cell: "The hover tells you who holds the capacity that day and names the tower that's over and by how much."
-- **Click** a cell around Dec 21 → day panel: "Power **67.4 of 60 kW, 7.4 kW over**. Three holds; this one — TSMC's **thermal characterization**, Reserved from Dec 18 — is what pushes it over."
-- Row menu on that hold → **Move to another tower…**: "The system only offers towers that can hold this job for every remaining day, capacity and power, and it re-checks on save, so nobody can double-book from a stale screen."
-- *(Destructive, optional)* **Move here** → the red clears: "Conflict resolved in two clicks, with the reason on screen."
-- **Key line:** "Notice the menu said **Move**. That hold is Reserved — nothing is installed yet, so moving it is paperwork. Hold that thought for Act 4."
+**Show** — **HAV Daily Capacity** (first tab in the Siemens EDA HAV app), All colos, 90 days:
+- "Every cell is one day for one colo: in use, reserved, free, and forecast demand from likely deals. Nothing is typed in; it's worked out from the holds every time, so it can't drift."
+- Purple banner: "Before anyone asked, it says **add 3 blade slots at Hsinchu before 12/3** and **1 at Seoul before 12/18**." (Point at it now; we come back to it at the close.)
+- Colo badges: "San Jose has **12 free**, Austin 9, Bangalore 7, Munich 6. Seoul is **short 1** and Hsinchu **short 3** once forecast lands. A red stripe means a tower below has a clash."
+- Click **Hsinchu → Row A → Rack R01 — HSC1**: "From **Dec 18** this tower turns red. It has a free slot but not the power: lowest headroom **−7 kW**."
+- Click a cell around Dec 21 → day panel: "**67.4 of 60 kW**. TSMC's thermal characterization, reserved from Dec 18, is what tips it over."
+- Row menu → **Move to another tower…**: "It only offers towers that fit for every remaining day, space and power, and checks again on save, so nobody double-books from an old screen." *(Destructive, optional: **Move here** → the red clears. Reset afterwards.)*
+- *(Optional, 1 min, cut first if short)* **All customers → TSMC**: "The account team's view of the same grid."
 
-**Optional (1 min):** header **All customers → TSMC**: "Focus on one customer: everywhere TSMC holds blades stays lit, pipeline-only days fade, the rest dims. That's the account team's view of the same grid."
+**Tell — what did we see?**
+- *Process:* ⬇ time to find free capacity · ⬇ double bookings
+- *Scale:* ⬆ colos one planner can watch
+- *Customer:* ⬆ confidence in the promised start date
 
-## Act 3 — Rules about where a customer may run (5 min)
-**Click:** breadcrumb **All colos** → **New reservation**.
+**Checkpoint:** "How do you find out about a clash like this today, and how far ahead?"
 
-**Talk track:**
-- Customer **Samsung Semiconductor**, 2 blades, 40 kW, next Monday, 30 days → **Check eligibility**:
-  "Look at the **placement policy** line: Samsung is **Korea only** — design data stays in Korea — so only Seoul towers qualify, and every other tower says *Not allowed: data residency*. And the **rule source** is the **Business Rules Engine**."
-- "That distinction matters. The capacity math is code because it has to be exact and fast. *Where a customer is allowed to run* is policy, and policy belongs to the ops team, not to a developer."
-- Switch to **TSMC**, Hsinchu scope (or All colos) → check: "No residency restriction, so it's judged on capacity and power only. In Hsinchu, **1 of 7** towers can take a 2-blade, 40 kW job for 30 days — R02. The rest are blocked, mostly by power, and each says why."
-- *(Optional live edit, 1 min)* In the decision matrix, change **Korea only** to `APAC-Korea,APAC-Taiwan` → Save → back in the dialog, check Samsung again: "Now Hsinchu qualifies too. **No code, no deployment.** That's the rules engine." Change it back.
-- **Region filter:** header **All regions → APAC-Korea**: "And for latency or geography questions, filter the whole grid to a region; totals follow." Back to All regions.
+---
 
-## Act 4 — The colo's day: work orders that change capacity (6 min)
-**Open:** **Facility — Seoul Colo (SEL1)** asset → **HAV Colo Operations** card.
+## Case 2 — Decide: where this customer may run (7 min) · Hero: capacity planner, for sales · Map steps 2 and 4
+**Tell — today:** "Today a request means a call to the colo to confirm space and power, and someone remembering which customers must keep their data in-country."
 
-**Talk track:**
-- "This is the colo team's landing page. They don't edit capacity; they work this queue."
-- **Conflicts in the next 90 days:** "Seoul's double-booked tower from late November, with how many slots over and for how long, weeks before it bites. (Hsinchu's page shows R01 the same way.)"
-- **Starting soon · provision:** "Samsung's tape-out sprint starts in under two weeks and already has a **provisioning work order**" (00000854, status New).
-- **Switch to Facility — Hsinchu Colo (HSC1)** → Starting soon · provision: **RES-00011, Inbound shipment: PM-HSC1-010** on Rack R08, starts 11/2, Provisioning WO **None yet** → row menu **▾ → Create provisioning work order**: "Created, with the steps as line items and the tower as the asset." The row now shows the work order number, and it appears under **Open capacity work orders**; open it to show the line items, Asset = Rack R08 — HSC1, and the Capacity section linking back to RES-00011. *(Backup: San Jose, RES-00015 / PM-SJ1-008 on Rack R09. Each can only be created once; delete the work order to repeat the beat.)*
-- "Here's the model: the **reservation is the source of truth for capacity; the work order is the physical job**. Complete the provisioning work order and the hold becomes **in use**. That's the loop the spreadsheet can't close."
-- *(Destructive, optional)* **Open capacity work orders** → **Mark complete** on the new one → it drops off; the hold is now Allocated.
-- **Back to Act 2's thought** — HAV Daily Capacity → any tower → click a future cell → an **Allocated** hold's row menu: "For an in-use hold the menu doesn't say Move. It says **Plan move (work order)**. Real blades move on a real date: pick it, and the target tower is booked from that date, this one is freed from then, and a **Move** work order goes to the colo team. Cancel the work order and everything is restored."
-- *(Optional)* **Facility — Austin Colo (AUS1)**: "Ending soon: Qualcomm's short-term burst ends in about nine days → **Create decommission work order**."
+**Show:**
+- Breadcrumb **All colos** → **New reservation** → **Samsung Semiconductor**, 2 blades, 40 kW, next Monday, 30 days → **Check eligibility**: "Samsung is **Korea only**, so only Seoul towers qualify. Every other tower says *Not allowed: data residency*. That's a rule, not a shortage."
+- "The rule lives in a table the **operations team owns**, not in code. Change it there and the answer changes, with no developer." *(Optional live edit, 1 min: change **Korea only** to `APAC-Korea,APAC-Taiwan`, re-check, Hsinchu qualifies; change it back.)*
+- Switch to **TSMC**, Hsinchu → check: "No residency rule, so it's space and power only: **1 of 7** towers can take it (R02), and every blocked tower says why."
+- The assistant (HAV Operations Agent, fresh conversation): *"Can we run a 2-blade 40 kW job for Samsung for 30 days starting next week?"* → quotes the Korea-only rule, only Seoul considered. "Sales can ask the same question in plain English and get the same answer the screen gave." *(Rehearse once.)*
 
-## Act 5 — What it's worth: chargeback and recurring revenue (3 min)
-**Open:** React app `/capacity/daily` → **Chargeback** tab, This month.
+**Tell — what did we see?**
+- *Process:* ⬇ time to answer a request
+- *Scale:* ⬆ requests answered without the colo on the phone
+- *Customer:* ⬆ residency rules followed every time
 
-**Talk track:**
-- "Same records, now in the ops app. Chargeback is blade-days held — in use plus reserved, never pipeline — times the daily rate. **TSMC: 310 blade-days, $1.65M** this month, split by colo, with a total."
-- "Pipeline is never charged and capacity is never resold: you pay for what you hold."
-- `/financials`: "And at the top line, EaaS and lease units roll up to **$4.72M MRR**."
-- **Two surfaces, one truth:** on `/capacity/daily`, drill to Hsinchu R01: "Same conflict state as Salesforce a minute ago. No sync."
+**Checkpoint:** "Who owns rules like 'Korea only' today, and where are they written down?"
 
-## Act 6 — Ask the agent (4 min)
-**Open:** Agentforce → HAV Operations Agent (fresh conversation per prompt).
+---
 
-Run in this order:
-1. *"Where do we have free capacity for a new EaaS customer?"* → best fit San Jose, Austin, Bangalore, Munich; avoid Seoul and Hsinchu, with the expansion recommendation.
-2. *"Can we run a 2-blade 40 kW job in Hsinchu for 30 days starting next week?"* → **1 of 7** towers (R02), with why the others are blocked.
-3. *"Can we run a 2-blade 40 kW job for Samsung for 30 days starting next week?"* → quotes the **Korea-only** rule and its Business Rules Engine source; only Seoul is considered; other colos are "excluded by data residency", a policy block, not a shortage. *(New in v2: rehearse it once.)*
-4. *"What is TSMC's capacity chargeback for October?"* → 310 blade-days, $1.65M.
-5. *"What's our revenue by lease type?"* → $4.72M MRR with the EaaS slice.
+## Case 3 — Act: the colo's job queue (7 min) · Hero: colo operations · Map step 5
+**Tell — today:** "Today the colo learns about new work by email, with no priority, and the spreadsheet only changes when someone remembers."
 
-**Talk track:** "The agent doesn't have its own copy of anything. Every answer calls the same capacity engine, the same rules and the same chargeback the screens use."
+**Show:**
+- **Facility — Seoul Colo (SEL1)** → **HAV Colo Operations** card: "This is the colo team's page. They don't edit capacity; they work this list."
+- **Conflicts in the next 90 days:** "Seoul's double-booked tower from late November, how many slots over and for how long, weeks before it bites."
+- **Starting soon · provision:** "Samsung's tape-out sprint starts in under two weeks and already has a provisioning job" (00000854, New).
+- **Facility — San Jose Colo (SJ1)** → Starting soon: **RES-00015, Inbound shipment: PM-SJ1-008** on Rack R09, job **None yet** → row menu **▾ → Create provisioning work order**: "Created, with the steps listed and the tower attached." *(Backup: Hsinchu, RES-00011 / PM-HSC1-010 on Rack R08. Each hold can only get one job; delete it to repeat. Run `scripts/fix-inbound-residency.apex` once first, so both holds belong to customers with no residency rule.)*
+- "The hold is the source of truth for capacity; the job is the physical work. Finish the job and the hold becomes **in use**."
+- HAV Daily Capacity → any tower → future cell → an **in-use** hold's menu: "For installed blades it doesn't say Move. It says **Plan move**: real blades move on a real date, and the colo gets a job for it."
 
-## Close (1 min) — Key messages
-- **Capacity is the product:** by day, at every level, from the reservations themselves, with power and capacity both gating.
-- **Policy is data, not code:** residency rules live in the Business Rules Engine and change without a deployment.
-- **The reservation is the truth; the work order is the job:** completing the job changes capacity, and in-use holds can't be moved by accident.
-- **You charge for what you hold:** chargeback by customer and colo falls out of the same records.
-- **One set of records, two surfaces, agent on top.**
+**Tell — what did we see?**
+- *Process:* ⬇ jobs that arrive late
+- *Scale:* ⬆ colos run from one list
+- *Customer:* ⬆ capacity ready on the start date
+
+**Checkpoint:** "What does a colo team's week look like when three requests land at once?"
+
+---
+
+## Case 4 — Charge: chargeback (4 min) · Hero: finance manager · Map step 6
+**Tell — today:** "Today finance rebuilds the charges by hand at month end, and each spreadsheet charges a little differently."
+
+**Show** — ops app `/capacity/daily` (on VPN) → **Chargeback**, this month:
+- "Blade-days held, in use plus reserved, times the daily rate. **TSMC: 310 blade-days, $1.65M** this month, split by colo."
+- "Forecast is never charged and capacity is never resold: you pay for what you hold."
+- Drill to Hsinchu R01: "Same clash as in Salesforce a minute ago. Two screens, one set of numbers."
+
+**Tell — what did we see?**
+- *Process:* ⬇ days to close the chargeback
+- *Scale:* ⬆ customers billed without more people
+- *Customer:* ⬆ charges customers can trace
+
+**Checkpoint:** "Which part of month end takes longest today?"
+
+---
+
+## Close of demo — the whole fleet (3 min) · Hero: services leader
+- Back to **HAV Daily Capacity**, All colos: "Remember the banner: **3 slots at Hsinchu before 12/3, 1 at Seoul before 12/18**. That's the rack-buying decision, with a date on it."
+- The assistant, fresh conversation: *"Where do we have free capacity for a new EaaS customer?"* → San Jose, Austin, Bangalore, Munich; avoid Seoul and Hsinchu, with the expansion advice.
+- "The assistant doesn't keep its own copy of anything. It asks the same engine, the same rules and the same chargeback the screens use."
+- **What did we see?** ⬆ notice before buying racks.
+- Hand back to the deck: **What we measure, and what happens next**.
+
+**If time runs short, cut in this order:** the customer-focus filter (case 1), the live rule edit (case 2), Plan move (case 3), the fleet assistant prompt (close). Never cut questions or next steps.
+
+## Key messages (if asked to sum up)
+- **One live picture of capacity**, by day, for every colo, worked out from the holds themselves.
+- **Rules about where a customer may run** belong to the operations team and change without a developer.
+- **The hold is the truth; the job is the work.** Finishing the job changes capacity.
+- **You charge for what you hold.**
 
 ## Field Service (talking point, don't demo)
 "These are standard work orders: the tower is the asset, each step is a line item. If field-ops discovery shows technicians doing this work, we add Service Appointments, a territory per colo and scheduling on top, with no rework. That's a different seat type from Manufacturing Cloud, so it waits on the role breakdown." *(Internal audience only: licensing and seat-mix points stay out of the customer version.)*
@@ -115,5 +140,5 @@ Run in this order:
 - If you edited the decision matrix, set **Korea only** back to `APAC-Korea`.
 - Re-run the readiness check.
 
-## Transition to V6
+## Transition to V6 (longer sessions only; on 10/26 go back to the deck)
 > "You've seen capacity sold, scheduled, worked and charged from one set of records. The payoff is the renewal and the expansion: let's look at how the account 360 protects the recurring revenue this model depends on."
